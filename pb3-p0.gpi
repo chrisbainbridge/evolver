@@ -1,0 +1,41 @@
+
+#set style data line
+# eps
+    set terminal postscript portrait noenhanced  solid defaultplex
+
+#set out 'pb3.trace.eps'
+    set out "pb3-p0.eps"
+set multiplot
+# time n0 n1 n2i n3 n4o 
+set yrange [0:1]
+set size 1,0.035000
+set bmargin 0.05
+set tmargin 0.05
+set format x ""
+set xlabel ""
+set border 2
+set key top outside
+set noytics
+set ytics nomirror 0, 1, 1
+set noxtics
+set style line 1 linetype 1 linewidth 3
+set origin 0.05,0.007500
+set label "n0" at graph -0.145, graph 0.5
+plot "pb3.trace" using 1:2 notitle with lines linestyle 1
+unset label
+set origin 0.05,0.057500
+set label "n1" at graph -0.145, graph 0.5
+plot "pb3.trace" using 1:3 notitle with lines linestyle 1
+unset label
+set origin 0.05,0.107500
+set label "n2i" at graph -0.145, graph 0.5
+plot "pb3.trace" using 1:4 notitle with lines linestyle 1
+unset label
+set origin 0.05,0.157500
+set label "n3" at graph -0.145, graph 0.5
+plot "pb3.trace" using 1:5 notitle with lines linestyle 1
+unset label
+set origin 0.05,0.207500
+set label "n4o" at graph -0.145, graph 0.5
+plot "pb3.trace" using 1:6 notitle with lines linestyle 1
+unset label

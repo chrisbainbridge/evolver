@@ -1,0 +1,101 @@
+Plan from 30th September 2005
+
+1. Get pole balancer simulation working again under new framework
+[ Deadline: January 2006)
+
+2. Implement LQR controller
+[ Deadline: February 2006)
+
+3. Add Gaussian noise to sensor and motor models.
+[ Deadline: February 2006)
+
+4. Pole balancer experiments, compare against LQR analytical solution.
+
+   Averaging results over a suitable number of experiments, plot:
+
+     number of quanta (x) against balance time (y).
+     plot lines for avg, max, LQR
+
+   This will show the performance cost of reducing the number of state.
+   CPQ provides a baseline "perfect balancer".
+
+   The task could be varied by changing the magnitude or regularity of
+   the force hitting the pole. It is not clear whether it is better to
+   present results like this separately, or to average and summarise in
+   a single plot.
+
+[ Deadline: March 2006)
+
+5. Finish integration of morphology and network evolution.
+[ Deadline: April 2006)
+
+6. Finish other digital network code (Cellular Automata, Random Boolean
+Network, Digital circuits).
+[ Deadline: May 2006)
+
+7. Co-evolution experiments. Averaging results over a suitable number
+of experiments, find mean/max performance of various tasks
+(running, jumping, target chasing). Plots:
+
+     * for quantised network: number of quanta (x) against performance (y). 
+     * compare continuous, quantised, ca, rbn. For each plot the avg and
+       max performance on each task of the best controller found after
+       some number of experimental runs. 
+
+[ Deadline: June 2006)
+
+8. Writeup thesis.
+[ Deadline: September 2006)
+
+
+* "benchmark to judge significance of work"
+
+** effects of reducing precision
+
+** Properly studying evolved quantised controllers means investigating
+questions like the following:
+  - What happens when you reduce precision (= quantise)?
+  - If this works (how well? need experiments with measurement) then
+ within what limits (e.g. on number of bits) does it work well?
+  - What is the relationship between evolved quantised control and
+  evolved continuous control?  Between quantised evolutionary control
+   and analytically-derived optimal control?
+  - Pole-balancing is a good task for an exhaustive study, since it is
+    so simple, but do your conclusions for that tasks extend to other
+    tasks?
+  - Pole balancer should be compared with LQR controller, which gives
+ the ideal solution
+- What about friction (see Matthew Whitaker's work)?  [Chris: not a
+ problem]
+ - Is there noise in the simulation?  [Chris: no, but could easily add
+  noise to sensors]
+  - What about different quantisation methods, other than linear
+   quantisation?  You could even evolve the quantisation scheme.
+   - How does it compare with a Boltzmann machine?  (The network looked
+    similar to the BM.)
+    - Look at work of Matthew Whitaker (MRes), Noah Keen (Chicago,
+     ex-MSc), Joel Horne (UG project)
+
+Nigel suggests that Chris should produce a document in the near future
+describing his hypothesis and outlining the story that he will tell in
+his thesis.
+
+An application for an extension to Chris's PhD studies needs to be
+submitted in the near future.  Don can write this (for signature by
+Nigel) but he needs to know how long it should be for, from
+30th September, and he needs a fairly detailed programme of work
+covering the period of the extension and ending with a finished thesis.
+
+* connect control networks and motors/sensors
+
+* do plan for year
+
+
+DONE - used property to dynamically add relax time. Bug - classes should
+inherit from object() otherwise property won't work. check relax time - ev.py steps manually, should call sim.run
+
+DONE every simulation begins with the same random state (in evolve.py) - this
+should vary for different generations, but be the same within each
+generation (?)... FUCK no this is generating the same elites again and
+again - all it takes is for the elites to become dominant and be copied
+with no errors

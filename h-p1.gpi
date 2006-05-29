@@ -1,0 +1,57 @@
+
+#set style data line
+# eps
+    set terminal postscript portrait noenhanced  solid defaultplex
+
+#set out 'h.trace.eps'
+    set out "h-p1.eps"
+set multiplot
+# time bp0-0io bp0-1 bp0-2o bp0-3 bp0-4i bp1-0io bp1-1 bp1-2o bp1-3 bp1-4i bp2-0io bp2-1 bp2-2o bp2-3 bp2-4i bp3-0io bp3-1 bp3-2o bp3-3 bp3-4i bp4-0io bp4-1 bp4-2o bp4-3 bp4-4i bp5-0io bp5-1 bp5-2o bp5-3 bp5-4i 
+set yrange [0:1]
+set size 1,0.035000
+set bmargin 0.05
+set tmargin 0.05
+set format x ""
+set xlabel ""
+set border 2
+set key top outside
+set noytics
+set ytics nomirror 0, 1, 1
+set noxtics
+set style line 1 linetype 1 linewidth 3
+set origin 0.05,0.007500
+set label "bp4-0io" at graph -0.145, graph 0.5
+plot "h.trace" using 1:22 notitle with lines linestyle 1
+unset label
+set origin 0.05,0.057500
+set label "bp4-1" at graph -0.145, graph 0.5
+plot "h.trace" using 1:23 notitle with lines linestyle 1
+unset label
+set origin 0.05,0.107500
+set label "bp4-2o" at graph -0.145, graph 0.5
+plot "h.trace" using 1:24 notitle with lines linestyle 1
+unset label
+set origin 0.05,0.157500
+set label "bp4-3" at graph -0.145, graph 0.5
+plot "h.trace" using 1:25 notitle with lines linestyle 1
+unset label
+set origin 0.05,0.207500
+set label "bp4-4i" at graph -0.145, graph 0.5
+plot "h.trace" using 1:26 notitle with lines linestyle 1
+unset label
+set origin 0.05,0.257500
+set label "bp5-0io" at graph -0.145, graph 0.5
+plot "h.trace" using 1:27 notitle with lines linestyle 1
+unset label
+set origin 0.05,0.307500
+set label "bp5-1" at graph -0.145, graph 0.5
+plot "h.trace" using 1:28 notitle with lines linestyle 1
+unset label
+set origin 0.05,0.357500
+set label "bp5-2o" at graph -0.145, graph 0.5
+plot "h.trace" using 1:29 notitle with lines linestyle 1
+unset label
+set origin 0.05,0.407500
+set label "bp5-3" at graph -0.145, graph 0.5
+plot "h.trace" using 1:30 notitle with lines linestyle 1
+unset label

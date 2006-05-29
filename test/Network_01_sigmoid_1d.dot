@@ -1,0 +1,14 @@
+digraph G {
+  n0 [label="0-Sigmoid"]
+  n1 [label="1-Sigmoid"]
+  n2 [label="2-Sigmoid"]
+  n3 [label="3-Sigmoid"]
+  n3 -> n0 [label="-3.4"]
+  n1 -> n0 [label="6.0"]
+  n0 -> n1 [label="-4.8"]
+  n2 -> n1 [label="5.3"]
+  n1 -> n2 [label="0.1"]
+  n3 -> n2 [label="5.3"]
+  n2 -> n3 [label="-4.8"]
+  n0 -> n3 [label="6.7"]
+}

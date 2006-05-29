@@ -1,0 +1,26 @@
+digraph G {
+	node [label="\N"];
+	graph [bb="0,0,1285,233"];
+	n0 [label="bp0 (scale=3.44,rec_lim=2,joint=ball,net.inputs=2)", pos="203,206", width="4.36", height="0.50"];
+	n1 [label="bp1 (scale=1.68,rec_lim=1,joint=ball,net.inputs=2)", pos="203,118", width="4.33", height="0.50"];
+	n2 [label="bp2 (scale=4.88,rec_lim=2,joint=universal,net.inputs=2)", pos="203,30", width="4.78", height="0.50"];
+	n0 -> n0 [style=dashed, label="bp0-0 -> MOTOR_1", pos="e,359,208 359,204 371,204 378,205 378,206 378,207 375,207 369,208", lp="437,206"];
+	n0 -> n0 [style=dashed, label="JOINT_2 -> bp0-1", pos="e,313,219 313,193 403,188 496,192 496,206 496,219 410,224 323,220", lp="549,206"];
+	n0 -> n0 [style=dashed, label="JOINT_2 -> MOTOR_0", pos="e,313,219 313,193 446,183 603,188 603,206 603,224 454,229 323,220", lp="672,206"];
+	n0 -> n0 [style=dashed, label="bp0-2 -> MOTOR_2", pos="e,316,219 316,193 501,179 742,183 742,206 742,229 510,233 326,220", lp="801,206"];
+	n1 -> n0 [label="joint_end=-1,terminal_only=1", pos="e,270,190 271,134 279,139 287,146 293,154 301,167 294,177 279,185", lp="381,162"];
+	n1 -> n1 [label="joint_end=-1,terminal_only=0", pos="e,356,121 356,115 369,115 377,116 377,118 377,119 373,120 366,121", lp="462,118"];
+	n0 -> n1 [style=dashed, label="bp0-0 -> bp1-2", pos="e,203,136 203,188 203,176 203,160 203,146", lp="246,162"];
+	n1 -> n1 [style=dashed, label="JOINT_2 -> bp1-0", pos="e,313,131 313,105 424,98 548,102 548,118 548,134 431,138 323,132", lp="601,118"];
+	n1 -> n1 [style=dashed, label="JOINT_1 -> MOTOR_1", pos="e,307,131 307,105 461,91 655,96 655,118 655,140 469,145 317,132", lp="724,118"];
+	n2 -> n1 [style=dashed, label="bp2-0 -> MOTOR_0", pos="e,315,105 320,43 344,49 365,56 373,66 377,71 377,76 373,82 365,91 347,98 325,103", lp="435,74"];
+	n0 -> n1 [style=dashed, label="CONTACT -> MOTOR_2", pos="e,102,132 103,192 79,187 58,179 50,170 46,164 46,159 50,154 57,145 73,139 92,134", lp="129,162"];
+	n2 -> n2 [label="joint_end=-1,terminal_only=0", pos="e,375,32 375,28 386,29 393,29 393,30 393,31 390,31 385,31", lp="478,30"];
+	n2 -> n1 [label="joint_end=1,terminal_only=1", pos="e,201,100 201,48 201,54 200,60 200,66 200,74 200,82 201,90", lp="285,74"];
+	n1 -> n2 [style=dashed, label="CONTACT -> MOTOR_1", pos="e,97,44 102,104 77,99 55,92 47,82 43,76 43,71 47,66 54,58 69,52 87,47", lp="126,74"];
+	n2 -> n2 [style=dashed, label="JOINT_1 -> MOTOR_1", pos="e,332,42 332,18 445,13 564,17 564,30 564,43 452,47 342,42", lp="633,30"];
+	n2 -> n2 [style=dashed, label="JOINT_0 -> bp2-0", pos="e,335,42 335,18 503,9 703,13 703,30 703,47 511,51 345,43", lp="756,30"];
+	n2 -> n2 [style=dashed, label="JOINT_2 -> bp2-2", pos="e,336,42 336,18 544,6 810,10 810,30 810,50 553,54 346,43", lp="863,30"];
+	n2 -> n2 [style=dashed, label="JOINT_0 -> MOTOR_0", pos="e,336,41 336,19 584,3 917,7 917,30 917,53 593,57 346,42", lp="986,30"];
+	n2 -> n2 [style=dashed, label="JOINT_0 -> MOTOR_2", pos="e,338,41 338,19 636,0 1056,3 1056,30 1056,57 645,60 348,42", lp="1125,30"];
+}

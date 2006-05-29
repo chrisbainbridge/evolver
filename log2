@@ -1,0 +1,2145 @@
+DEBUG:root:TestBpg.__init__
+DEBUG:root:Creating 2 random BodyParts
+DEBUG:root:TestBp.__init__
+DEBUG:bpg:BodyPart.__init__
+DEBUG:neural:Network.__init__()
+DEBUG:root:TestBp.__init__
+DEBUG:bpg:BodyPart.__init__
+DEBUG:neural:Network.__init__()
+DEBUG:sim:Sim.__init__()
+DEBUG:sim:BPGSim.__init__
+DEBUG:sim:addBPG(<__main__.TestBpg object at 0xb7934dec>)
+DEBUG:sim:<class '__main__.TestBpg'>
+DEBUG:bpg:BodyPartGraph.sanityCheck
+DEBUG:bpg:BodyPartGraph.unroll
+DEBUG:bpg:BodyPartGraph.__init__
+DEBUG:bpg:unroll: added root bp
+DEBUG:bpg:<__main__.TestBp object at 0xb793836c> has 1 edges: [Edge(child=<__main__.TestBp object at 0xb793546c>, joint_end=1, terminal_only=0)]
+DEBUG:bpg:<__main__.TestBp object at 0xb793546c> has 0 edges: []
+DEBUG:bpg:/BodyPartGraph.unroll (bpg size 2 -> size 2)
+DEBUG:bpg:BodyPartGraph.connectInputNodes(self=<bpg.BodyPartGraph object at 0xb793a5ac>, backannotate=0)
+DEBUG:bpg:looking at BP <__main__.TestBp object at 0xb793a62c>, bp.network.inputs=[<node.Sigmoid object at 0xb793a6ec>]
+DEBUG:bpg:thinking about input node Node(inputs=[])
+DEBUG:bpg:input_node isnt connected, so hook it up
+DEBUG:bpg:valid bp neighbours = [<__main__.TestBp object at 0xb793a62c>, <__main__.TestBp object at 0xb79406ac>]
+DEBUG:bpg:is there an entry in genotype input_map for this genotype input node?
+DEBUG:bpg:no. create new key
+DEBUG:bpg:no entry in input_map for this input node. generate valid source
+DEBUG:bpg:entering (<__main__.TestBp object at 0xb793546c>, 'JOINT_2') into bp.input_map
+DEBUG:bpg:looking at BP <__main__.TestBp object at 0xb79406ac>, bp.network.inputs=[<node.Sigmoid object at 0xb794076c>]
+DEBUG:bpg:thinking about input node Node(inputs=[])
+DEBUG:bpg:input_node isnt connected, so hook it up
+DEBUG:bpg:valid bp neighbours = [<__main__.TestBp object at 0xb79406ac>, <__main__.TestBp object at 0xb79406ac>]
+DEBUG:bpg:is there an entry in genotype input_map for this genotype input node?
+DEBUG:bpg:no. create new key
+DEBUG:bpg:no entry in input_map for this input node. generate valid source
+DEBUG:bpg:entering (<__main__.TestBp object at 0xb793546c>, 'JOINT_1') into bp.input_map
+DEBUG:bpg:looking at BP <__main__.TestBp object at 0xb793a62c>, bp.network.inputs=[<node.Sigmoid object at 0xb793a6ec>]
+DEBUG:bpg:thinking about input node Node(inputs=[(<__main__.TestBp object at 0xb793546c>, 'JOINT_2')])
+DEBUG:bpg:looking at BP <__main__.TestBp object at 0xb79406ac>, bp.network.inputs=[<node.Sigmoid object at 0xb794076c>]
+DEBUG:bpg:thinking about input node Node(inputs=[(<__main__.TestBp object at 0xb793546c>, 'JOINT_1')])
+DEBUG:bpg:/BodyPartGraph.connectInputNodes
+DEBUG:bpg:BodyPartGraph.unroll
+DEBUG:bpg:BodyPartGraph.__init__
+DEBUG:bpg:unroll: added root bp
+DEBUG:bpg:<__main__.TestBp object at 0xb793836c> has 1 edges: [Edge(child=<__main__.TestBp object at 0xb793546c>, joint_end=1, terminal_only=0)]
+DEBUG:bpg:<__main__.TestBp object at 0xb793546c> has 0 edges: []
+DEBUG:bpg:/BodyPartGraph.unroll (bpg size 2 -> size 2)
+DEBUG:sim:BPGSim.setSolution: number of unrolled bodyparts = 2
+DEBUG:sim:addBP
+DEBUG:sim:created CappedCylinder(radius=0.500000, len=10.000000)
+DEBUG:sim:radians,v = 0.000000,(1, 0, 0)
+DEBUG:sim:r=(1, 0, 0)
+(0, 1, 0)
+(0, 0, 1)
+
+DEBUG:sim:set geom axis to (0, 0, 1)
+DEBUG:sim:real position of joint is 0.000000,0.000000,5.000000
+DEBUG:sim:set root geom x,y,z = 0,0,0
+DEBUG:sim:addBP
+DEBUG:sim:created CappedCylinder(radius=0.500000, len=10.000000)
+DEBUG:sim:radians,v = 1.570796,(0, 1, 0)
+DEBUG:sim:parent rotation = (1, 0, 0)
+(0, 1, 0)
+(0, 0, 1)
+
+DEBUG:sim:r=(2.22045e-16, 0, 1)
+(0, 1, 0)
+(-1, 0, 2.22045e-16)
+
+DEBUG:sim:set geom axis to (1, 0, 2.22045e-16)
+DEBUG:sim:real position of joint is 5.000000,0.000000,0.000000
+DEBUG:sim:set geom x,y,z = 5.000000,0.000000,5.000000
+DEBUG:sim:created joint with parent at 0.000000,0.000000,5.000000
+DEBUG:sim:big model raise by -0.000000
+DEBUG:sim:raised model to 5.600000
+DEBUG:qtapp:myapp init with args ['./sim_test.py']
+DEBUG:qtapp:We have OpenGL support
+DEBUG:glwidget:glwidget init
+DEBUG:glwidget:initialiseGL
+DEBUG:glwidget:double buffer: 1
+DEBUG:glwidget:auto buffer swap: 1
+DEBUG:glwidget:resize
+DEBUG:glwidget:resize
+DEBUG:qtapp:end of qtapp init
+DEBUG:qtapp:setEndTime(0.000000)
+DEBUG:glwidget:resize
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[2.2204460492503131e-16, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 2.2204460492503131e-16]
+DEBUG:glwidget:geom matrix T is [2.22045e-16, 0, 1, 5]
+[0, 1, 0, 0]
+[-1, 0, 2.22045e-16, 15.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.000000,0.000000,15.600000
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+DEBUG:glwidget:geom matrix T is [1, 0, 0, 0]
+[0, 1, 0, 0]
+[0, 0, 1, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000000,0.000000,10.600000
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baafb0> <ode.GeomCCylinder object at 0xb7baab48>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(0.000000,0.000000,0.000000) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.020000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99999240228872432, 0.002287691918193206, -0.0031562367644824654, -0.0022899270045069176, 0.99999712979989253, -0.000704717170811819, 0.0031546155296750867, 0.00071193936837383011, 0.99999477075792531]
+DEBUG:glwidget:geom matrix T is [0.999992, 0.00228769, -0.00315624, -0.0012966]
+[-0.00228993, 0.999997, -0.000704717, -0.000275458]
+[0.00315462, 0.000711939, 0.999995, 10.5997]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.001297,-0.000275,10.599681
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.0015883810540748534, -0.002230482074668352, 0.99999625099064304, 0.08553938527401321, 0.99633260527403744, 0.0020864406996106252, -0.99633352378235807, 0.085535750523179743, 0.0017733498993061573]
+DEBUG:glwidget:geom matrix T is [0.00158838, -0.00223048, 0.999996, 5.03225]
+[0.0855394, 0.996333, 0.00208644, 0.00685153]
+[-0.996334, 0.0855358, 0.00177335, 15.6079]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.032251,0.006852,15.607935
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(6.283185,6.283185,0.000000) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.040000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99998378676911526, 0.0042511972823688973, -0.0037886040393618411, -0.0042590662753204788, 0.99998878481824749, -0.0020713744681051492, 0.0037797557279693745, 0.0020874768001272379, 0.99999067790017215]
+DEBUG:glwidget:geom matrix T is [0.999984, 0.0042512, -0.0037886, -0.00159034]
+[-0.00425907, 0.999989, -0.00207137, -0.000530591]
+[0.00377976, 0.00208748, 0.999991, 10.5994]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.001590,-0.000531,10.599426
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.0040806596357663505, -0.0066668414563625803, 0.99996945025432304, 0.11337958055592112, 0.99353264149670462, 0.0061612493492856409, -0.99354336539976995, 0.11335097487704464, 0.0048101522349271366]
+DEBUG:glwidget:geom matrix T is [0.00408066, -0.00666684, 0.999969, 5.07361]
+[0.11338, 0.993533, 0.00616125, 0.0204312]
+[-0.993543, 0.113351, 0.00481015, 15.6226]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.073606,0.020431,15.622647
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(6.219470,6.230198,6.265575) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.060000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99997878691080688, 0.0059290408000042738, -0.0026967023534289264, -0.0059382249008911722, 0.99997655264962715, -0.0034105184347632211, 0.0026764180199551164, 0.0034264597121968928, 0.99999054803554177]
+DEBUG:glwidget:geom matrix T is [0.999979, 0.00592904, -0.0026967, -0.00162151]
+[-0.00593822, 0.999977, -0.00341052, -0.000781866]
+[0.00267642, 0.00342646, 0.999991, 10.5992]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.001622,-0.000782,10.599159
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.007712284354353856, -0.012809205464172338, 0.99988821621489987, 0.13712153428675961, 0.99048594231941123, 0.011631117851397282, -0.99052420743002678, 0.1370165038344093, 0.0093953271423990858]
+DEBUG:glwidget:geom matrix T is [0.00771228, -0.0128092, 0.999888, 5.11924]
+[0.137122, 0.990486, 0.0116311, 0.0412725]
+[-0.990524, 0.137017, 0.00939533, 15.6451]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.119240,0.041272,15.645116
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(6.198429,6.216106,6.256329) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.080000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99997245082819897, 0.0073983089807470245, -0.00060217013418494643, -0.0074010167477912316, 0.99996191161422998, -0.0046260427920332648, 0.00056792230456295667, 0.004630372019633751, 0.99998911850040439]
+DEBUG:glwidget:geom matrix T is [0.999972, 0.00739831, -0.00060217, -0.00149821]
+[-0.00740102, 0.999962, -0.00462604, -0.00100506]
+[0.000567922, 0.00463037, 0.999989, 10.5989]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.001498,-0.001005,10.598909
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.0124707116835475, -0.020600891904305647, 0.99971000025149981, 0.15848694579890973, 0.98719024632507912, 0.018365880647632338, -0.9872823149238722, 0.15821194902211635, 0.01557593737737718]
+DEBUG:glwidget:geom matrix T is [0.0124707, -0.0206009, 0.99971, 5.16565]
+[0.158487, 0.98719, 0.0183659, 0.0692805]
+[-0.987282, 0.158212, 0.0155759, 15.6755]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.165647,0.069281,15.675548
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(6.178668,6.206914,6.246832) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.100000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99996018560701638, 0.0086904378240305578, 0.0020257075820613842, -0.0086787954761611066, 0.99994616721588736, -0.0056869305727809839, -0.0020750204491347753, 0.0056691234492930696, 0.99998177749869643]
+DEBUG:glwidget:geom matrix T is [0.99996, 0.00869044, 0.00202571, -0.00128809]
+[-0.0086788, 0.999946, -0.00568693, -0.00119728]
+[-0.00207502, 0.00566912, 0.999982, 10.5987]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.001288,-0.001197,10.598678
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.018343000329146972, -0.030022870212122663, 0.99938088915245482, 0.17785935147051704, 0.98370474308356204, 0.026287440525665309, -0.98388494522144831, 0.17726704628646958, 0.023383944651376852]
+DEBUG:glwidget:geom matrix T is [0.018343, -0.0300229, 0.999381, 5.21053]
+[0.177859, 0.983705, 0.0262874, 0.104246]
+[-0.983885, 0.177267, 0.0233839, 15.7141]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.210528,0.104246,15.714088
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(6.159239,6.200954,6.236663) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.120000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99993971575740093, 0.0098312857851392474, 0.0048898538648139709, -0.0097989820089501214, 0.99993029362591024, -0.0065869447234045038, -0.00495427114685793, 0.0065386320443831039, 0.99996635017804048]
+DEBUG:glwidget:geom matrix T is [0.99994, 0.00983129, 0.00488985, -0.00103434]
+[-0.00979898, 0.99993, -0.00658694, -0.00135924]
+[-0.00495427, 0.00653863, 0.999966, 10.5985]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.001034,-0.001359,10.598465
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.025315254694240182, -0.04106079336807085, 0.9988358969959733, 0.19548221680140845, 0.9800704801906478, 0.035334922856576211, -0.98038045716659061, 0.19436014279388056, 0.032837388735547583]
+DEBUG:glwidget:geom matrix T is [0.0253153, -0.0410608, 0.998836, 5.25238]
+[0.195482, 0.98007, 0.0353349, 0.145906]
+[-0.98038, 0.19436, 0.0328374, 15.7608]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.252382,0.145906,15.760841
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(6.140115,6.197623,6.225665) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.140000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99991072242425805, 0.010843057153805506, 0.0078086677837924875, -0.010785857923476725, 0.99991496216500519, -0.0073303279197264827, -0.0078874869161796902, 0.0072454503045328005, 0.99994264385515219]
+DEBUG:glwidget:geom matrix T is [0.999911, 0.0108431, 0.00780867, -0.000763457]
+[-0.0107859, 0.999915, -0.00733033, -0.00149266]
+[-0.00788749, 0.00724545, 0.999943, 10.5983]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000763,-0.001493,10.598271
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.033375846715881757, -0.053694008675142436, 0.99799950214836863, 0.21151215305722654, 0.97631785157739848, 0.045453952527688947, -0.97680533473414977, 0.20957195929724651, 0.043942370341379024]
+DEBUG:glwidget:geom matrix T is [0.0333758, -0.053694, 0.998, 5.29022]
+[0.211512, 0.976318, 0.045454, 0.193968]
+[-0.976805, 0.209572, 0.0439424, 15.8159]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.290222,0.193968,15.815875
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(6.121293,6.196547,6.213738) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.160000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99987398611975131, 0.011744785821479619, 0.010680444139025516, -0.011660440247359795, 0.99990060555596127, -0.0079254742482501861, -0.010772465559797582, 0.0077999368477889817, 0.99991155357408157]
+DEBUG:glwidget:geom matrix T is [0.999874, 0.0117448, 0.0106804, -0.000491436]
+[-0.0116604, 0.999901, -0.00792547, -0.00159968]
+[-0.0107725, 0.00779994, 0.999912, 10.5981]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000491,-0.001600,10.598095
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.042516789422627849, -0.067890051559671691, 0.99678646836542539, 0.22604031612258191, 0.9724726506662229, 0.056592571892551041, -0.97318965166322824, 0.22290779395399218, 0.056692303623767107]
+DEBUG:glwidget:geom matrix T is [0.0425168, -0.0678901, 0.996786, 5.32339]
+[0.22604, 0.972473, 0.0565926, 0.248121]
+[-0.97319, 0.222908, 0.0566923, 15.8792]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.323389,0.248121,15.879227
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(6.102769,6.197500,6.200818) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.180000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99983055788770636, 0.012552658984772536, 0.013464258849634933, -0.012440495703602025, 0.99988748087375967, -0.008382103469632125, -0.013567961549423069, 0.0082131811339436981, 0.99987421912711316]
+DEBUG:glwidget:geom matrix T is [0.999831, 0.0125527, 0.0134643, -0.000228488]
+[-0.0124405, 0.999887, -0.0083821, -0.00168256]
+[-0.013568, 0.00821318, 0.999874, 10.5979]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000228,-0.001683,10.597935
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.052736667506276647, -0.083601671993175378, 0.99510281093979303, 0.23910304882160774, 0.96856079252932181, 0.068700241769471287, -0.96956102229026497, 0.23430909417885909, 0.071068083135386914]
+DEBUG:glwidget:geom matrix T is [0.0527367, -0.0836017, 0.995103, 5.35146]
+[0.239103, 0.968561, 0.0687002, 0.308048]
+[-0.969561, 0.234309, 0.0710681, 15.9509]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.351460,0.308048,15.950931
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(6.084541,6.200357,6.186872) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.200000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99978142801099601, 0.013280803097936679, 0.016146717108049744, -0.013141384596526588, 0.9998757110036649, -0.0087101409748450136, -0.016260387916028466, 0.0084960469625194393, 0.9998316943220148]
+DEBUG:glwidget:geom matrix T is [0.999781, 0.0132808, 0.0161467, 2.27372e-05]
+[-0.0131414, 0.999876, -0.00871014, -0.00174348]
+[-0.0162604, 0.00849605, 0.999832, 10.5978]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000023,-0.001743,10.597792
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.064061033797869357, -0.10076685201302937, 0.99284551944606814, 0.25069083867254821, 0.96461129905753784, 0.081726037076220323, -0.9659452817599985, 0.24366182151891089, 0.087055323672270479]
+DEBUG:glwidget:geom matrix T is [0.064061, -0.100767, 0.992846, 5.37409]
+[0.250691, 0.964611, 0.081726, 0.373424]
+[-0.965945, 0.243662, 0.0870553, 16.031]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.374092,0.373424,16.030966
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(6.066604,6.205079,6.171884) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.220000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99972734798980467, 0.013941435611683964, 0.018731418909339933, -0.013776245391321038, 0.99986532264850969, -0.0089191719295944934, -0.018853242272617549, 0.0086586914760159138, 0.99978476799645888]
+DEBUG:glwidget:geom matrix T is [0.999727, 0.0139414, 0.0187314, 0.000262354]
+[-0.0137762, 0.999865, -0.00891917, -0.00178446]
+[-0.0188532, 0.00865869, 0.999785, 10.5977]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000262,-0.001784,10.597665
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.076534871787731162, -0.11930483273104375, 0.98990341462561537, 0.26076291196203705, 0.9606558893365239, 0.095618858119783726, -0.96236433700834645, 0.25081191991225238, 0.10463395091659045]
+DEBUG:glwidget:geom matrix T is [0.0765349, -0.119305, 0.989903, 5.39096]
+[0.260763, 0.960656, 0.0956189, 0.443921]
+[-0.962364, 0.250812, 0.104634, 16.1193]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.390960,0.443921,16.119276
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(6.048957,6.211694,6.155857) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.240000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99966877588852077, 0.014545159739578319, 0.021231505874446877, -0.014356350209048975, 0.99985627153424117, -0.0090183968819792081, -0.021359628325925098, 0.008710602837685967, 0.99973391043616322]
+DEBUG:glwidget:geom matrix T is [0.999669, 0.0145452, 0.0212315, 0.000491946]
+[-0.0143564, 0.999856, -0.0090184, -0.00180741]
+[-0.0213596, 0.0087106, 0.999734, 10.5976]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000492,-0.001807,10.597555
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.090225227160855681, -0.13911324286106347, 0.98615765171926262, 0.26925106261520798, 0.95672966859468644, 0.11032772322169396, -0.95883433066633206, 0.25556965174171237, 0.12377754014467461]
+DEBUG:glwidget:geom matrix T is [0.0902252, -0.139113, 0.986158, 5.40173]
+[0.269251, 0.95673, 0.110328, 0.519208]
+[-0.958834, 0.25557, 0.123778, 16.2158]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.401731,0.519208,16.215773
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(6.031594,6.220274,6.138806) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.260000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99960588685823215, 0.015101220568172785, 0.023664828241900589, -0.014891421259043313, 0.99984846043632347, -0.0090167475288737472, -0.023797405977395381, 0.0086607909838035679, 0.99967928565529551]
+DEBUG:glwidget:geom matrix T is [0.999606, 0.0151012, 0.0236648, 0.000713833]
+[-0.0148914, 0.999848, -0.00901675, -0.0018141]
+[-0.0237974, 0.00866079, 0.999679, 10.5975]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000714,-0.001814,10.597461
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.10522395456155964, -0.16006449018644042, 0.98148218443728352, 0.27606106529042451, 0.95287149487067846, 0.12580223564640874, -0.95536286698675021, 0.25771160867192905, 0.14445248055531512]
+DEBUG:glwidget:geom matrix T is [0.105224, -0.160064, 0.981482, 5.40604]
+[0.276061, 0.952871, 0.125802, 0.598953]
+[-0.955363, 0.257712, 0.144452, 16.3203]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.406038,0.598953,16.320331
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(6.014512,6.230928,6.120758) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.280000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99953861252087339, 0.015617730224226399, 0.026050884485764328, -0.01538990477486127, 0.99984175202475511, -0.008923101427681851, -0.026186120576902065, 0.0085180637888713166, 0.99962079294021322]
+DEBUG:glwidget:geom matrix T is [0.999539, 0.0156177, 0.0260509, 0.000930615]
+[-0.0153899, 0.999842, -0.0089231, -0.0018062]
+[-0.0261861, 0.00851806, 0.999621, 10.5974]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000931,-0.001806,10.597384
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.12165041899255592, -0.18200113559473227, 0.97574420941205875, 0.28107243401527821, 0.94912391989297062, 0.14199320942822907, -0.95194509421271911, 0.25698126649471886, 0.16661682470599304]
+DEBUG:glwidget:geom matrix T is [0.12165, -0.182001, 0.975744, 5.40347]
+[0.281072, 0.949124, 0.141993, 0.682826]
+[-0.951945, 0.256981, 0.166617, 16.4328]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.403471,0.682826,16.432783
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.997704,6.243801,6.101754) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.300000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99946668935175964, 0.016101858321539014, 0.028408925267006439, -0.015859194408898745, 0.99983597825629722, -0.0087465728702125871, -0.028545101662702601, 0.0082913655610079608, 0.9995581175840651]
+DEBUG:glwidget:geom matrix T is [0.999467, 0.0161019, 0.0284089, 0.00114489]
+[-0.0158592, 0.999836, -0.00874657, -0.0017853]
+[-0.0285451, 0.00829137, 0.999558, 10.5973]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001145,-0.001785,10.597323
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.13965403777394503, -0.2047299678368556, 0.96880461910694571, 0.28413698864196557, 0.94553252200675664, 0.15885345924158464, -0.94855833843728854, 0.2530887000580278, 0.19021879109075568]
+DEBUG:glwidget:geom matrix T is [0.139654, -0.20473, 0.968805, 5.39357]
+[0.284137, 0.945533, 0.158853, 0.770499]
+[-0.948558, 0.253089, 0.190219, 16.5529]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.393569,0.770499,16.552916
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.981162,6.259074,6.081843) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.320000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99938970716675324, 0.016559979375788424, 0.030756792619269824, -0.016305794635481815, 0.99983094781911774, -0.0084968726264539364, -0.030892301151853371, 0.0079901731018890837, 0.99949078178007478]
+DEBUG:glwidget:geom matrix T is [0.99939, 0.01656, 0.0307568, 0.00135909]
+[-0.0163058, 0.999831, -0.00849687, -0.00175292]
+[-0.0308923, 0.00799017, 0.999491, 10.5973]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001359,-0.001753,10.597279
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.159416413597567, -0.22801446457318633, 0.96051851154524481, 0.28507662251008425, 0.94214434162005645, 0.17633876162532539, -0.94515486898916856, 0.2457100801731861, 0.21519486547627961]
+DEBUG:glwidget:geom matrix T is [0.159416, -0.228014, 0.960519, 5.37582]
+[0.285077, 0.942144, 0.176339, 0.861649]
+[-0.945155, 0.24571, 0.215195, 16.6805]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.375821,0.861649,16.680462
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.964876,6.276962,6.061090) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.340000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99930715580998808, 0.016997762730117445, 0.033110185881733506, -0.016735409766810122, 0.99982645303032835, -0.0081847346157070313, -0.033243561886315234, 0.007624951341695687, 0.99941819360573358]
+DEBUG:glwidget:geom matrix T is [0.999307, 0.0169978, 0.0331102, 0.00157538]
+[-0.0167354, 0.999826, -0.00818473, -0.00171054]
+[-0.0332436, 0.00762495, 0.999418, 10.5973]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001575,-0.001711,10.597254
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.18115260221949614, -0.25156530524004583, 0.95073583708019949, 0.28368068624562537, 0.93900501336622655, 0.19440898416560812, -0.9416522728482718, 0.23448770132477131, 0.24146742009453109]
+DEBUG:glwidget:geom matrix T is [0.181153, -0.251565, 0.950736, 5.34966]
+[0.283681, 0.939005, 0.194409, 0.955962]
+[-0.941652, 0.234488, 0.241467, 16.8151]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.349662,0.955962,16.815090
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.948832,0.014536,6.039572) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.360000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99930117364824533, 0.01786216090810171, 0.032834548160929559, -0.01759635315190803, 0.99981016611642792, -0.0083666054044783146, -0.032977760703126226, 0.0077829902951238828, 0.99942578131698867]
+DEBUG:glwidget:geom matrix T is [0.999301, 0.0178622, 0.0328345, 0.00212081]
+[-0.0175964, 0.99981, -0.00836661, -0.00162938]
+[-0.0329778, 0.00778299, 0.999426, 10.598]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.002121,-0.001629,10.597991
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.19393374230393678, -0.27954772712539155, 0.94034183776699953, 0.30534773279126498, 0.92812629687406223, 0.21294210276522182, -0.93228346851975485, 0.24583458932759575, 0.26535427076817103]
+DEBUG:glwidget:geom matrix T is [0.193934, -0.279548, 0.940342, 5.30639]
+[0.305348, 0.928126, 0.212942, 1.05238]
+[-0.932283, 0.245835, 0.265354, 16.9379]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.306392,1.052383,16.937914
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.933014,0.038464,6.017380) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.380000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99934389054658934, 0.018507883693956423, 0.031132726645404615, -0.018241955921828878, 0.99979483733399288, -0.0088042196951680259, -0.031289286846340178, 0.0082305213362043033, 0.99947648248829835]
+DEBUG:glwidget:geom matrix T is [0.999344, 0.0185079, 0.0311327, 0.00240551]
+[-0.018242, 0.999795, -0.00880422, -0.00156094]
+[-0.0312893, 0.00823052, 0.999476, 10.5987]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.002406,-0.001561,10.598657
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.20434460811593502, -0.30744492363198167, 0.92936585910332958, 0.32381488780168921, 0.91718052912254089, 0.23221497677039563, -0.92378958620019325, 0.2534906229654677, 0.28697613924620058]
+DEBUG:glwidget:geom matrix T is [0.204345, -0.307445, 0.929366, 5.25152]
+[0.323815, 0.917181, 0.232215, 1.15107]
+[-0.92379, 0.253491, 0.286976, 17.0497]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.251523,1.151073,17.049697
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.906590,0.039112,5.989611) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.400000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.9994049627142817, 0.018899300644252975, 0.028853716177008503, -0.018640844490879514, 0.99978391290158997, -0.0092003488984252531, -0.029021361421064828, 0.0086570167115494843, 0.99954130312004807]
+DEBUG:glwidget:geom matrix T is [0.999405, 0.0188993, 0.0288537, 0.00247324]
+[-0.0186408, 0.999784, -0.00920035, -0.00150153]
+[-0.0290214, 0.00865702, 0.999541, 10.5992]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.002473,-0.001502,10.599163
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.21293051981364189, -0.33510677743112066, 0.91780392320561677, 0.34003660663230484, 0.90604069946777299, 0.25192331582832062, -0.91598891908247415, 0.25844476900815383, 0.30687228856715387]
+DEBUG:glwidget:geom matrix T is [0.212931, -0.335107, 0.917804, 5.18951]
+[0.340037, 0.906041, 0.251923, 1.25208]
+[-0.915989, 0.258445, 0.306872, 17.1528]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.189511,1.252079,17.152784
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.885150,0.039292,5.961986) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.420000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99946371723292593, 0.018975735659947143, 0.026687064115515045, -0.018733602937989785, 0.99978131296213923, -0.0092939965925778554, -0.026857588423079629, 0.0087890675196472777, 0.99960063137046462]
+DEBUG:glwidget:geom matrix T is [0.999464, 0.0189757, 0.0266871, 0.0023951]
+[-0.0187336, 0.999781, -0.009294, -0.00143064]
+[-0.0268576, 0.00878907, 0.999601, 10.5995]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.002395,-0.001431,10.599475
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.22019491521518311, -0.36257663841904375, 0.90556743569218778, 0.35534758425138963, 0.8943779495452211, 0.27169132804340196, -0.90842847471888521, 0.26196615170672705, 0.32577820933863599]
+DEBUG:glwidget:geom matrix T is [0.220195, -0.362577, 0.905567, 5.12361]
+[0.355348, 0.894378, 0.271691, 1.35497]
+[-0.908428, 0.261966, 0.325778, 17.2506]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.123606,1.354967,17.250616
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.866829,0.039219,5.934566) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.440000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.9995151004966123, 0.0188259192600191, 0.024802190291628862, -0.0186062009270355, 0.99978583959701439, -0.0090600346774047501, -0.024967442125890877, 0.0085941669350923858, 0.99965132277628788]
+DEBUG:glwidget:geom matrix T is [0.999515, 0.0188259, 0.0248022, 0.00227634]
+[-0.0186062, 0.999786, -0.00906003, -0.00133345]
+[-0.0249674, 0.00859417, 0.999651, 10.5997]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.002276,-0.001333,10.599691
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.22649119498241416, -0.38972137834430887, 0.89264717882086542, 0.36985380269770529, 0.88223247087709122, 0.29133148123769464, -0.90106043261564028, 0.26416493823275339, 0.34395782035447403]
+DEBUG:glwidget:geom matrix T is [0.226491, -0.389721, 0.892647, 5.05486]
+[0.369854, 0.882232, 0.291331, 1.45892]
+[-0.90106, 0.264165, 0.343958, 17.3446]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=5.054859,1.458923,17.344641
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.849569,0.038721,5.907320) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.460000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99955911938976127, 0.018512166498601042, 0.023213499010125354, -0.018318204251283721, 0.99979573002000566, -0.0085405870273717512, -0.023366861958193458, 0.0081115920318968783, 0.99969404911549553]
+DEBUG:glwidget:geom matrix T is [0.999559, 0.0185122, 0.0232135, 0.00215546]
+[-0.0183182, 0.999796, -0.00854059, -0.0012101]
+[-0.0233669, 0.00811159, 0.999694, 10.5999]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.002155,-0.001210,10.599856
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.23201394954315122, -0.41643691197573146, 0.87906190087018632, 0.38363881724266113, 0.86964081259699266, 0.31071870714569844, -0.8938628446926522, 0.26515119349110838, 0.36153016398109944]
+DEBUG:glwidget:geom matrix T is [0.232014, -0.416437, 0.879062, 4.98357]
+[0.383639, 0.869641, 0.310719, 1.56309]
+[-0.893863, 0.265151, 0.36153, 17.4355]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=4.983566,1.563092,17.435520
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.832926,0.038067,5.880261) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.480000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99959689569549293, 0.018081241147906851, 0.021888691931796704, -0.017914424860643124, 0.99980915010313531, -0.0077933787254665836, -0.022025428437291147, 0.0073981138540457564, 0.99973003776697456]
+DEBUG:glwidget:geom matrix T is [0.999597, 0.0180812, 0.0218887, 0.00204337]
+[-0.0179144, 0.999809, -0.00779338, -0.00106587]
+[-0.0220254, 0.00739811, 0.99973, 10.6]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.002043,-0.001066,10.599988
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.23689304560032504, -0.44264071418651824, 0.86484153640458983, 0.39677726060577845, 0.85663716870675199, 0.3297583458477647, -0.88681987484064462, 0.26503199681270345, 0.37856115787689393]
+DEBUG:glwidget:geom matrix T is [0.236893, -0.442641, 0.864842, 4.90979]
+[0.396777, 0.856637, 0.329758, 1.66669]
+[-0.88682, 0.265032, 0.378561, 17.5236]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=4.909794,1.666685,17.523616
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.816737,0.037357,5.853413) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.500000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99962957491185156, 0.017569665635171396, 0.020785086264415178, -0.017430140993562552, 0.99982444709244844, -0.0068749677253208113, -0.020902228266274234, 0.0065101340806430251, 0.99976032878273213]
+DEBUG:glwidget:geom matrix T is [0.99963, 0.0175697, 0.0207851, 0.00194163]
+[-0.0174301, 0.999824, -0.00687497, -0.000907087]
+[-0.0209022, 0.00651013, 0.99976, 10.6001]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001942,-0.000907,10.600097
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.24122847510181189, -0.46826698462665245, 0.85002050205198998, 0.409334250869619, 0.84325584037716816, 0.34837488246830262, -0.87991720852876976, 0.26390456376966709, 0.39509503585400735]
+DEBUG:glwidget:geom matrix T is [0.241228, -0.468267, 0.850021, 4.83356]
+[0.409334, 0.843256, 0.348375, 1.76902]
+[-0.879917, 0.263905, 0.395095, 17.6092]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=4.833562,1.769018,17.609170
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.800930,0.036628,5.826800) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.520000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99965809564380392, 0.017006259844327524, 0.019861493899265382, -0.01689341241255014, 0.99984026551379646, -0.0058357582506952978, -0.01995756575494215, 0.0054982345719580394, 0.99978570953266221]
+DEBUG:glwidget:geom matrix T is [0.999658, 0.0170063, 0.0198615, 0.00184906]
+[-0.0168934, 0.99984, -0.00583576, -0.000739655]
+[-0.0199576, 0.00549823, 0.999786, 10.6002]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001849,-0.000740,10.600187
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.24510297170905232, -0.49326375876047246, 0.83463488877046244, 0.42136641369719008, 0.82953166017123026, 0.36650725802026224, -0.87314081262266063, 0.26185509173406013, 0.41116545607040839]
+DEBUG:glwidget:geom matrix T is [0.245103, -0.493264, 0.834635, 4.7549]
+[0.421366, 0.829532, 0.366507, 1.86951]
+[-0.873141, 0.261855, 0.411165, 17.6924]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=4.754895,1.869511,17.692361
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.785469,0.035894,5.800441) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.540000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99968319021452046, 0.016413693693233398, 0.019081662974271243, -0.016326449464610517, 0.99985557867585806, -0.0047189870358564021, -0.019156363182986552, 0.0044059562083357227, 0.99980679198507738]
+DEBUG:glwidget:geom matrix T is [0.999683, 0.0164137, 0.0190817, 0.00176385]
+[-0.0163264, 0.999856, -0.00471899, -0.000568609]
+[-0.0191564, 0.00440596, 0.999807, 10.6003]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001764,-0.000569,10.600262
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.24858695687841723, -0.51759066788582031, 0.81872121347100746, 0.43292307482178394, 0.81549978222338215, 0.3841063869300646, -0.86647685263761109, 0.25895946731318192, 0.42679955263811253]
+DEBUG:glwidget:geom matrix T is [0.248587, -0.517591, 0.818721, 4.67384]
+[0.432923, 0.8155, 0.384106, 1.96768]
+[-0.866477, 0.258959, 0.4268, 17.7733]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=4.673842,1.967682,17.773333
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.770329,0.035165,5.774356) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.560000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99970543102812359, 0.015809622277157456, 0.018414858574729031, -0.015746624990851495, 0.9998696730433676, -0.0035610012000385828, -0.018468756706155283, 0.0032699803673404125, 0.99982409065501421]
+DEBUG:glwidget:geom matrix T is [0.999705, 0.0158096, 0.0184149, 0.0016843]
+[-0.0157466, 0.99987, -0.003561, -0.000398077]
+[-0.0184688, 0.00326998, 0.999824, 10.6003]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001684,-0.000398,10.600324
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.25174085840611304, -0.54121704359742773, 0.80231580560812432, 0.44404727460204663, 0.80119532893849554, 0.40113347255699144, -0.85991194789201997, 0.25528446213351103, 0.44201955303555973]
+DEBUG:glwidget:geom matrix T is [0.251741, -0.541217, 0.802316, 4.59047]
+[0.444047, 0.801195, 0.401133, 2.06314]
+[-0.859912, 0.255284, 0.44202, 17.8522]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=4.590470,2.063140,17.852204
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.755490,0.034444,5.748558) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.580000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99972527395358568, 0.015207590166637629, 0.017835521291841523, -0.015167303176591377, 0.99988210888568763, -0.0023919123435706428, -0.017869793864997631, 0.0021207384642032128, 0.99983807335767572]
+DEBUG:glwidget:geom matrix T is [0.999725, 0.0152076, 0.0178355, 0.001609]
+[-0.0151673, 0.999882, -0.00239191, -0.000231342]
+[-0.0178698, 0.00212074, 0.999838, 10.6004]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001609,-0.000231,10.600376
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.25461651532029334, -0.56412029898080851, 0.78545446615571168, 0.45477659717435021, 0.78665304247514278, 0.41755866345595088, -0.85343346359787742, 0.25088897752273703, 0.45684356640859669]
+DEBUG:glwidget:geom matrix T is [0.254617, -0.56412, 0.785454, 4.50487]
+[0.454777, 0.786653, 0.417559, 2.15557]
+[-0.853433, 0.250889, 0.456844, 17.9291]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=4.504871,2.155572,17.929070
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.740934,0.033736,5.723060) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.600000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99974308985306948, 0.014617775882997786, 0.017322670673770552, -0.014598541133372103, 0.99989267129567583, -0.0012363195277985096, -0.017338883695748833, 0.000983116184396072, 0.99984918692508484]
+DEBUG:glwidget:geom matrix T is [0.999743, 0.0146178, 0.0173227, 0.00153683]
+[-0.0145985, 0.999893, -0.00123632, -7.09491e-05]
+[-0.0173389, 0.000983116, 0.999849, 10.6004]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001537,-0.000071,10.600419
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.25725824073588138, -0.58628455677987579, 0.76817225675944834, 0.46514385846377054, 0.77190698175168904, 0.43335989945590647, -0.84702974475924697, 0.24582520213440712, 0.47128609303549662]
+DEBUG:glwidget:geom matrix T is [0.257258, -0.586285, 0.768172, 4.41715]
+[0.465144, 0.771907, 0.43336, 2.24473]
+[-0.84703, 0.245825, 0.471286, 18.004]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=4.417151,2.244733,18.004009
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.726646,0.033043,5.697870) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.620000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99975918566874955, 0.014047611647688455, 0.016859278690218155, -0.014047686319843685, 0.99990131988741493, -0.00011400203815773359, -0.016859216471057988, -0.00012285927378585627, 0.99985786576171953]
+DEBUG:glwidget:geom matrix T is [0.999759, 0.0140476, 0.0168593, 0.00146694]
+[-0.0140477, 0.999901, -0.000114002, 8.11858e-05]
+[-0.0168592, -0.000122859, 0.999858, 10.6005]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001467,0.000081,10.600456
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.25970372897065475, -0.60769949619692298, 0.75050336140535867, 0.47517769002700849, 0.7569902728287331, 0.44852189438563239, -0.84069027356056203, 0.24013964513317274, 0.4853584394815661]
+DEBUG:glwidget:geom matrix T is [0.259704, -0.607699, 0.750503, 4.32743]
+[0.475178, 0.75699, 0.448522, 2.33044]
+[-0.84069, 0.24014, 0.485358, 18.0771]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=4.327428,2.330440,18.077080
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.712611,0.032367,5.672996) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.640000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99977381820830891, 0.013502301002391755, 0.016431685635384087, -0.01351988398225972, 0.99990814188074517, 0.00095944656019621936, -0.016417221515393956, -0.0011813840342775588, 0.99986453040873391]
+DEBUG:glwidget:geom matrix T is [0.999774, 0.0135023, 0.0164317, 0.00139869]
+[-0.0135199, 0.999908, 0.000959447, 0.000223677]
+[-0.0164172, -0.00118138, 0.999865, 10.6005]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001399,0.000224,10.600487
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.26198486628799106, -0.62835938917305223, 0.73248099488937746, 0.48490304350417435, 0.74193491048328397, 0.46303523300775962, -0.83440575755231472, 0.23387404012465798, 0.49906909854179271]
+DEBUG:glwidget:geom matrix T is [0.261985, -0.628359, 0.732481, 4.23583]
+[0.484903, 0.741935, 0.463035, 2.41256]
+[-0.834406, 0.233874, 0.499069, 18.1483]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=4.235831,2.412561,18.148331
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.698815,0.031711,5.648441) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.660000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99978720330561521, 0.012985251357968386, 0.016029078373593162, -0.013018506087569244, 0.99991331100535574, 0.0019720480609225445, -0.016002081289142808, -0.0021803030699987591, 0.9998695813319548]
+DEBUG:glwidget:geom matrix T is [0.999787, 0.0129853, 0.0160291, 0.00133164]
+[-0.0130185, 0.999913, 0.00197205, 0.000355581]
+[-0.0160021, -0.0021803, 0.99987, 10.6005]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001332,0.000356,10.600513
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.26412846436590315, -0.64826229836688587, 0.7141373445127992, 0.49434163204413262, 0.72677160574814825, 0.47689556918281539, -0.82816816235572177, 0.22706612603895981, 0.5124241107383668]
+DEBUG:glwidget:geom matrix T is [0.264128, -0.648262, 0.714137, 4.14249]
+[0.494342, 0.726772, 0.476896, 2.49101]
+[-0.828168, 0.227066, 0.512424, 18.2178]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=4.142494,2.491010,18.217794
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.685245,0.031074,5.624210) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.680000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99979952222364599, 0.012498435232095147, 0.015643032893858471, -0.012545511975919424, 0.9999170532148588, 0.0029149304237428967, -0.015605303285462854, -0.0031105959014829212, 0.99987339133637632]
+DEBUG:glwidget:geom matrix T is [0.9998, 0.0124984, 0.015643, 0.00126548]
+[-0.0125455, 0.999917, 0.00291493, 0.000476315]
+[-0.0156053, -0.0031106, 0.999873, 10.6005]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001265,0.000476,10.600536
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.26615692369060401, -0.66740941178299151, 0.69550353632101358, 0.50351231998172419, 0.71152967341598827, 0.49010291518737065, -0.82197070239648817, 0.21975031493041919, 0.52542741029547135]
+DEBUG:glwidget:geom matrix T is [0.266157, -0.667409, 0.695504, 4.04756]
+[0.503512, 0.71153, 0.490103, 2.56574]
+[-0.821971, 0.21975, 0.525427, 18.2855]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=4.047557,2.565739,18.285492
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.671890,0.030458,5.600303) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.700000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.9998109264825692, 0.012042691534812982, 0.015267117169391393, -0.012101749985197252, 0.99991961930358075, 0.0037818750743322154, -0.015220346032937622, -0.003965918856888114, 0.99987629862611416]
+DEBUG:glwidget:geom matrix T is [0.999811, 0.0120427, 0.0152671, 0.00120001]
+[-0.0121017, 0.99992, 0.00378188, 0.000585595]
+[-0.0152203, -0.00396592, 0.999876, 10.6006]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001200,0.000586,10.600556
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.26808883108081838, -0.68580449213889627, 0.67660961950879128, 0.51243146894291003, 0.69623695357130355, 0.50266101312789535, -0.81580780107003903, 0.21195825778643582, 0.53808115435258164]
+DEBUG:glwidget:geom matrix T is [0.268089, -0.685804, 0.67661, 3.95116]
+[0.512431, 0.696237, 0.502661, 2.63673]
+[-0.815808, 0.211958, 0.538081, 18.3514]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=3.951161,2.636733,18.351436
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.658740,0.029863,5.576722) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.720000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99982154180986638, 0.011617976356374673, 0.014896548537303999, -0.011687208354733853, 0.99992126398573478, 0.0045689156310383073, -0.01484229408867019, -0.0047421993371457964, 0.99987860155702513]
+DEBUG:glwidget:geom matrix T is [0.999822, 0.011618, 0.0148965, 0.00113513]
+[-0.0116872, 0.999921, 0.00456892, 0.000683377]
+[-0.0148423, -0.0047422, 0.999879, 10.6006]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001135,0.000683,10.600574
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.26993949512905341, -0.70345342210383111, 0.65748456400122479, 0.52111324655365232, 0.6809197616358087, 0.51457677996596951, -0.80967502940116898, 0.20371931951644323, 0.55038603327116986]
+DEBUG:glwidget:geom matrix T is [0.269939, -0.703453, 0.657485, 3.85345]
+[0.521113, 0.68092, 0.514577, 2.70401]
+[-0.809675, 0.203719, 0.550386, 18.4156]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=3.853448,2.704006,18.415633
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.645784,0.029288,5.553466) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.740000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99983147159192454, 0.011223571157075117, 0.014527899531886998, -0.011301222782454202, 0.99992223070859743, 0.0052739831592290539, -0.014467576782166012, -0.0054372773724139798, 0.99988055548491772]
+DEBUG:glwidget:geom matrix T is [0.999831, 0.0112236, 0.0145279, 0.0010708]
+[-0.0113012, 0.999922, 0.00527398, 0.000769804]
+[-0.0144676, -0.00543728, 0.999881, 10.6006]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001071,0.000770,10.600590
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.27172142351626638, -0.72036382930411291, 0.63815626725168861, 0.52956990255986369, 0.66560286199391883, 0.52585981821036742, -0.80356903020526504, 0.19506097389231702, 0.56234156004971803]
+DEBUG:glwidget:geom matrix T is [0.271721, -0.720364, 0.638156, 3.75456]
+[0.52957, 0.665603, 0.52586, 2.7676]
+[-0.803569, 0.195061, 0.562342, 18.4781]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=3.754561,2.767596,18.478080
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.633014,0.028733,5.530534) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.760000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99984080001179165, 0.010858254979305756, 0.014158846371962241, -0.010942647114236008, 0.99992274134586423, 0.0058965933813638332, -0.014093725764103294, -0.0060505899031601139, 0.9998823717097477]
+DEBUG:glwidget:geom matrix T is [0.999841, 0.0108583, 0.0141588, 0.00100703]
+[-0.0109426, 0.999923, 0.00589659, 0.000845173]
+[-0.0140937, -0.00605059, 0.999882, 10.6006]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.001007,0.000845,10.600604
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.27344474634658328, -0.73654477742459157, 0.61865156715554459, 0.53781201618824293, 0.6503094609000547, 0.53652198492458547, -0.7974874330915751, 0.18600912857287111, 0.57394633734223921]
+DEBUG:glwidget:geom matrix T is [0.273445, -0.736545, 0.618652, 3.65464]
+[0.537812, 0.650309, 0.536522, 2.82756]
+[-0.797487, 0.186009, 0.573946, 18.5388]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=3.654639,2.827560,18.538770
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.620423,0.028197,5.507923) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.780000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99984959494620085, 0.010520446246218592, 0.013787954768511114, -0.010609992808591462, 0.99992298989676232, 0.0064375716323006793, -0.013719166830377154, -0.0065828934899320743, 0.99988421828468743]
+DEBUG:glwidget:geom matrix T is [0.99985, 0.0105204, 0.013788, 0.000943849]
+[-0.01061, 0.999923, 0.00643757, 0.000909892]
+[-0.0137192, -0.00658289, 0.999884, 10.6006]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000944,0.000910,10.600618
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.27511758973001621, -0.75200651185404632, 0.5989962587114015, 0.54584871786081024, 0.63506121499663193, 0.54657701233834466, -0.79142876434386422, 0.17658838958468215, 0.58519830111940052]
+DEBUG:glwidget:geom matrix T is [0.275118, -0.752007, 0.598996, 3.55382]
+[0.545849, 0.635061, 0.546577, 2.88397]
+[-0.791429, 0.176588, 0.585198, 18.5977]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=3.553821,2.883972,18.597693
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.608004,0.027680,5.485632) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.800000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99985791063698182, 0.010208318838089973, 0.013414498244403899, -0.010301542057238057, 0.99992313936036714, 0.0068988117056964634, -0.013343041927992783, -0.0070360214757770921, 0.9998862223442726]
+DEBUG:glwidget:geom matrix T is [0.999858, 0.0102083, 0.0134145, 0.000881334]
+[-0.0103015, 0.999923, 0.00689881, 0.000964456]
+[-0.013343, -0.00703602, 0.999886, 10.6006]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000881,0.000964,10.600631
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.27674640381067978, -0.76676025015418403, 0.5792151126838363, 0.55368788784274148, 0.61987825235453664, 0.5560401740109514, -0.78539235470820556, 0.1668222738167135, 0.59609494052920931]
+DEBUG:glwidget:geom matrix T is [0.276746, -0.76676, 0.579215, 3.45224]
+[0.553688, 0.619878, 0.55604, 2.93692]
+[-0.785392, 0.166822, 0.596095, 18.6548]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=3.452241,2.936919,18.654836
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.595750,0.027180,5.463657) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.820000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99986579012691434, 0.0099198964134218047, 0.013038304683828252, -0.01001543875830231, 0.99992332103494952, 0.0072830650770129846, -0.012965057668982904, -0.0074126719598462919, 0.99988847356795529]
+DEBUG:glwidget:geom matrix T is [0.999866, 0.0099199, 0.0130383, 0.000819568]
+[-0.0100154, 0.999923, 0.00728307, 0.00100942]
+[-0.0129651, -0.00741267, 0.999888, 10.6006]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000820,0.001009,10.600643
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.27833624932252066, -0.78081800920936739, 0.55933189503852876, 0.56133633400315874, 0.60477920346793301, 0.56492799114629344, -0.77937824734910699, 0.15673337725900188, 0.60663349397475708]
+DEBUG:glwidget:geom matrix T is [0.278336, -0.780818, 0.559332, 3.35003]
+[0.561336, 0.604779, 0.564928, 2.9865]
+[-0.779378, 0.156733, 0.606633, 18.7102]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=3.350031,2.986499,18.710183
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.583657,0.026697,5.441995) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.840000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99987326744402383, 0.0096531283395748773, 0.012659627327504161, -0.0097497609337851288, 0.99992363559007802, 0.0075937573081356034, -0.012585357068658447, -0.0077162232718164595, 0.99989102840553268]
+DEBUG:glwidget:geom matrix T is [0.999873, 0.00965313, 0.0126596, 0.000758644]
+[-0.00974976, 0.999924, 0.00759376, 0.00104538]
+[-0.0125854, -0.00771622, 0.999891, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000759,0.001045,10.600655
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.2798910465814381, -0.79419246226809248, 0.53936938633935438, 0.56879995056672983, 0.58978124008510191, 0.57325797428292713, -0.7733871076497415, 0.14634350590382864, 0.61681112182007802]
+DEBUG:glwidget:geom matrix T is [0.279891, -0.794192, 0.539369, 3.24732]
+[0.5688, 0.589781, 0.573258, 3.03282]
+[-0.773387, 0.146344, 0.616811, 18.7637]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=3.247319,3.032821,18.763721
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.571719,0.026229,5.420643) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.860000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99988036952222548, 0.0094059500949993744, 0.01227903688845949, -0.0095025776530999664, 0.99992415536210077, 0.007834828736880458, -0.012204411581250968, -0.0079505739541132492, 0.99989391472883538]
+DEBUG:glwidget:geom matrix T is [0.99988, 0.00940595, 0.012279, 0.00069866]
+[-0.00950258, 0.999924, 0.00783483, 0.00107296]
+[-0.0122044, -0.00795057, 0.999894, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000699,0.001073,10.600666
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.28141379061370664, -0.80689682024516496, 0.51934940062607793, 0.57608385950443819, 0.57490012013700431, 0.58104839616414783, -0.76742013608641724, 0.13567377544942025, 0.62662505646072353]
+DEBUG:glwidget:geom matrix T is [0.281414, -0.806897, 0.519349, 3.14423]
+[0.576084, 0.5749, 0.581048, 3.076]
+[-0.76742, 0.135674, 0.626625, 18.8154]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=3.144226,3.075997,18.815432
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.559932,0.025774,5.399596) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.880000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99988711785442019, 0.0091763305837497464, 0.011897331877300339, -0.0092719930644795077, 0.99992492742356287, 0.0080105968313650914, -0.011822930829245839, -0.0081200045566595328, 0.99989713662586643]
+DEBUG:glwidget:geom matrix T is [0.999887, 0.00917633, 0.0118973, 0.000639718]
+[-0.00927199, 0.999925, 0.0080106, 0.0010928]
+[-0.0118229, -0.00812, 0.999897, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000640,0.001093,10.600676
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.28290673589186616, -0.81894473263997547, 0.4992928035414177, 0.5831925360354262, 0.56015023734032721, 0.58831809212376185, -0.76147898506759715, 0.12474468521269368, 0.63607273075616755]
+DEBUG:glwidget:geom matrix T is [0.282907, -0.818945, 0.499293, 3.04087]
+[0.583193, 0.56015, 0.588318, 3.11615]
+[-0.761479, 0.124745, 0.636073, 18.8653]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=3.040871,3.116145,18.865303
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.548293,0.025333,5.378851) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.900000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99989352988327629, 0.0089623084482819502, 0.011515464595039633, -0.0090561797393685535, 0.99992597706937791, 0.008125637844387943, -0.011441787713902397, -0.0082290588239332108, 0.99990067911007152]
+DEBUG:glwidget:geom matrix T is [0.999894, 0.00896231, 0.0115155, 0.000581913]
+[-0.00905618, 0.999926, 0.00812564, 0.00110552]
+[-0.0114418, -0.00822906, 0.999901, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000582,0.001106,10.600686
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.28437155391171742, -0.8303502042629638, 0.47921952965868275, 0.5901299195740527, 0.54554467430901943, 0.59508628479959758, -0.75556568036760174, 0.1135761709757816, 0.64515188602151896]
+DEBUG:glwidget:geom matrix T is [0.284372, -0.83035, 0.47922, 2.93737]
+[0.59013, 0.545545, 0.595086, 3.15339]
+[-0.755566, 0.113576, 0.645152, 18.9133]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=2.937368,3.153388,18.913321
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.536799,0.024902,5.358404) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.920000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99989962014313771, 0.0087620191665669367, 0.011134480577630087, -0.0088534031946554213, 0.99992731144463576, 0.0081846856369254296, -0.011061956855899101, -0.0082824421052695527, 0.99990451257272117]
+DEBUG:glwidget:geom matrix T is [0.9999, 0.00876202, 0.0111345, 0.000525341]
+[-0.0088534, 0.999927, 0.00818469, 0.00111176]
+[-0.011062, -0.00828244, 0.999905, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000525,0.001112,10.600696
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.28580946660538115, -0.84112752466857243, 0.45914859908712302, 0.59689951134647024, 0.53109525821596693, 0.60137243040802968, -0.74968254758470443, 0.10218764086441948, 0.65386066092208961]
+DEBUG:glwidget:geom matrix T is [0.285809, -0.841128, 0.459149, 2.83382]
+[0.5969, 0.531095, 0.601372, 3.18785]
+[-0.749683, 0.102188, 0.653861, 18.9595]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=2.833825,3.187849,18.959473
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.525446,0.024483,5.338250) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.940000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99990540117291249, 0.0085737144648272319, 0.010755469562622832, -0.0086620391671010533, 0.99992892310981174, 0.0081925457532940338, -0.01068446454926503, -0.0082849350466869132, 0.99990859685701661]
+DEBUG:glwidget:geom matrix T is [0.999905, 0.00857371, 0.0107555, 0.000470088]
+[-0.00866204, 0.999929, 0.00819255, 0.00111212]
+[-0.0106845, -0.00828494, 0.999909, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000470,0.001112,10.600705
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.28722135835084694, -0.85129120778568357, 0.43909813351218741, 0.60350445981088263, 0.5168126182128695, 0.6071960841806654, -0.74383214389771379, 0.090597997785553483, 0.66219766271241076]
+DEBUG:glwidget:geom matrix T is [0.287221, -0.851291, 0.439098, 2.73035]
+[0.603504, 0.516813, 0.607196, 3.21965]
+[-0.743832, 0.090598, 0.662198, 19.0038]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=2.730345,3.219654,19.003753
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.514232,0.024072,5.318386) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.960000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99991088422415075, 0.0083957753597926239, 0.01037952629866994, -0.0084805849670449383, 0.99993079339879132, 0.0081540230242809174, -0.010310348621342212, -0.0082413208268863648, 0.99991288487664498]
+DEBUG:glwidget:geom matrix T is [0.999911, 0.00839578, 0.0103795, 0.000416237]
+[-0.00848058, 0.999931, 0.00815402, 0.00110719]
+[-0.0103103, -0.00824132, 0.999913, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000416,0.001107,10.600713
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.28860786911082553, -0.86085593973120655, 0.41908537187166339, 0.60994763493972615, 0.50270624394879415, 0.61257678288221995, -0.73801719527308018, 0.078825651436554123, 0.67016202231763278]
+DEBUG:glwidget:geom matrix T is [0.288608, -0.860856, 0.419085, 2.62703]
+[0.609948, 0.502706, 0.612577, 3.24893]
+[-0.738017, 0.0788257, 0.670162, 19.0462]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=2.627028,3.248926,19.046152
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.503156,0.023671,5.298807) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 0.980000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99991607979089814, 0.0082267199581380398, 0.010007719736916637, -0.0083076660286479712, 0.99993289547413655, 0.0080738611497884038, -0.0099406267789685174, -0.0081563243829550647, 0.99991732573838388]
+DEBUG:glwidget:geom matrix T is [0.999916, 0.00822672, 0.0100077, 0.00036386]
+[-0.00830767, 0.999933, 0.00807386, 0.00109755]
+[-0.00994063, -0.00815632, 0.999917, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000364,0.001098,10.600721
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.2899694710158856, -0.86983653320233068, 0.39912668588471811, 0.61623169235543496, 0.48878454463371607, 0.61753394260070249, -0.73224053917788823, 0.06688852243667584, 0.67775343477603567]
+DEBUG:glwidget:geom matrix T is [0.289969, -0.869837, 0.399127, 2.52397]
+[0.616232, 0.488785, 0.617534, 3.27579]
+[-0.732241, 0.0668885, 0.677753, 19.0867]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=2.523965,3.275790,19.086668
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.492216,0.023276,5.279508) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.000000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99992099798857492, 0.0080652069805186074, 0.009641069333521329, -0.0081420385961547964, 0.9999351970233189, 0.0079566928704847134, -0.009576272188649251, -0.0080345622343653885, 0.99992186735798061]
+DEBUG:glwidget:geom matrix T is [0.999921, 0.00806521, 0.00964107, 0.000313024]
+[-0.00814204, 0.999935, 0.00795669, 0.00108374]
+[-0.00957627, -0.00803456, 0.999922, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000313,0.001084,10.600727
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.2913065304993821, -0.87824788718032665, 0.37923759564645565, 0.62235912825163808, 0.47505490817794632, 0.62208677023217906, -0.72650507277669674, 0.054804040720873151, 0.68497218655241132]
+DEBUG:glwidget:geom matrix T is [0.291307, -0.878248, 0.379238, 2.42125]
+[0.622359, 0.475055, 0.622087, 3.30037]
+[-0.726505, 0.054804, 0.684972, 19.1253]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=2.421247,3.300368,19.125301
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.481409,0.022888,5.260487) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.020000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99992564880843737, 0.0079100358392526909, 0.0092805273582523707, -0.0079825893352384637, 0.99993766257033478, 0.007806999479969717, -0.009218195188347331, -0.0078805016589712264, 0.99992645858136608]
+DEBUG:glwidget:geom matrix T is [0.999926, 0.00791004, 0.00928053, 0.000263784]
+[-0.00798259, 0.999938, 0.007807, 0.00106626]
+[-0.0092182, -0.0078805, 0.999926, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000264,0.001066,10.600734
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.29261935789563021, -0.88610495095415809, 0.3594327854819005, 0.62833232597615574, 0.46152376000684825, 0.62625418727744631, -0.72081370652765941, 0.042589139973355221, 0.69181917119879466]
+DEBUG:glwidget:geom matrix T is [0.292619, -0.886105, 0.359433, 2.31895]
+[0.628332, 0.461524, 0.626254, 3.32278]
+[-0.720814, 0.0425891, 0.691819, 19.1621]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=2.318954,3.322779,19.162052
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.470735,0.022506,5.241737) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.040000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99993004227247051, 0.0077601439788977378, 0.0089269662485192691, -0.0078283325313375889, 0.99994025540037057, 0.0076290785564463674, -0.0088672301624705008, -0.0076984281037368501, 0.99993105083999534]
+DEBUG:glwidget:geom matrix T is [0.99993, 0.00776014, 0.00892697, 0.00021619]
+[-0.00782833, 0.99994, 0.00762908, 0.0010456]
+[-0.00886723, -0.00769843, 0.999931, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000216,0.001046,10.600739
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.29390824622851808, -0.89342269169498667, 0.33972612022533849, 0.6341535950995546, 0.44819662120665132, 0.63005476473180588, -0.71516932304258307, 0.03026024955987552, 0.69829589478629139]
+DEBUG:glwidget:geom matrix T is [0.293908, -0.893423, 0.339726, 2.21717]
+[0.634154, 0.448197, 0.630055, 3.34314]
+[-0.715169, 0.0302602, 0.698296, 19.1969]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=2.217167,3.343142,19.196929
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.460192,0.022129,5.223256) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.060000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99993418851118865, 0.0076146020848707804, 0.0085811701742661839, -0.0076784054293380331, 0.99994293911213517, 0.0074270189071738756, -0.0085241267314221797, -0.007492419827658324, 0.99993559938057652]
+DEBUG:glwidget:geom matrix T is [0.999934, 0.0076146, 0.00858117, 0.000170281]
+[-0.00767841, 0.999943, 0.00742702, 0.00102221]
+[-0.00852413, -0.00749242, 0.999936, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000170,0.001022,10.600743
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.29517350074501691, -0.90021606499130558, 0.32013066205769919, 0.63982520374250962, 0.43507816570435814, 0.63350666798636535, -0.70957474103422491, 0.017833285140445406, 0.70440447246401849]
+DEBUG:glwidget:geom matrix T is [0.295174, -0.900216, 0.320131, 2.11596]
+[0.639825, 0.435078, 0.633507, 3.36157]
+[-0.709575, 0.0178333, 0.704404, 19.2299]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=2.115958,3.361569,19.229939
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.449780,0.021757,5.205039) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.080000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99993809778405673, 0.0074726076747277355, 0.0082438300893384504, -0.0075320621780156777, 0.99994567882420415, 0.0072046818214346799, -0.0081895445141221129, -0.0072663288764826606, 0.99994006411649994]
+DEBUG:glwidget:geom matrix T is [0.999938, 0.00747261, 0.00824383, 0.00012609]
+[-0.00753206, 0.999946, 0.00720468, 0.000996505]
+[-0.00818954, -0.00726633, 0.99994, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000126,0.000997,10.600746
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.29641546058710727, -0.90649998789601816, 0.30065868799928586, 0.64534940488601855, 0.42217227622540288, 0.63662761077408792, -0.7040326841405834, 0.0053236389040794453, 0.71014761742233878]
+DEBUG:glwidget:geom matrix T is [0.296415, -0.9065, 0.300659, 2.0154]
+[0.645349, 0.422172, 0.636628, 3.37817]
+[-0.704033, 0.00532364, 0.710148, 19.2611]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=2.015395,3.378172,19.261095
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.439497,0.021389,5.187082) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.100000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99994178045932525, 0.0073334775077750379, 0.0079155416414447601, -0.0073886667656317875, 0.99994844206920308, 0.0069656878195942613, -0.0078640508175454142, -0.0070237675799070384, 0.99994441015174562]
+DEBUG:glwidget:geom matrix T is [0.999942, 0.00733348, 0.00791554, 8.36411e-05]
+[-0.00738867, 0.999948, 0.00696569, 0.00096888]
+[-0.00786405, -0.00702377, 0.999944, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000084,0.000969,10.600749
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.29763451384591616, -0.91228931414773684, 0.28132170812000457, 0.65072845734050433, 0.40948209880838449, 0.63943481729002516, -0.69854575438903965, -0.0072538298389426383, 0.71552862345102253]
+DEBUG:glwidget:geom matrix T is [0.297635, -0.912289, 0.281322, 1.91554]
+[0.650728, 0.409482, 0.639435, 3.39306]
+[-0.698546, -0.00725383, 0.715529, 19.2904]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=1.915544,3.393057,19.290413
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.429343,0.021025,5.169381) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.120000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99994524696718634, 0.0071966391798757414, 0.0075968053974919333, -0.007247685267822419, 0.99995119941376376, 0.0067134081682718493, -0.0075481206926807307, -0.0067680998433760371, 0.99994860802869201]
+DEBUG:glwidget:geom matrix T is [0.999945, 0.00719664, 0.00759681, 4.29492e-05]
+[-0.00724769, 0.999951, 0.00671341, 0.00093969]
+[-0.00754812, -0.0067681, 0.999949, 10.6008]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000043,0.000940,10.600750
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.29883110710331684, -0.9175988113142356, 0.26213048449600024, 0.65596464200276983, 0.39701009568836587, 0.64194499169608965, -0.69311641004205338, -0.01988480314754058, 0.72055134219165784]
+DEBUG:glwidget:geom matrix T is [0.298831, -0.917599, 0.26213, 1.81646]
+[0.655965, 0.39701, 0.641945, 3.40633]
+[-0.693116, -0.0198848, 0.720551, 19.3179]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=1.816462,3.406328,19.317910
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.419316,0.020664,5.151932) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.140000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99994850773741673, 0.0070616222102432907, 0.0072880289155008333, -0.00710867767349177, 0.99995392484368417, 0.0064509605056975406, -0.0072421388724448815, -0.0065024365795806503, 0.99995263374975951]
+DEBUG:glwidget:geom matrix T is [0.999949, 0.00706162, 0.00728803, 4.02359e-06]
+[-0.00710868, 0.999954, 0.00645096, 0.000909263]
+[-0.00724214, -0.00650244, 0.999953, 10.6008]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.000004,0.000909,10.600751
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.30000575043839689, -0.92244313967108926, 0.24309505091144396, 0.66106027398371403, 0.38475809638971603, 0.6441742942893165, -0.68774694755009369, -0.032555511611787019, 0.72522015609001356]
+DEBUG:glwidget:geom matrix T is [0.300006, -0.922443, 0.243095, 1.71821]
+[0.66106, 0.384758, 0.644174, 3.41808]
+[-0.687747, -0.0325555, 0.72522, 19.3436]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=1.718205,3.418083,19.343607
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.409417,0.020306,5.134731) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.160000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99995157313018779, 0.0069280488746642473, 0.006989530259814707, -0.0069712895073108629, 0.99995659595325148, 0.0061812079880171292, -0.0069464031748711118, -0.0062296346904238895, 0.99995646861978749]
+DEBUG:glwidget:geom matrix T is [0.999952, 0.00692805, 0.00698953, -3.31341e-05]
+[-0.00697129, 0.999957, 0.00618121, 0.000877899]
+[-0.0069464, -0.00622963, 0.999956, 10.6008]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000033,0.000878,10.600750
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.30115901875845141, -0.92683683267710315, 0.2242247332778485, 0.66601771114484976, 0.37272734689674036, 0.64613832367124957, -0.68243948732603554, -0.04525273989928718, 0.72953994796020949]
+DEBUG:glwidget:geom matrix T is [0.301159, -0.926837, 0.224225, 1.62082]
+[0.666018, 0.372727, 0.646138, 3.42842]
+[-0.682439, -0.0452527, 0.72954, 19.3675]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=1.620824,3.428417,19.367528
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.399644,0.019951,5.117774) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.180000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99995445336651867, 0.0067956249939901507, 0.0067015426140415706, -0.0068352434272964087, 0.99995919397579858, 0.0059067614274582389, -0.0066611290151415026, -0.0059522990694658153, 0.9999600989519688]
+DEBUG:glwidget:geom matrix T is [0.999954, 0.00679562, 0.00670154, -6.85285e-05]
+[-0.00683524, 0.999959, 0.00590676, 0.00084587]
+[-0.00666113, -0.0059523, 0.99996, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000069,0.000846,10.600748
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.30229155020644805, -0.93079427894343603, 0.20552817072107613, 0.67083935953797136, 0.36091855679600793, 0.64785210430697182, -0.6771959630479697, -0.057963830501926508, 0.73351606798016145]
+DEBUG:glwidget:geom matrix T is [0.302292, -0.930794, 0.205528, 1.52437]
+[0.670839, 0.360919, 0.647852, 3.43742]
+[-0.677196, -0.0579638, 0.733516, 19.3897]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=1.524365,3.437420,19.389698
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.389996,0.019599,5.101057) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.200000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99995715846296951, 0.0066641308470819696, 0.006424219697101408, -0.0067003309417062139, 0.99996170368970672, 0.0056299839476477119, -0.0063864547234964006, -0.0056727871484947446, 0.99996351567546338]
+DEBUG:glwidget:geom matrix T is [0.999957, 0.00666413, 0.00642422, -0.000102171]
+[-0.00670033, 0.999962, 0.00562998, 0.000813421]
+[-0.00638645, -0.00567279, 0.999964, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000102,0.000813,10.600746
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.30340404229855078, -0.93432970561825079, 0.18701333726826033, 0.67552767620003706, 0.34933194430839742, 0.64933007890709382, -0.67201811419386392, -0.070676685583207471, 0.73715429884814165]
+DEBUG:glwidget:geom matrix T is [0.303404, -0.93433, 0.187013, 1.42887]
+[0.675528, 0.349332, 0.64933, 3.44518]
+[-0.672018, -0.0706767, 0.737154, 19.4101]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=1.428871,3.445179,19.410147
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.380473,0.019249,5.084577) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.220000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99995969817360553, 0.0065334123430105581, 0.0061576417326633295, -0.0065664043602582422, 0.99996411323060641, 0.0053529977306703419, -0.0061224474133487923, -0.0053932155606073789, 0.99996671387781089]
+DEBUG:glwidget:geom matrix T is [0.99996, 0.00653341, 0.00615764, -0.000134077]
+[-0.0065664, 0.999964, 0.005353, 0.000780772]
+[-0.00612245, -0.00539322, 0.999967, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000134,0.000781,10.600742
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.3044972463556731, -0.93745716312568206, 0.16868756405307636, 0.68008516971472766, 0.33796727915141012, 0.65058610510606718, -0.66690748151141799, -0.083379766894259397, 0.74046081974454026]
+DEBUG:glwidget:geom matrix T is [0.304497, -0.937457, 0.168688, 1.33438]
+[0.680085, 0.337967, 0.650586, 3.45178]
+[-0.666907, -0.0833798, 0.740461, 19.4289]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=1.334382,3.451776,19.428905
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.371075,0.018902,5.068329) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.240000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99996208194100011, 0.006403372557608005, 0.0059018217618813373, -0.0064333690697104635, 0.99996641383675466, 0.0050776924752456926, -0.0058691091856802368, -0.0051154685365806642, 0.99996969231023092]
+DEBUG:glwidget:geom matrix T is [0.999962, 0.00640337, 0.00590182, -0.000164269]
+[-0.00643337, 0.999966, 0.00507769, 0.000748118]
+[-0.00586911, -0.00511547, 0.99997, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000164,0.000748,10.600737
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.30557196071206671, -0.94019051120870212, 0.15055756194792258, 0.6845143989131528, 0.3268239231935296, 0.65163345594663491, -0.66186540512943293, -0.096062093780581434, 0.74344216966173127]
+DEBUG:glwidget:geom matrix T is [0.305572, -0.940191, 0.150558, 1.24093]
+[0.684514, 0.326824, 0.651633, 3.45729]
+[-0.661865, -0.0960621, 0.743442, 19.446]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=1.240931,3.457289,19.446003
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.361800,0.018558,5.052312) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.260000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99996431885705839, 0.0062739637138554743, 0.0056567121242437962, -0.0063011762024646053, 0.9999685995507066, 0.0048057352261760894, -0.0056263834925141453, -0.0048412076918720225, 0.9999724528790177]
+DEBUG:glwidget:geom matrix T is [0.999964, 0.00627396, 0.00565671, -0.000192774]
+[-0.00630118, 0.999969, 0.00480574, 0.000715634]
+[-0.00562638, -0.00484121, 0.999972, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000193,0.000716,10.600732
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.30662902311087459, -0.94254340623176958, 0.13262944452527814, 0.68881797004909529, 0.31590086888211005, 0.65248482371390937, -0.65689302502273095, -0.10871323934342599, 0.74610521058892543]
+DEBUG:glwidget:geom matrix T is [0.306629, -0.942543, 0.132629, 1.14855]
+[0.688818, 0.315901, 0.652485, 3.46179]
+[-0.656893, -0.108713, 0.746105, 19.4615]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=1.148551,3.461791,19.461476
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.352647,0.018217,5.036520) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.280000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.9999664176337042, 0.006145179663704114, 0.0054222109620589293, -0.0061698157486538086, 0.99997066689661507, 0.0045385812724438165, -0.0053941615144467141, -0.0045718828987312971, 0.99997500014166174]
+DEBUG:glwidget:geom matrix T is [0.999966, 0.00614518, 0.00542221, -0.000219621]
+[-0.00616982, 0.999971, 0.00453858, 0.00068347]
+[-0.00539416, -0.00457188, 0.999975, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000220,0.000683,10.600725
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.30766930263081499, -0.94452928970225059, 0.11490875124736927, 0.69299853274912504, 0.30519677544431612, 0.65315232669412693, -0.65199128355080616, -0.12132332485121515, 0.74845709096835922]
+DEBUG:glwidget:geom matrix T is [0.307669, -0.944529, 0.114909, 1.05727]
+[0.692999, 0.305197, 0.653152, 3.46535]
+[-0.651991, -0.121323, 0.748457, 19.4754]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=1.057271,3.465352,19.475359
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.343617,0.017878,5.020950) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.300000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.9999683865829434, 0.0060170489102438279, 0.0051981686310481369, -0.0060393101466166945, 0.99997261454891639, 0.0042774858453529848, -0.0051722884353110022, -0.0043087439719663159, 0.99997734082214385]
+DEBUG:glwidget:geom matrix T is [0.999968, 0.00601705, 0.00519817, -0.000244845]
+[-0.00603931, 0.999973, 0.00427749, 0.00065176]
+[-0.00517229, -0.00430874, 0.999977, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000245,0.000652,10.600718
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.30869369142966474, -0.94616137797037458, 0.097400470782891824, 0.69705877500478852, 0.29471000287729776, 0.65364751846303737, -0.64716092980057949, -0.13388301251938267, 0.75050520977431212]
+DEBUG:glwidget:geom matrix T is [0.308694, -0.946161, 0.0974005, 0.967115]
+[0.697059, 0.29471, 0.653648, 3.46804]
+[-0.647161, -0.133883, 0.750505, 19.4877]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.967115,3.468038,19.487689
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.334707,0.017542,5.005599) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.320000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99997023360546244, 0.0058896281933679562, 0.0049843939231084102, -0.0059097083734702622, 0.99997444300486316, 0.0040235163792689916, -0.0049605695214733365, -0.004052852928197086, 0.99997948335611619]
+DEBUG:glwidget:geom matrix T is [0.99997, 0.00588963, 0.00498439, -0.000268483]
+[-0.00590971, 0.999974, 0.00402352, 0.000620618]
+[-0.00496057, -0.00405285, 0.999979, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000268,0.000621,10.600709
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.30970309653801009, -0.94745265306689808, 0.080109064351443326, 0.70100141744315425, 0.28443864375861971, 0.6539813993375081, -0.64240252547562127, -0.14638349679268048, 0.75225718150728937]
+DEBUG:glwidget:geom matrix T is [0.309703, -0.947453, 0.0801091, 0.878107]
+[0.701001, 0.284439, 0.653981, 3.46991]
+[-0.642403, -0.146383, 0.752257, 19.4985]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.878107,3.469910,19.498505
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.325918,0.017209,4.990464) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.340000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99997196618671436, 0.0057629966488631397, 0.0047806600278426691, -0.0057810805463367537, 0.9999761542704082, 0.0037775651260574948, -0.0047587759343540436, -0.0038050966071876873, 0.99998143747342461]
+DEBUG:glwidget:geom matrix T is [0.999972, 0.005763, 0.00478066, -0.000290577]
+[-0.00578108, 0.999976, 0.00377757, 0.00059014]
+[-0.00475878, -0.0038051, 0.999981, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000291,0.000590,10.600700
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.31069843189065666, -0.94841585463617628, 0.063038489000120615, 0.70482920708314389, 0.27438055292121455, 0.65416442965144117, -0.63771645208762939, -0.15881649427367403, 0.75372080234221106]
+DEBUG:glwidget:geom matrix T is [0.310698, -0.948416, 0.0630385, 0.790266]
+[0.704829, 0.274381, 0.654164, 3.47103]
+[-0.637716, -0.158816, 0.753721, 19.5078]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.790266,3.471028,19.507845
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.317248,0.016879,4.975542) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.360000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99997359139934294, 0.0056372505398892651, 0.0045867101772941688, -0.0056535130354065056, 0.99997775156634794, 0.0035403619404999818, -0.0045666502229166211, -0.0035661994702722781, 0.99998321382265198]
+DEBUG:glwidget:geom matrix T is [0.999974, 0.00563725, 0.00458671, -0.000311168]
+[-0.00565351, 0.999978, 0.00354036, 0.000560409]
+[-0.00456665, -0.0035662, 0.999983, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000311,0.000560,10.600691
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.31168061074277981, -0.94906347292042437, 0.046192220722009292, 0.70854491075829207, 0.26453337504880353, 0.65420654454370386, -0.63310291922051021, -0.17117423244610189, 0.75490401762141657]
+DEBUG:glwidget:geom matrix T is [0.311681, -0.949063, 0.0461922, 0.703608]
+[0.708545, 0.264533, 0.654207, 3.47145]
+[-0.633103, -0.171174, 0.754904, 19.5157]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.703608,3.471447,19.515749
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.308696,0.016552,4.960829) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.380000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99997511591078581, 0.0055124985508505555, 0.004402262933691733, -0.0055271040822284226, 0.99997923905940289, 0.0033124870779845713, -0.0043839114583553726, -0.0033367364151924523, 0.99998482364004948]
+DEBUG:glwidget:geom matrix T is [0.999975, 0.0055125, 0.00440226, -0.000330302]
+[-0.0055271, 0.999979, 0.00331249, 0.00053149]
+[-0.00438391, -0.00333674, 0.999985, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000330,0.000531,10.600680
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.31265053858228053, -0.94940774274913831, 0.029573277332682654, 0.7121513083620542, 0.25489457025741935, 0.65411716997148139, -0.62856197365289623, -0.1834494373424769, 0.75581489084054465]
+DEBUG:glwidget:geom matrix T is [0.312651, -0.949408, 0.0295733, 0.618149]
+[0.712151, 0.254895, 0.654117, 3.47122]
+[-0.628562, -0.183449, 0.755815, 19.5223]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.618149,3.471217,19.522258
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.300262,0.016229,4.946321) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.400000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99997654599494279, 0.0053888576264368724, 0.0042270170931717164, -0.00540195991020858, 0.99998062162104295, 0.0030943838677667881, -0.004210259986327688, -0.0031171454689489847, 0.9999862784633462]
+DEBUG:glwidget:geom matrix T is [0.999977, 0.00538886, 0.00422702, -0.000348025]
+[-0.00540196, 0.999981, 0.00309438, 0.000503439]
+[-0.00421026, -0.00311715, 0.999986, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000348,0.000503,10.600669
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.31360910661964425, -0.94946063848573736, 0.01318424102799793, 0.71565118604904643, 0.2454614377372526, 0.65390523968733716, -0.62409350914091521, -0.19563532030340683, 0.75646157423755622]
+DEBUG:glwidget:geom matrix T is [0.313609, -0.949461, 0.0131842, 0.5339]
+[0.715651, 0.245461, 0.653905, 3.47039]
+[-0.624094, -0.195635, 0.756462, 19.5274]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.533900,3.470387,19.527412
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.291944,0.015909,4.932017) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.420000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99997788754688632, 0.0052664493329371929, 0.0040606561896345201, -0.0052781913091251454, 0.99998190461533654, 0.0028863711452629722, -0.0040453817831062038, -0.002907740240725828, 0.99998758988945524]
+DEBUG:glwidget:geom matrix T is [0.999978, 0.00526645, 0.00406066, -0.000364384]
+[-0.00527819, 0.999982, 0.00288637, 0.000476298]
+[-0.00404538, -0.00290774, 0.999988, 10.6007]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000364,0.000476,10.600657
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.31455718590992432, -0.94923386988219371, -0.0029727194458578207, 0.71904732950513917, 0.23623113753546346, 0.65357921294226362, -0.6196972766794745, -0.20772556397125372, 0.7568522810620758]
+DEBUG:glwidget:geom matrix T is [0.314557, -0.949234, -0.00297272, 0.450871]
+[0.719047, 0.236231, 0.653579, 3.469]
+[-0.619697, -0.207726, 0.756852, 19.5313]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.450871,3.469002,19.531253
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.283742,0.015593,4.917913) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.440000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99997914609970373, 0.0051453967145794833, 0.0039028525922791576, -0.0051559106713717192, 0.99998309371588046, 0.0026886553452420423, -0.0038889524111643107, -0.0027087220356208641, 0.99998876937397529]
+DEBUG:glwidget:geom matrix T is [0.999979, 0.0051454, 0.00390285, -0.00037943]
+[-0.00515591, 0.999983, 0.00268866, 0.000450097]
+[-0.00388895, -0.00270872, 0.999989, 10.6006]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000379,0.000450,10.600644
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.31549562213953442, -0.94873887879125285, -0.018895827071188295, 0.72234251738049882, 0.22720071056613059, 0.65314709270014271, -0.61537289507679127, -0.21971430765464836, 0.75699525957343139]
+DEBUG:glwidget:geom matrix T is [0.315496, -0.948739, -0.0188958, 0.36907]
+[0.722343, 0.227201, 0.653147, 3.4671]
+[-0.615373, -0.219714, 0.756995, 19.5338]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.369070,3.467104,19.533823
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.275654,0.015281,4.904007) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.460000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99998032684268956, 0.0050258216144783846, 0.0037532711981857858, -0.0050352294545179515, 0.99998419475092992, 0.002501342174621158, -0.0037406405772332538, -0.0025201915470109684, 0.99998982806958503]
+DEBUG:glwidget:geom matrix T is [0.99998, 0.00502582, 0.00375327, -0.000393209]
+[-0.00503523, 0.999984, 0.00250134, 0.000424858]
+[-0.00374064, -0.00252019, 0.99999, 10.6006]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000393,0.000425,10.600632
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.31642523109139686, -0.94798683668538219, -0.034583675339656207, 0.72553951496292968, 0.21836709693707518, 0.65261644417117703, -0.6111198616933613, -0.23159613219248004, 0.75689876879102558]
+DEBUG:glwidget:geom matrix T is [0.316425, -0.947987, -0.0345837, 0.288502]
+[0.72554, 0.218367, 0.652616, 3.46473]
+[-0.61112, -0.231596, 0.756899, 19.5352]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.288502,3.464734,19.535163
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.267679,0.014973,4.890294) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.480000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99998143464023304, 0.0049078424275789592, 0.003611572727687553, -0.0049162560424750685, 0.99998521357515846, 0.0023244477988233559, -0.0036001113019110977, -0.0023421600608590433, 0.999990776699897]
+DEBUG:glwidget:geom matrix T is [0.999981, 0.00490784, 0.00361157, -0.000405774]
+[-0.00491626, 0.999985, 0.00232445, 0.000400595]
+[-0.00360011, -0.00234216, 0.999991, 10.6006]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000406,0.000401,10.600618
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.31734679478670835, -0.94698864293135765, -0.05003520758054715, 0.72864106815361518, 0.20972715268606157, 0.65199441349305753, -0.60693756321269277, -0.24336604443763937, 0.75657105599951113]
+DEBUG:glwidget:geom matrix T is [0.317347, -0.946989, -0.0500352, 0.209172]
+[0.728641, 0.209727, 0.651994, 3.46193]
+[-0.606938, -0.243366, 0.756571, 19.5353]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.209172,3.461928,19.535315
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.259816,0.014668,4.876773) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.500000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.99998247405087082, 0.0047915722516894332, 0.0034774166354152123, -0.0047990939760338075, 0.99998615596599338, 0.0021579094895500545, -0.003467028714709271, -0.0021745601193652962, 0.99999162546502296]
+DEBUG:glwidget:geom matrix T is [0.999982, 0.00479157, 0.00347742, -0.000417173]
+[-0.00479909, 0.999986, 0.00215791, 0.000377313]
+[-0.00346703, -0.00217456, 0.999992, 10.6006]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000417,0.000377,10.600604
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.31826105828868095, -0.94575492376978454, -0.06524969687422269, 0.7316498977939323, 0.20127766502009015, 0.65128774640875042, -0.60282528632689025, -0.25501946147160903, 0.75602033599343954]
+DEBUG:glwidget:geom matrix T is [0.318261, -0.945755, -0.0652497, 0.131081]
+[0.73165, 0.201278, 0.651288, 3.45872]
+[-0.602825, -0.255019, 0.75602, 19.5343]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.131081,3.458720,19.534320
+DEBUG:qtapp:qtapp.timerEvent on <qtapp.MyApp object at 0xb7940c6c>
+DEBUG:sim:collision: creating contact between <ode.GeomCCylinder object at 0xb7baab48> <ode.GeomCCylinder object at 0xb7baafb0>
+DEBUG:sim:MyMotor.step
+DEBUG:sim:MyMotor angles=(5.252064,0.014368,4.863440) desired_angles=(4.712389,0.000000,3.926991)
+DEBUG:sim:stepped world by 0.020000 time is 1.520000
+DEBUG:glwidget:paintGL
+DEBUG:glwidget:drawing joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:dont know how to render joint <ode.BallJoint object at 0xb708b280>
+DEBUG:glwidget:rendering 3 geoms
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.9999834493460934, 0.0046771174020800626, 0.0033504636539091995, -0.0046838405226188639, 0.99998702754217528, 0.0020015956943072607, -0.0033410584921069828, -0.0020172556040214049, 0.99999238397498824]
+DEBUG:glwidget:geom matrix T is [0.999983, 0.00467712, 0.00335046, -0.000427455]
+[-0.00468384, 0.999987, 0.0020016, 0.000355011]
+[-0.00334106, -0.00201726, 0.999992, 10.6006]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=-0.000427,0.000355,10.600590
+DEBUG:glwidget:draw ccylinder
+DEBUG:glwidget:r=[0.31916872714348665, -0.94429603194953782, -0.080226726581381996, 0.73456869437999017, 0.19301536615180992, 0.65050280680882466, -0.59878222823534344, -0.26655219465170416, 0.75525477203118485]
+DEBUG:glwidget:geom matrix T is [0.319169, -0.944296, -0.0802267, 0.0542305]
+[0.734569, 0.193015, 0.650503, 3.45514]
+[-0.598782, -0.266552, 0.755255, 19.5322]
+[0, 0, 0, 1]
+DEBUG:glwidget:geom len=10.000000 xyz=0.054231,3.455142,19.532219
+DEBUG:qtapp:QEEET!
+DEBUG:sim:Sim.__del__()
+.
+----------------------------------------------------------------------
+Ran 1 test in 2.528s
+
+OK
+XXXX

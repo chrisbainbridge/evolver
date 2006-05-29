@@ -1,0 +1,15 @@
+digraph G {
+	node [label="\N"];
+	graph [bb="0,0,967,133"];
+	n0 [label="bp0 (scale=4.47,rec_lim=2,joint=hinge,net.inputs=2)", pos="225,106", width="4.47", height="0.50"];
+	n1 [label="bp1 (scale=2.02,rec_lim=1,joint=hinge,net.inputs=2)", pos="225,18", width="4.47", height="0.50"];
+	n0 -> n0 [label="joint_end=-1,terminal_only=0", pos="e,385,108 385,104 397,104 404,105 404,106 404,107 401,107 395,108", lp="489,106"];
+	n0 -> n0 [label="joint_end=1,terminal_only=0", pos="e,344,118 344,94 455,88 575,92 575,106 575,120 462,124 354,119", lp="658,106"];
+	n0 -> n1 [label="joint_end=-1,terminal_only=0", pos="e,97,29 99,95 68,89 42,82 32,70 28,64 28,59 32,54 41,43 62,36 87,31", lp="121,62"];
+	n0 -> n0 [label="bp0-6 -> bp0-8", style=dashed, pos="e,347,118 347,94 523,83 741,87 741,106 741,125 531,129 357,119", lp="784,106"];
+	n0 -> n0 [label="bp0-5 -> bp0-7", style=dashed, pos="e,345,118 345,94 553,79 827,83 827,106 827,129 562,133 355,119", lp="870,106"];
+	n1 -> n0 [label="joint_end=1,terminal_only=0", pos="e,225,88 225,36 225,48 225,64 225,78", lp="308,62"];
+	n1 -> n0 [label="joint_end=-1,terminal_only=0", pos="e,338,93 339,31 365,36 387,44 395,54 399,59 399,64 395,70 387,79 369,86 348,91", lp="483,62"];
+	n1 -> n1 [label="bp1-5 -> bp1-0", style=dashed, pos="e,378,24 378,12 394,14 404,15 404,18 404,20 398,21 388,23", lp="447,18"];
+	n1 -> n1 [label="bp1-3 -> bp1-8", style=dashed, pos="e,342,30 342,6 417,2 490,6 490,18 490,29 423,34 352,30", lp="533,18"];
+}
