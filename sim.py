@@ -18,7 +18,7 @@ CYLINDER_RADIUS = 1.0
 CYLINDER_DENSITY = 1.5
 MAX_UNROLLED_BODYPARTS = 20
 SOFT_WORLD = 1
-JOINT_MAXFORCE = 8 * CYLINDER_DENSITY * CYLINDER_RADIUS # product with density and cylinder lengths
+JOINT_MAXFORCE = 2 * CYLINDER_DENSITY * CYLINDER_RADIUS # product with density and cylinder lengths
 
 log = logging.getLogger('sim')
 log.setLevel(logging.INFO)
@@ -127,12 +127,13 @@ class BpgSim(Sim):
     "Simulate articulated bodies built from BodyPartGraphs"
 
     def __init__(self, max_simsecs=30.0):
-        self.relax_time = 0
+        self.relax_time = 10
         Sim.__init__(self, max_simsecs)
         log.debug('BPGSim.__init__')
         self.geom_contact = {}
-        self.startpos = None
+        self.startpos = vec3(0, 0, 0) 
         self.relaxed = 0
+        self.prev_pos = [1, 1, 1, 1, 1]
 
     # max_simsecs attribute. add relax time to the sim time when set. 
     # return the real full sim time so that it can be rendered correctly.
@@ -234,7 +235,7 @@ class BpgSim(Sim):
             # (once the model is constructed we translate it until all
             # bodies have z>0)
             geom.setPosition((0, 0, 0))
-            #geom.parent_joint = None
+#            geom.parent_joint = None
             #geom.motor = None
             log.debug('set root geom x,y,z = 0,0,0')
         else:
@@ -500,17 +501,17 @@ class BpgSim(Sim):
 
     def fitnessDistFromOrigin(self):
         "Geometric distance from post-relax start position"
-        total = 0.0
-        count = 0
+#        total = 0.0
+#        count = 0
 #        mindist = None 
 
-        if self.total_time > self.relax_time:
-            if self.startpos == None:
-                self.startpos = self.meanPos(self.bpgs[0])
-                log.debug('post-relax pos = %s', str(self.startpos))
+#        if self.total_time > self.relax_time:
+#        if self.startpos == None:
+#            self.startpos = self.meanPos(self.bpgs[0])
+#            log.debug('post-relax pos = %s', str(self.startpos))
                     
-            mpos = self.meanPos(self.bpgs[0])
-            self.score = (mpos - self.startpos).length()
+        mpos = self.meanPos(self.bpgs[0])
+        self.score = (mpos - self.startpos).length()
 #            print 'X startpos =', self.startpos
 #            print 'X curpos =', mpos - self.startpos
 #            print 'X score = ', self.score
@@ -593,6 +594,7 @@ class BpgSim(Sim):
 
     def relax(self):
         "Relax bpg until total velocity is less than some threshold."
+        count = 0
         while 1:
             self.contactgroup.empty()
             self.space.collide(None, self.collision_callback)
@@ -605,10 +607,25 @@ class BpgSim(Sim):
                     b = g.getBody()
                     v = b.getLinearVel()
                     total += vec3(v).length()
-            if total < 0.01:
+#            print abs(total - self.prev_total)
+#            if abs(total - self.prev_total) < 0.0001:
+            self.prev_pos = self.prev_pos[1:] + [total]
+            vt = 0
+            for i in range(1, len(self.prev_pos)):
+                vt += abs(self.prev_pos[i] - self.prev_pos[i-1])
+#            print vt
+            if vt < 0.00001:
                 self.relaxed = 1
+                self.startpos = self.meanPos(self.bpgs[0])
                 log.debug('relaxed - time %f', self.total_time)
                 break
+            count += 1
+            if count > 50 * 10:
+                # if there are opposing violated constraints the body can move
+                # constantly. We don't want that - we want the networks to
+                # generate all of the movement energy. So we timeout after 10
+                # seconds of waiting for the body to be still, and quit.
+                return 1
 
     def step(self):
         """Sim loop needs to:
@@ -622,13 +639,28 @@ class BpgSim(Sim):
           * Go through all BodyParts, for each motor, find connected
             OutputNode (if any) and get value."""
 
+        for g in self.space:
+            if g.placeable():
+                v = vec3(g.getBody().getLinearVel())
+                if v.length() > 150:
+                    # blew up, early exit
+                    self.score = -1
+                    self.finished = 1
+                    return
+                
+                
         if not self.relaxed:
-            self.relax()
+            e = self.relax()
+            if e:
+                self.score = -1
+                self.finished = 1
+                return
+                
         # detect collisions - calculate contact joints
         for g in self.geom_contact:
             self.geom_contact[g] = 0
         self.space.collide(None, self.collision_callback)
-        if self.total_time > self.relax_time:
+        if 1: #self.total_time > self.relax_time:
             # update sensory input values
             for bpgraph in self.bpgs:
                 for bp in bpgraph.bodyparts:

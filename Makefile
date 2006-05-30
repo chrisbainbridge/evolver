@@ -33,6 +33,7 @@ pop:
 	ev.py -r x -p 20 -t 20 -g 20 --topology full --update async --node_type sigmoid --nodes 10 --sim bpg
 
 run:
+	ev.py -r x -u
 	rm -f pymemprof.log evo.stats
 	ev.py -r x -c -m --statlog evo.stats
 
