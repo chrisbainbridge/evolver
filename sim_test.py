@@ -18,6 +18,7 @@ import node
 from test_common import *
 import network
 
+TESTDIR = '/tmp/'
 rl = logging.getLogger()
 
 class TestBp(bpg.BodyPart):
@@ -174,7 +175,7 @@ class VisualTestCase(unittest.TestCase):
         if not record:
             runVisualSim(s)
         else:
-            runVisualSim(s, 1, 'test/record_test.avi', ['-geometry','640x480'])
+            runVisualSim(s, 1, '%s/record_test.avi'%TESTDIR, ['-geometry','640x480'])
 
     def test_5_hinge_motor(self):
         self.do_joint_motor('hinge')
@@ -187,11 +188,11 @@ class VisualTestCase(unittest.TestCase):
     
     def test_8_record_movie(self):
         self.do_joint_motor(jointtype='ball', record=1) 
-        cmd = 'mplayer test/record_test.avi'
+        cmd = 'mplayer %s/record_test.avi'%TESTDIR
         if rl.level != logging.DEBUG:
             cmd += ' &> /dev/null'
         os.system(cmd)
-        os.system('rm test/record_test.avi')
+        os.system('rm %s/record_test.avi'%TESTDIR)
 
 class PoleBalanceTestCase(unittest.TestCase):
 

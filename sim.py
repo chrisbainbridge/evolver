@@ -15,10 +15,10 @@ import network
 import pdb
 
 CYLINDER_RADIUS = 1.0
-CYLINDER_DENSITY = 1.5
+CYLINDER_DENSITY = 3.0
 MAX_UNROLLED_BODYPARTS = 20
 SOFT_WORLD = 1
-JOINT_MAXFORCE = 2 * CYLINDER_DENSITY * CYLINDER_RADIUS # product with density and cylinder lengths
+JOINT_MAXFORCE = 6 * CYLINDER_DENSITY * CYLINDER_RADIUS # product with density and cylinder lengths
 
 log = logging.getLogger('sim')
 log.setLevel(logging.INFO)
@@ -127,13 +127,13 @@ class BpgSim(Sim):
     "Simulate articulated bodies built from BodyPartGraphs"
 
     def __init__(self, max_simsecs=30.0):
-        self.relax_time = 10
+        self.relax_time = 0
         Sim.__init__(self, max_simsecs)
         log.debug('BPGSim.__init__')
         self.geom_contact = {}
         self.startpos = vec3(0, 0, 0) 
         self.relaxed = 0
-        self.prev_pos = [1, 1, 1, 1, 1]
+        self.prev_v = []
 
     # max_simsecs attribute. add relax time to the sim time when set. 
     # return the real full sim time so that it can be rendered correctly.
@@ -609,16 +609,17 @@ class BpgSim(Sim):
                     total += vec3(v).length()
 #            print abs(total - self.prev_total)
 #            if abs(total - self.prev_total) < 0.0001:
-            self.prev_pos = self.prev_pos[1:] + [total]
-            vt = 0
-            for i in range(1, len(self.prev_pos)):
-                vt += abs(self.prev_pos[i] - self.prev_pos[i-1])
-#            print vt
-            if vt < 0.00001:
-                self.relaxed = 1
-                self.startpos = self.meanPos(self.bpgs[0])
-                log.debug('relaxed - time %f', self.total_time)
-                break
+            min_rt = 50 * 2
+            if len(self.prev_v) < min_rt:
+                self.prev_v += [total]
+            else:
+                self.prev_v = self.prev_v[1:] + [total]
+#                print sum(self.prev_v), self.prev_v
+                if sum(self.prev_v) < 0.005:
+                    self.relaxed = 1
+                    self.startpos = self.meanPos(self.bpgs[0])
+                    log.debug('relaxed - time=%f, startpos=%s, vt=%f', self.total_time, self.startpos, sum(self.prev_v))
+                    break
             count += 1
             if count > 50 * 10:
                 # if there are opposing violated constraints the body can move

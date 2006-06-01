@@ -30,7 +30,7 @@ popd:
 	ev.py -r x -e
 
 pop:
-	ev.py -r x -p 20 -t 20 -g 20 --topology full --update async --node_type sigmoid --nodes 10 --sim bpg
+	ev.py -r x -p 50 -t 30 -g 100 --topology full --update sync --node_type sigmoid --nodes 20 --sim bpg
 
 run:
 	ev.py -r x -u
@@ -41,7 +41,10 @@ viewstats:
 	kghostview stats.eps
 
 clean:
-	rm -rf types/* test/* *.pyc qtgui.py *~
+	rm -f *.pyc 
+	rm -f qtgui.py 
+
+	rm -rf types/* test/* *~
 
 memprof:
 	rm -rf types/*
