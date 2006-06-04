@@ -417,9 +417,9 @@ class BodyPartGraph(Persistent):
             f.close()
             if ext != 'dot':
                 if ext == 'pdf':
-                    os.system('dot -Tsvg -o%s.svg %s.dot'%(fbase, fbase))
-                    os.system('convert %s.svg %s.pdf'%(fbase, fbase))
-                    os.remove(fbase+'.svg')
+                    os.system('dot -Tps -o%s.eps %s.dot'%(fbase, fbase))
+                    os.system('epstopdf %s.eps %s.pdf'%(fbase, fbase))
+                    os.remove(fbase+'.eps')
                 else:
                     os.system('dot -T%s -o%s.%s %s.dot'%(ext, fbase, ext, fbase))
                     os.remove(fbase+'.dot')

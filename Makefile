@@ -1,3 +1,4 @@
+include ../Makefile
 export COVERAGE_FILE=test/coverage
 
 SRC = glwidget.py bpg.py daemon.py ev.py evolve.py qtgui.py network.py node.py qtapp.py sim.py trace.py qtgui.py
