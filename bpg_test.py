@@ -22,6 +22,8 @@ class BodyPart(unittest.TestCase):
 class BodyPartGraph(unittest.TestCase):
 
     def setUp(self):
+        if not os.path.exists('test'):
+            os.mkdir('test')
         self.fprefix = 'test/BodyPartGraph_'
 
     def tearDown(self):

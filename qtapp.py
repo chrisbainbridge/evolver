@@ -51,10 +51,7 @@ class MyApp(QApplication):
         self.startTimer(self.sim.dt*1000)
         # create main window
         self.setMainWidget(self.window)
-        if '-geometry' in args:
-            self.window.show()
-        else:
-            self.window.showMaximized()
+        self.window.show()
         # what to do when we quit
         QObject.connect(self, SIGNAL("lastWindowClosed()"), self.quit)
         # default end time
