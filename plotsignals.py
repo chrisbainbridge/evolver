@@ -52,14 +52,10 @@ def main():
         print 'writing %s'%fname
         s = hs + 'set out "%s-p%d.eps"\nset multiplot\n'%(basename, page) + header
         #s += 'set multiplot\n'
-        #pdb.set_trace()
 
         for i in range(x, x+min(PLOTS_PER_PAGE, num_plots-x+1)):
             print 'i=%d'%i
             s += 'set origin 0.05,%f\n'%(y_size*(i-x)+0.015/2) #+0.015) #*(i-2))
-            #import pdb
-#    pdb.set_trace()
-            #print s
             s += 'set label "%s" at graph -0.145, graph 0.5\n'%(labels[i])
             #s += 'plot "%s" using 1:%d with lines title "%s"\n'%(sys.argv[1], i, labels[i-1])
             s += 'plot "%s" using 1:%d notitle with lines linestyle 1\n'%(sys.argv[1], i+1)

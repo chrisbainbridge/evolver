@@ -15,10 +15,10 @@ class main(unittest.TestCase):
     def test_0_createpop(self):
         sys.argv = 'ev.py -r ev_test -e'.split()
         ev.main()
-        sys.argv = 'ev.py -r ev_test -p 3 -t 15 -g 2' \
+        sys.argv = 'ev.py -r ev_test -p 3 -t 1 -g 5' \
                     ' --topology 1d --update async' \
-                    ' --node_type Sigmoid --nodes 10' \
-                    ' --simulation bpg'.split()
+                    ' --node_type sigmoid --nodes 10' \
+                    ' --sim bpg'.split()
         ev.main()
 
     def test_1_evolvepop(self):

@@ -30,7 +30,7 @@ class Generation(unittest.TestCase):
         rl.debug('score was %f', g[0].score)
 
     def test_2_elitistUpdate(self):
-        g = evolve.Generation(5, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args)
+        g = evolve.Generation(10, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args)
         for x in g:
             #g.evaluate(x)
             x.score = random.uniform(0,10)

@@ -32,7 +32,8 @@ class TestBp(bpg.BodyPart):
         self.recursive_limit = 2
         self.joint = jtype
 
-class TestBpg(bpg.BodyPartGraph): "Create a BPG containing num_bodyparts BodyParts"
+class TestBpg(bpg.BodyPartGraph):
+    "Create a BPG containing num_bodyparts BodyParts"
     def __init__(self, network_args, num_bodyparts, jtype='hinge'):
         rl.debug('TestBpg.__init__')
         self.bodyparts = PersistentList()
@@ -52,7 +53,9 @@ class TestBpg(bpg.BodyPartGraph): "Create a BPG containing num_bodyparts BodyPar
 class BpgTestCase(unittest.TestCase):
 
     def setUp(self):
-        s = random.randint(0,1000)
+#        s = random.randint(0,1000)
+        s = 445
+        print 'seed = ',s
         random.seed(s)
 
     def test_0_init(self):
@@ -78,6 +81,7 @@ class BpgTestCase(unittest.TestCase):
         s.add(b)
         s.run()
         assert s.score == -1 or s.score >= 0
+        del s
         #assert s.score == -1 or round(s.total_time) == round(30+s.relax_time)
 
     def test_4_run(self):
@@ -89,6 +93,7 @@ class BpgTestCase(unittest.TestCase):
         #assert s.score == -1 or round(s.total_time) == round(30+s.relax_time)
 
 def runVisualSim(sim, record=0, avifile=None, qtargs=[]):
+    return
     "Open the QT renderer and run the simulation"
     from qtapp import MyApp
     myapp = MyApp([sys.argv[0]]+qtargs, sim)
@@ -122,9 +127,7 @@ class VisualTestCase(unittest.TestCase):
         random.seed()
         
     def tearDown(self):
-        # try our best to get rid of the qtapp that won't die...
-        import gc
-        gc.collect()
+        pass
         
     def test_1_single_bodypart(self):
         b = TestBpg(new_network_args, 1)

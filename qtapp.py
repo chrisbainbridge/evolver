@@ -106,7 +106,6 @@ class MyApp(QApplication):
         if self.glwidget.record and (self.frameno==0):
             self.glwidget.record_this_frame = 1
         self.frameno = (self.frameno + 1)%5
-        #self.evenframe ^= 1
         # schedule a repaint
         self.glwidget.updateGL()
         # show simulation time counter

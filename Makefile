@@ -10,7 +10,7 @@ qtgui.py: qtgui.ui
 
 test: $(SRC) $(TEST)
 	coverage.py -e
-	-for t in $(TEST); do coverage.py -x $$t -v --color-mode; done
+	-for t in $(TEST); do coverage.py -x $$t -v; done
 	coverage.py -r $(SRC)
 
 tags:

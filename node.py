@@ -1,17 +1,10 @@
-#from random import random, randint, uniform, choice
+import logging
 import random
 import math
-#from copy import copy
-#from cPickle import loads, dumps
 
 from persistent import Persistent
 from persistent.list import PersistentList
 from persistent.mapping import PersistentMapping
-
-#from log import debug, info
-#from trace import trace
-
-import logging
 
 log = logging.getLogger('node')
 log.setLevel(logging.WARN)
@@ -36,14 +29,19 @@ class Node(Persistent):
         # (note - this can also come from its own network, so its really a
         # non-topological input ie. external to the network topology)
         self.external_input = None
+        self.deleted = 0
+
+    def destroy(self):
+        # delete references that can cause cycles
+        del self.weights
+        del self.inputs
+        del self.external_input
 
     def swapInputs(self, a, b):
         "If we have any inputs from a or b swap them over (for mutate)"
         log.debug('Node.swapInputs(%s,%s)', a, b)
         log.debug('self.inputs=%s', self.inputs)
         assert a != b
-        #assert a in self.inputs
-        #assert b in self.inputs
 
         for i in range(len(self.inputs)):
             if self.inputs[i] == a:
@@ -68,65 +66,6 @@ class Node(Persistent):
 
     def fixup(self):
         pass
-
-#    def __str__(self):
-#        return 'Node(inputs=%s)'%(self.inputs)
-
-## class InputNode(Node):
-##     def __init__(self):
-##         Node.__init__(self)
-##     def preUpdate(self):
-##         # someone else updates us
-##         pass
-##     def postUpdate(self):
-##         pass
-##     def randomValue(self):
-##         pass
-##     def mutate(self, p):
-##         pass
-
-
-## class ScalarInputNode(InputNode):
-##     """Outputs value in [0,1], quantised if necessary"""
-##     def __init__(self, network, discrete):
-##         InputNode.__init__(self)
-##         self.network = network
-##         self.discrete = discrete
-##     def updateInput(self, x):
-##         """takes x in range [0,1] and sets _v_value equal to it"""
-##         if self.discrete:
-##             self._v_value = round(self.network.quanta*x)/self.network.quanta
-##         else:
-##             self._v_value = x
-
-
-## class LogicalInputNode(InputNode):
-##     """Outputs integer value in [0..quanta]"""
-##     def __init__(self, network):
-##         InputNode.__init__(self)
-##         self.network = network
-##     def updateInput(self, x):
-##         """maps x in range [0,1] to value_domain [0..quanta]"""
-##         self._v_value = int(round(self.network.quanta*x))
-
-
-## class MultiNodeLogicalInputNode(InputNode):
-##     """Take a value in [0,1] and map it onto several Nodes in some way"""
-##     def __init__(self, network, nodes_per_input):
-##         InputNode.__init__(self)
-##         self.network = network
-##         # create some nodes
-##         self.nodeset = PersistentList()
-##         for _ in range(nodes_per_input):
-##             n = LogicalInputNode(self)
-##             self.nodeset.append(n)
-## #    def updateInput(self,x):
-## #        debug('fixme: insert code here')
-## def random_quanta((domain_low,domain_high), quanta):
-##     """Return a random value in the given domain (a,b), split into
-##     quanta discrete states
-##     """
-##     return round(random.random()*quanta)/quanta*(domain_high-domain_low)+domain_low
 
 def randomFromDomain((low,high), quanta=None):
     if quanta:
@@ -231,11 +170,6 @@ class Sigmoid(Node):
             self.weights[a] = self.weights[b]
             del self.weights[b]
 
-##     def checkWeights(self):
-##         # check that every input has a weight
-##         for inp in self.inputs:
-##             assert self.weights.has_key(inp)
-
     def output():
         """The output attribute is a generic way to access the output value of
         any node. It should lie in the domain [0, 1]. If an output is set, use
@@ -252,31 +186,6 @@ class Sigmoid(Node):
         return locals()
     output = property(**output())
 
-##     def get(self):
-##         """return a value in the continuous range [0,1]"""
-##         # map state_domain -> [0,1]
-##         # note: if node is discrete then state is already
-##         # quantised, so we don't have to do anything special here
-##         return float(self.state - self.network.state_domain[0])/ \
-##                (self.network.state_domain[1] - self.network.state_domain[0])
-
-
-# class OutputNode:
-#     """When subclassing implement getOutput() to return v in 0..1"""
-#     pass
-
-
-# class SigmoidOutputNode(SigmoidNode, OutputNode):
-#     """A sigmoid node that can be used as an output"""
-#     def getOutput(self):
-#         """return a value in the continuous range [0,1]"""
-#         # map state_domain -> [0,1]
-#         # note: if node is discrete then state is already
-#         # quantised, so we don't have to do anything special here
-#         return float(self.state - self.network.state_domain[0])/ \
-#                (self.network.state_domain[1] - self.network.state_domain[0])
-
-
 class MultiValueLogical(PersistentList):
     """logical function of k inputs. outputs in the domain [low,high]"""
     def __init__(self, k=2, states=[0,1]):
@@ -290,7 +199,6 @@ class MultiValueLogical(PersistentList):
             if random() < p:
                 #x = randint(0,len(self)-1)
                 self[x] = random.randint(0, self.states-1)
-
 
 class Logical(Node):
     """Output is a logical function of k inputs."""
@@ -338,79 +246,3 @@ class Logical(Node):
     def delInput(self, source):
         Node.delInput(self, source)
         log.debug('fixme: remove input from function')
-
-
-## class LogicalOutputNode(LogicalNode, OutputNode):
-##     """A logical node that can be used as an output"""
-##     def getOutput(self):
-##         """return a value in the continuous range [0,1]"""
-##         # map states[0,..,quanta] -> [0,1]
-##         return float(self.state)/self.network.quanta
-
-
-## class MultiNodeLogicalOutputNode(LogicalNode, OutputNode):
-##     """Map from several nodes onto a value in [0,1] in some way"""
-##     def __init__(self, network, nodes_per_output):
-##         LogicalNode.__init__(self, network)
-##         # create some nodes
-##         self.nodeset = PersistentList()
-##         for _ in range(nodes_per_output):
-##             n = LogicalOutputNode(self)
-##             self.nodeset.append(n)
-##     def getOutput(self):
-##         log.critical('fixme: insert code here')
-
-
-
-
-
-##### JUNK CODE BELOW
-        
-#        for n in self.nodeset:
-#            self.nodeset.getOutput()
-
-##             # this is the dodgy multi-bools to linear output function
-##             if type(x) is PersistentList:
-##                 # convert to scalar
-##                 a = -1
-##                 for i in range(len(x)):
-##                     #log.debug('output from node is %s',str(x[i].state))
-##                     if x[i].state == 1:
-##                         a = i
-##                         break
-##                 #assert(a != -1)
-##                 if a == -1:
-##                     b = 0
-##                 else:
-##                     b = float(a)/(len(x)-1)
-##                 # b is in 0..1
-##                 output_values.append(b)
-##             else:
-##                 # map self.state_domain -> 0..1
-##                 # x is a float in state_domain
-##                 a = self.state_domain[0]
-##                 b = self.state_domain[1]
-##                 c = (x.state-a)/(b-a)
-##                 output_values.append(c)
-        #log.debug('network.getOutputValues=%s',str(output_values))
-
-## class CANode(Node):
-##     """Like BooleanNode, but with a shared global function"""
-##     def __init__(self, network):
-##         Node.__init__(self)
-##         self.inputs = PersistentList()
-##         self.network = network
-##     def preUpdate(self):
-##         # get input values from self.inputs
-##         # look up in self.function
-##         values = []
-##         for n in self.inputs:
-##             values.append(n.state)
-##         x = bin2int(values)
-##         self._v_next_value = self.network.function[x]        
-##         assert(0 <= self.state <= 1)
-##     def postUpdate(self):
-##         self.state = self._v_next_value
-##     def randomValue(self):
-##         self.state = choice([0,1])
-##     def connect(self):

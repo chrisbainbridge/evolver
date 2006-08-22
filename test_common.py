@@ -31,4 +31,4 @@ new_network_args = { 'num_nodes' : 5,
 new_individual_fn = bpg.BodyPartGraph
 new_individual_args = { 'network_args' : new_network_args }
 new_sim_fn = sim.BpgSim 
-new_sim_args = { 'max_simsecs' : 30 }
+new_sim_args = { 'max_simsecs' : 1 }

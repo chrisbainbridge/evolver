@@ -55,6 +55,10 @@ class Network(PersistentList):
         if topology:
             self.connect(topology, nb_dist)
 
+    def destroy(self):
+        for n in self:
+            n.destroy()
+            
     def mutate(self, p):
         """Mutate the network with probability p of mutating each parameter.
 
@@ -117,10 +121,6 @@ class Network(PersistentList):
                     old = puts[i]
                     new = random.choice([x for x in self if x != old])
                     puts[i] = new
-                    # fixup
-                    #if puts is self.inputs and old not in self.inputs:
-                    #    old.external_input = None
-                    # but other things point to this thinking its an output
         return mutations
 
     def randomiseState(self):
@@ -288,13 +288,9 @@ class Network(PersistentList):
         # connect function doesn't work when neighbourhood length wraps around 
         assert nodes_per_d >= neighbour_len
         # make a torus grid
-        #assert neighbourhood_dist%2 == 1 # must be odd
-        #max_d = (neighbour_len-1)/2
-        dimension_len = int(math.sqrt(len(self))) #int(math.pow(len(self), 1.0/2))
+        dimension_len = int(math.sqrt(len(self)))
         log.debug('Network2D.connect %dx%d network, neighbourhoods %dx%d',
                 dimension_len, dimension_len, neighbour_len, neighbour_len)
-#        log.debug('creating neighbourhoods with dimensions %dx%d',
-#        neighbour_len, neighbour_len)
         for i in range(dimension_len): # for dimension 1
             for j in range(dimension_len): # for dimension 2
                 # for all nodes...
@@ -329,6 +325,6 @@ class Network(PersistentList):
         for target in self:
             # make every other neuron a connected source neuron
             for source in self:
-                 # not connecting to self and type is sigmoid node (what about others?!)
+                 # not connecting to self and type is sigmoid node (what about others?)
                 if target != source:
                     target.addInput(source)

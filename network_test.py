@@ -33,6 +33,7 @@ class Network(unittest.TestCase):
     def setUp(self):
         random.seed()
         self.fprefix = 'test/Network_'
+        print 'XX',sys.getrefcount(node.Sigmoid),
     
     def dot(self, n, name):
         name = self.fprefix + name

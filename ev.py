@@ -78,19 +78,18 @@ import asyncore
 import thread
 import transaction
 import logging
-import gc
 
 from ZODB.FileStorage import FileStorage
 from ZEO.ClientStorage import ClientStorage
 from ZODB import DB
 from persistent.mapping import PersistentMapping
 
-import evolve
 import bpg
-import sim
+import db
+import evolve
 import network
-# ignore checker for these
-import node
+import node # ignore checker error about this import
+import sim
 
 log = logging.getLogger('ev')
 
@@ -103,10 +102,6 @@ def setup_logging():
         l = logging.getLogger(m)
         l.setLevel(level)
     logging.basicConfig()
-
-# guard stuff that should only be run once with this..
-# ie. when main is called twice by a test harness
-once_only = 1
 
 def cleanup():
     log.debug('ev.py cleanup')
@@ -272,25 +267,7 @@ def main():
         # record pid so it can be used by monitoring programs
         open('/tmp/client.pid', 'w').write('%d'%(os.getpid()))
 
-    # connect to db
-    if socket.gethostname() == server_addr:
-        link = ('localhost',12345)
-    else:
-        link = (server_addr,12345)
-    storage = ClientStorage(link)
-    evolve.db = DB(storage)
-    evolve.conn = evolve.db.open()
-    root = evolve.conn.root()
-
-    # The asyncore loop thread processes invalidate messages when we
-    # call transaction.get.begin() or transaction.get.commit().  If we
-    # explicitly call conn.sync() we will also process all of the
-    # invalidate messages.
-    global once_only
-    if once_only:
-        log.debug('Starting asyncore thread')
-        thread.start_new_thread(asyncore.loop,())
-        once_only = 0
+    root = db.connect(server_addr)
 
     if unlock:
         log.debug('release all locks')
@@ -437,13 +414,9 @@ def main():
         #random.setstate(root[g].random_state)
         # set up tracing
         if tracefile:
-            #siglog = trace.SignalLog()
-            #siglog.fd = open(tracefile, 'w')
-            #s.siglog = siglog
-            #trace.writeHeader()
             s.doSignalLog(tracefile)
-        import psyco
-        psyco.full()
+#        import psyco
+#        psyco.full()
         if gui:
             log.info('Launching GUI')
             # start the qt app
@@ -461,8 +434,6 @@ def main():
     return 0
 
 if __name__=='__main__':
-    gc.enable()
-    #gc.set_debug(gc.DEBUG_LEAK)
     random.seed()
     setup_logging()
     r = main()

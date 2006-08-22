@@ -16,7 +16,6 @@ do things like moving the mouse over the widget!
 import math
 import os
 import sys
-#import pymedia
 
 from qt import *
 from qtgl import *
@@ -168,19 +167,10 @@ class GLWidget(QGLWidget):
         glLoadIdentity()
         glRotatef (90, 0,0,1)
         glRotatef (90, 0,1,0)
-        #glRotate(-90,1,0,0)
         glRotatef (r, 1,0,0)
         glRotatef (p, 0,1,0)
         glRotatef (-h, 0,0,1)
         glTranslatef (-x,-y,-z)
-
-        # FIXME: this object track code is broken.
-##     for geom in self.geoms.values():
-##       #if type(geom) is ode.GeomSphere:
-##       if geom.placeable():
-##         x,y,z = geom.getPosition()
-##         #gluLookAt(x-20,y+10,z+10,x,y,z,0,1,0)
-##         break
 
     def drawSky(self):
         glDisable(GL_LIGHTING)
@@ -225,9 +215,6 @@ class GLWidget(QGLWidget):
         glDepthRange (0,1)
 
     def drawGround(self):
-        # FIXME: this call hardcodes the ground position.
-        # We should just render any ODE plane we come across
-        # properly so we can have a more interesting landscape
         glDisable (GL_LIGHTING)
         glShadeModel (GL_FLAT)
         glEnable (GL_DEPTH_TEST)
@@ -297,112 +284,112 @@ class GLWidget(QGLWidget):
         else:
             glDisable(GL_LIGHTING)
 
-#    def renderJoints(self):
-#        # Render Joints 
-#        for joint in self.sim.joints:
-#            log.debug('drawing joint %s',str(joint)) #name)
-#            glPushMatrix()
+    def renderJoints(self):
+        # Render Joints 
+        for joint in self.sim.joints:
+            log.debug('drawing joint %s',str(joint)) #name)
+            glPushMatrix()
 
-#            if type(joint) is ode.HingeJoint:
+            if type(joint) is ode.HingeJoint:
 
-#                (x0,y0,z0) = joint.getBody(0).getPosition()
-#                (x1,y1,z1) = joint.getBody(1).getPosition()
-#                (x,y,z) = joint.getAnchor()
-#                # draw green lines between the joint and bodies
-#                glColor(0,1,0)
-#                glDisable(GL_LIGHTING)
-#                glBegin(GL_LINES)
-#                glVertex(x0,y0,z0)
-#                glVertex(x,y,z)
-#                glVertex(x,y,z)
-#                glVertex(x1,y1,z1)
-#                glEnd()
-#                glEnable(GL_LIGHTING)
-#                # draw extended sphere for joint
-#                glColor(1,1,1)
-#                glTranslate(x,y,z)
-#                x,y,z = joint.getAxis()
-#                log.debug('HINGE axis %f,%f,%f',x,y,z)
-#                glColor(1,1,1)
-#                glDisable(GL_LIGHTING)
-#                glBegin(GL_LINES)
-#                glVertex(0,0,0)
-#                glVertex(x*5,y*5,z*5)
-#                glEnd()
-#                glEnable(GL_LIGHTING)
-#                
-#            elif type(joint) is ode.UniversalJoint:
+                (x0,y0,z0) = joint.getBody(0).getPosition()
+                (x1,y1,z1) = joint.getBody(1).getPosition()
+                (x,y,z) = joint.getAnchor()
+                # draw green lines between the joint and bodies
+                glColor(0,1,0)
+                glDisable(GL_LIGHTING)
+                glBegin(GL_LINES)
+                glVertex(x0,y0,z0)
+                glVertex(x,y,z)
+                glVertex(x,y,z)
+                glVertex(x1,y1,z1)
+                glEnd()
+                glEnable(GL_LIGHTING)
+                # draw extended sphere for joint
+                glColor(1,1,1)
+                glTranslate(x,y,z)
+                x,y,z = joint.getAxis()
+                log.debug('HINGE axis %f,%f,%f',x,y,z)
+                glColor(1,1,1)
+                glDisable(GL_LIGHTING)
+                glBegin(GL_LINES)
+                glVertex(0,0,0)
+                glVertex(x*5,y*5,z*5)
+                glEnd()
+                glEnable(GL_LIGHTING)
+                
+            elif type(joint) is ode.UniversalJoint:
 
-#                (x0,y0,z0) = joint.getAxis1()
-#                (x1,y1,z1) = joint.getAxis2()
-#                (x,y,z) = joint.getAnchor()
-#                # draw green lines between the joint and bodies
-#                glColor(0.0,0.0,0.0)
-#                glDisable(GL_LIGHTING)
-#                glBegin(GL_LINES)
-#                glVertex(x,y,z)
-#                glVertex(x+x0,y+y0,z+z0)
-#                glVertex(x,y,z)
-#                glVertex(x+x1,y+y1,z+z1)
-#                glEnd()
-#                glEnable(GL_LIGHTING)
-#                # draw extended sphere for joint
-#                log.debug('HINGE axis %f,%f,%f',x,y,z)
+                (x0,y0,z0) = joint.getAxis1()
+                (x1,y1,z1) = joint.getAxis2()
+                (x,y,z) = joint.getAnchor()
+                # draw green lines between the joint and bodies
+                glColor(0.0,0.0,0.0)
+                glDisable(GL_LIGHTING)
+                glBegin(GL_LINES)
+                glVertex(x,y,z)
+                glVertex(x+x0,y+y0,z+z0)
+                glVertex(x,y,z)
+                glVertex(x+x1,y+y1,z+z1)
+                glEnd()
+                glEnable(GL_LIGHTING)
+                # draw extended sphere for joint
+                log.debug('HINGE axis %f,%f,%f',x,y,z)
 
-#            elif type(joint) is ode.SliderJoint:
-#                log.debug('slider: draw sliderjoint')
-#                # draw a line between the limits
-#                point = joint.getPosition()
-#                axis = vec3(joint.getAxis())
-#                log.debug('slider: point %f, axis %f',point,axis)
-#                b = joint.getBody(0)
-#                p = vec3(b.getPosition())
-#                log.debug('slider: x,y,z=%f,%f,%f',x,y,z)
-#                # xyz is positition, axis is gradient...
-#                lowstop = joint.getParam(ode.ParamLoStop)
-#                highstop = joint.getParam(ode.ParamHiStop)
-#                log.debug('slider: lowstop=%f,highstop=%f',lowstop, highstop)
-#                a = p-axis*100
-#                b = p+axis*100
-#                glColor(0,0,0)
-#                glDisable(GL_LIGHTING)
-#                glBegin(GL_LINES)
-#                glVertex(a[0],a[1],a[2])
-#                glVertex(b[0],b[1],b[2])
-#                glEnd()
-#                glEnable(GL_LIGHTING)
+            elif type(joint) is ode.SliderJoint:
+                log.debug('slider: draw sliderjoint')
+                # draw a line between the limits
+                point = joint.getPosition()
+                axis = vec3(joint.getAxis())
+                log.debug('slider: point %f, axis %f',point,axis)
+                b = joint.getBody(0)
+                p = vec3(b.getPosition())
+                log.debug('slider: x,y,z=%f,%f,%f',x,y,z)
+                # xyz is positition, axis is gradient...
+                lowstop = joint.getParam(ode.ParamLoStop)
+                highstop = joint.getParam(ode.ParamHiStop)
+                log.debug('slider: lowstop=%f,highstop=%f',lowstop, highstop)
+                a = p-axis*100
+                b = p+axis*100
+                glColor(0,0,0)
+                glDisable(GL_LIGHTING)
+                glBegin(GL_LINES)
+                glVertex(a[0],a[1],a[2])
+                glVertex(b[0],b[1],b[2])
+                glEnd()
+                glEnable(GL_LIGHTING)
 
-#            elif type(joint) is ode.BallJoint:
-#                log.debug('render ode.BallJoint')
-#                # render the axes
-#                m = joint.motor
-#                a0 = vec3(m.getAxis(0))
-#                a1 = vec3(m.getAxis(1))
-#                a2 = vec3(m.getAxis(2))
-#                p = vec3(joint.getBody(0).getPosition())
-#                glColor(1,0,0)
-#                glDisable(GL_LIGHTING)
-#                glBegin(GL_LINES)
-#                glVertex(p[0],p[1],p[2])
-#                q = p+a0
-#                glVertex(q[0],q[1],q[2])
-#                glEnd()
-#                glColor(0,1,0)
-#                glBegin(GL_LINES)
-#                glVertex(0,0,0)
-#                glVertex(0,5,0)
-#                glEnd()
-#                glColor(0,0,1)
-#                glBegin(GL_LINES)
-#                glVertex(0,0,0)
-#                glVertex(0,0,5)
-#                glEnd()
-#                glEnable(GL_LIGHTING)
+            elif type(joint) is ode.BallJoint:
+                log.debug('render ode.BallJoint')
+                # render the axes
+                m = joint.motor
+                a0 = vec3(m.getAxis(0))
+                a1 = vec3(m.getAxis(1))
+                a2 = vec3(m.getAxis(2))
+                p = vec3(joint.getBody(0).getPosition())
+                glColor(1,0,0)
+                glDisable(GL_LIGHTING)
+                glBegin(GL_LINES)
+                glVertex(p[0],p[1],p[2])
+                q = p+a0
+                glVertex(q[0],q[1],q[2])
+                glEnd()
+                glColor(0,1,0)
+                glBegin(GL_LINES)
+                glVertex(0,0,0)
+                glVertex(0,5,0)
+                glEnd()
+                glColor(0,0,1)
+                glBegin(GL_LINES)
+                glVertex(0,0,0)
+                glVertex(0,0,5)
+                glEnd()
+                glEnable(GL_LIGHTING)
 
-#            else:
-#                log.debug('dont know how to render joint %s', str(joint))
-#            # restore matrix
-#            glPopMatrix()
+            else:
+                log.debug('dont know how to render joint %s', str(joint))
+            # restore matrix
+            glPopMatrix()
 
     def renderGeoms(self):
         # Render Geoms
@@ -454,9 +441,6 @@ class GLWidget(QGLWidget):
                 rotmat = mat3(geom.getRotation())
                 log.debug('r=%s', geom.getRotation())
                 # ode ccylinders are aligned along z axis by default
-                # (FIXME: but what if this one isn't?)
-                #geom_axis = rotmat * vec3(0,0,1)
-                #log.debug('geom axis=%s', str(geom_axis))
                 T = mat4()
                 T.setMat3(rotmat)
                 T.setColumn(3, vec4(x, y, z, 1.0))
@@ -537,9 +521,6 @@ class GLWidget(QGLWidget):
             self.use_textures ^= 1
         elif e.text() == 'p':
             self.pause ^= 1
-#        elif e.text() == 'f':
-#            if hasattr(self,'track_obj'):
-#                self.tracking ^= 1
         elif e.text() == 'x':
             self.render_bps ^= 1
         elif e.text() == 'a':
@@ -604,7 +585,6 @@ class GLWidget(QGLWidget):
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(90,width/float(height),0.1,250)
-        #glOrtho(0,width,0,height,0.1,1000) #left,right,bottom,top,zNear,zFar)
 
     def getViewport(self):
         viewport = glGetIntegerv(GL_VIEWPORT)
@@ -614,60 +594,16 @@ class GLWidget(QGLWidget):
         height = viewport[3]
         return (x, y, width, height)
 
-#    def initMpeg(self):
-#        print 'mpeg init'
-#        # realtime encoding
-#        outcodec = 'mpeg1video'
-#        bitrate = 2700000
-
-#        outcodec = 'mpeg2video'
-#        bitrate = 9800000
-#        (x,y,w,h) = self.getViewport()
-#        params= { \
-#                  'type': 0,
-#                  'gop_size': 12,
-#                  'frame_rate_base': 125,
-#                  'max_b_frames': 0,
-#                  'height': h,
-#                  'width': w,
-#                  'frame_rate': 2997,
-#                  'deinterlace': 0,
-#                  'bitrate': bitrate,
-#                  'id': pymedia.video.vcodec.getCodecID( outcodec )
-#                }
-#        print 'Setting codec to ', params
-#        self.vencoder= pymedia.video.vcodec.Encoder( params )
-#        #self.vout = open('
-#        self.done_mpeg_init = 1
-
     def screenshot(self, single=0):
         "Save the currently rendered framebuffer to a .png file"
-        # This is really slow.. I've tried calling glReadRixels() directly, now
-        # using QGlWidget.grabFrameBuffer(). Tried buffering (too big), and
-        # pickling to a file, and compressing.. all too slow!
-        # well, we're talking about 1400x1050@50fps.. thats 5.7MB per frame..
-        # 287MB/second to compress and/or stream to disk.. ouch
-
-#        if not self.done_mpeg_init:
-#            self.initMpeg()
         (x,y,w,h) = self.getViewport()
-
-#        log.debug('x,y,width,height = %d,%d,%d,%d', x, y, width, height)
+        log.debug('screenshot x,y,width,height = %d,%d,%d,%d', x, y, width, height)
         img = self.grabFrameBuffer()
-        #r = glReadPixels(x,y,w,h,GL_RGBA,GL_UNSIGNED_BYTE)
-#        print type(img)
         if single:
             fname = 'screenshot.jpg'
         else:
             fname = self.screenshot_dir+'/shot-'+str(self.frame).zfill(5)+'.jpg'
         img.save(fname, 'JPEG', 90)
-#        print 'w=%d h=%d'%(w,h)
-        #print 'r=%s, len(r)=%d'%(type(r),len(r))
-#        bmpFrame = pymedia.video.vcodec.VFrame( pymedia.video.vcodec.formats.PIX_FMT_RGB24, (w, h), (r,None,None))
-#        yuvFrame= bmpFrame.convert( pymedia.video.vcodec.formats.PIX_FMT_YUV420P )
-#        d= self.vencoder.encode( yuvFrame )
-        #self.avifile.write( d )
-
         self.frame += 1
 
     def finaliseRecording(self):
@@ -679,12 +615,6 @@ class GLWidget(QGLWidget):
         # 2-pass xvid encoding at 160kbit
         cmd0 = 'mencoder mf://%s/*.jpg'\
                ' -mf type=jpg:fps=10 '%(self.screenshot_dir)
-                    #' -ovc lavc'\
-                    #' -lavcopts vcodec=mpeg4:vbitrate=1800'\
-                    #' -lavcopts vcodec=mjpeg'\
-# these mysteriously stopped working one day... mplayer bug?
-#        cmd1a=            '-ovc xvid -xvidencopts pass=1 '
-#        cmd1b=            '-ovc xvid -xvidencopts bitrate=160:pass=2 ' 
         cmd1a = ' -ovc lavc -lavcopts vcodec=mpeg4:vpass=1'
         cmd1b = ' -ovc lavc -lavcopts vcodec=mpeg4:mbd=2:trell:vpass=2'
         cmd2 =  ' -oac copy'\
@@ -702,7 +632,6 @@ class GLWidget(QGLWidget):
 
         # erase all of the tmp files
         cmd = ('rm -rf ' + self.screenshot_dir)
-        log.debug('executing %s',cmd)
-        print 'skip',cmd
-        #os.system(cmd)
+        log.debug('%s',cmd)
+        os.system(cmd)
 

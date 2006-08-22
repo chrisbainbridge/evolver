@@ -13,9 +13,7 @@ import sys
 import os
 
 import bpg
-import gc
-import memprof
-sampler = memprof.Sampler()
+import db
 
 from persistent import Persistent
 from persistent.list import PersistentList
@@ -31,21 +29,8 @@ log.setLevel(logging.INFO)
 log.debug('recursion limit is %d, setting to 4000', sys.getrecursionlimit())
 sys.setrecursionlimit(4000)
 
-conn = None # zeo database connection
-db = None # zeo database
 master = 0
 statlog = None
-
-def garbage_collect():
-    """Garbage collect leaks"""
-    if globals().has_key('gc'):
-        x = gc.collect()
-        log.debug('GC: %d objects unreachable', x)
-#    sampler.run()
-#    print 'top 100 counts of references by object type'
-#    print_top_100()
-#    print 'uncollectable objects', gc.garbage
-    #print 'garbage collector knows about these objects', gc.get_objects()
 
 class Generation(PersistentList):
 
@@ -65,27 +50,15 @@ class Generation(PersistentList):
         self.new_individual_args = new_individual_args
         self.new_sim_fn = new_sim_fn
         self.new_sim_args = new_sim_args
-        #(new_s_fn, new_s_args) = new_sim
         for _ in range(size):
             log.debug('.')
-            # Generate a random BodyPartGraph
-            #net = apply(self.createNetwork, network_params)
+            # Generate new individual
             x = new_individual_fn(**dict(new_individual_args)) 
             x.score = None
-            #e.solution.createRandom(network_params)
             self.append(x)
-            # commit subtransaction
             transaction.savepoint()
-##             log.debug('created network #%d (type=%s, node_type=%s, ' +
-##                   'num_nodes=%d, quanta=%s, domains(bias=%s, values=%s, ' +
-##                   'weight=%s)', i, str(type(net)), str(type(net._network[0])),
-##                   len(net._network), str(net.quanta),
-##                   str(net.bias_domain), str(net.value_domain),
-##                   str(net.weight_domain))
-        #self.generation._generation[0].solution.toDotFile('bpg.dot')
-        #self.new_Sim = new_Sim
-        #self.max_simsecs = max_simsecs
         self.random_state = random.getstate()
+        self.prev_gen = []
 
     def recordStats(self):
         "Record statistics"
@@ -116,6 +89,7 @@ class Generation(PersistentList):
 
         Copies top % into next gen, then mutates copies
         of them to make the rest of the generation"""
+        # update function must copy from self.prev_gen to self
         log.debug('elitistUpdate()')
         # 10% seems to be good for bpgs
         num_elites = max(int(round(len(self.prev_gen)/100.0*50)), 1)
@@ -128,8 +102,6 @@ class Generation(PersistentList):
         for x in self.prev_gen[:num_elites]:
             y = copy.deepcopy(x)
             #y.mutate(0.0) # aging damage (0.15)
-            if hasattr(y, 'sanityCheck'):
-                y.sanityCheck()
             self.append(y)
             transaction.savepoint()
         log.debug('elites = %s'%self)
@@ -139,16 +111,11 @@ class Generation(PersistentList):
         for j in range(num_elites, len(self.prev_gen)):
             p = self.prev_gen[j%num_elites]
             child = copy.deepcopy(p)
-            if hasattr(child, 'sanityCheck'):
-                child.sanityCheck()
             # FIXME: mutation prob. should be set on command line
-            #child.mutate(0.02) # 0.10
             m = 0
             while m == 0:
                 m = child.mutate(0.01) # 0.10
             mutations.append(m)
-            if hasattr(child, 'sanityCheck'):
-                child.sanityCheck()
             self.append(child)
             transaction.savepoint()
         print 'mutations',mutations
@@ -203,23 +170,21 @@ class Generation(PersistentList):
 
     def update(self):
         log.debug('update()')
-        # we only need this lock if we have several masters
         self.next_gen_lock = (socket.gethostname(), time.time())
         transaction.commit()
         log.debug('hah, we got the lock. Evolving generation %d', self.gen_num)
-        self.sanityCheck()
 
         transaction.begin()
+        for bg in self.prev_gen:
+            bg.destroy()
         self.prev_gen = self[:]
         del self[:]
 
         print 'top 5 of new gen scores are:'
         for i in range(len(self.prev_gen)):
             print self.prev_gen[i].score
-        # update function must copy from self.prev_gen to self
         self.elitistUpdate()
         #self.randomUpdate()
-        self.sanityCheck()
         # reset everything
         for x in self:
             x.score = None
@@ -227,8 +192,6 @@ class Generation(PersistentList):
 
         # set next random seed
         self.random_state = random.getstate()
-
-        # hoorah another generation done
         self.gen_num += 1
         transaction.commit()
 
@@ -256,7 +219,6 @@ class Generation(PersistentList):
         transaction.commit()
         self.sort(lambda x,y: cmp(y.score, x.score))
         transaction.commit()
-        garbage_collect()
 
     def runClientLoop(self):
         """Evolve client.
@@ -271,38 +233,20 @@ class Generation(PersistentList):
         while 1:
             try:
                 # start new transaction
-                if conn:
-                    conn.sync()
+                db.sync()
                 transaction.begin()
-
                 # find ready individuals
                 ready = []
-                all_done = 1
                 for x in self:
                     if x.score == None:
-                        all_done = 0
-                        #if not hasattr(x, 'in_progress'):
                         ready.append(x)
-#                    if hasattr(x, 'in_progress'):
-#                        try:
-#                            held_time = int(time.time() - x.in_progress[1])
-#                        except:
-#                            pass
-#                            import pdb
-#                            pdb.set_trace()
-#                        if held_time > 300: # 5 min timeout on evaluate call
-#                            self.evaluate(x)
-
                 if ready:
                     # evaluate a random individual
-                    #x = random.choice(ready)
-                    x = ready[0]
+                    x = random.choice(ready)
                     self.evaluate(x)
-
-                elif all_done and master:
+                elif master or not master and self.next_gen_lock \
+                and int(time.time() - self.next_gen_lock[1]) > 1200:
                     # finalise this generation
-                    #self.sort(lambda x,y: cmp(y.score, x.score))
-                    #transaction.commit()
                     self.recordStats()
                     if self.gen_num < self.final_gen_num:
                         # make next generation
@@ -310,35 +254,17 @@ class Generation(PersistentList):
                     else:
                         # final generation is done, so exit
                         break
-
-# THIS CODE ALLOWS ANY NODE TO COMPLETE IF THE MASTER FAILS.. STILL NEEDED?
-##                elif not master and self.next_gen_lock:
-##                     held_time = int(time.time() - self.next_gen_lock[1])
-##                     log.debug('lock held by %s, waited for %d seconds...',self.next_gen_lock[0],held_time)
-##                     # make sure this is definately enough time for createNextGeneration to complete
-##                     # if host has failed, time out after 10 mins
-##                     time.sleep(60)
-## #                     if held_time > 1200:
-## #                         self.createNextGeneration()
-## #                     else:
-## #                         # wait a bit
-## #                         time.sleep(60)
-
-                elif all_done and not master and self.gen_num == self.final_gen_num:
+                elif self.gen_num == self.final_gen_num:
                     # all individuals in final generation are done, so exit
                     break
-
                 else:
                     # the master must be busy.. wait a bit
                     time.sleep(15)
-
             except ConflictError:
                 # Someone beat us to a lock or update
                 pass
-
             except DisconnectedError:
                 log.debug('we lost connection to the server, sleeping..')
                 # do i need to reestablish connection here??
                 time.sleep(60)
-
         log.debug('leaving evolve()')

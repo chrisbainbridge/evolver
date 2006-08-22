@@ -66,16 +66,7 @@ def unroll_bodyparts(bp_o, bpg_c, bp_c):
         # whether we follow edge depends on our bp instance count and
         # whether or not the edge is terminal, and also on whether the
         # child has reached its recursive limit
-
-        # can we follow any non-terminal links?
-        #print 'bp_o._v_instance_count=',bp_o._v_instance_count
-        #print 'bp_o.recursive_limit=',bp_o.recursive_limit
-        #print 'e.terminal_only=',e.terminal_only
-        #print 'e.child._v_instance_count=',e.child._v_instance_count
-        #print 'e.child.recursive_limit=',e.child.recursive_limit
-
         if ((bp_o._v_instance_count < bp_o.recursive_limit and not e.terminal_only) \
-            #or ((terminal or (bp_o._v_instance_count == bp_o.recursive_limit)) and e.terminal_only)) \
             or ((bp_o._v_instance_count == bp_o.recursive_limit) and e.terminal_only)) \
             and e.child._v_instance_count < e.child.recursive_limit:
             # copy the child bodypart
@@ -83,13 +74,10 @@ def unroll_bodyparts(bp_o, bpg_c, bp_c):
             e.child._v_instance_count += 1
             # add it to the copied bpg
             bpg_c.bodyparts.append(child_bp_c)
-            #print 'ubp='+str(child_bp_c)
             # add it as a child to the copy bodypart. copy the edge.
             e_c = Edge(child_bp_c, e.joint_end, e.terminal_only)
             bp_c.edges.append(e_c)
             # recurse
-            #print 'unroll_bodyparts(',e.child, bpg_c, child_bp_c,')'
-#            print 'following child',e.child,' with _v_instance_count=', e.child._v_instance_count
             unroll_bodyparts(e.child, bpg_c, child_bp_c)
             # restore instance count
             e.child._v_instance_count -= 1
@@ -113,7 +101,6 @@ def unroll_bodypart(bp_o):
         bpg_c.root = bp_c
         bpg_c.bodyparts.append(bp_c)
         log.debug('unroll: added root bp')
-        #print 'unroll_bodyparts(',bp_o, bpg_c, bp_c,')'
         unroll_bodyparts(bp_o, bpg_c, bp_c)
         bp_o._v_instance_count -= 1
     else:
@@ -159,6 +146,12 @@ class BodyPart(Persistent):
         self.mutations = 0
         self.mutate(1)
         self.motor_input = PersistentList([None,None,None])
+        
+    def destroy(self):
+        self.network.destroy()
+        del self.edges
+        del self.input_map
+        del self.motor_input
 
     def connectTo(self, child):
         "Make an edge from this bodypart to a child"
@@ -225,7 +218,18 @@ class BodyPartGraph(Persistent):
                 u = self.unroll()
                 if len(u.bodyparts) >= BPG_MIN_UNROLLED_BODYPARTS:
                     break
-
+                
+    def destroy(self):
+        for bp in self.bodyparts:
+            bp.destroy()
+            
+    def step(self):
+        for bp in self.bodyparts:
+            bp.network.step()
+        for bp in self.bodyparts:
+            if hasattr(bp, 'motor'):
+                bp.motor.step()
+                
     def randomInit(self, network_args):
         # create graph randomly
         del self.bodyparts[:]
@@ -234,11 +238,9 @@ class BodyPartGraph(Persistent):
         for _ in range(num_bodyparts):
             bp = BodyPart(network_args)
             self.bodyparts.append(bp)
-
         # randomly select the root node
         self.root = random.choice(self.bodyparts)
         root_index = self.bodyparts.index(self.root)
-
         # possible n^2 connections
         num_connects = random.randint(1, BPG_MAX_EDGES)
         log.debug('creating upto %d random connections', num_connects)
@@ -277,14 +279,8 @@ class BodyPartGraph(Persistent):
         valid_bp_neighbours = [bp]
         # .. all children
         valid_bp_neighbours += [ e.child for e in bp.edges ]
-#        for e in bp.edges:
-#            valid_bp_neighbours.append(e.child)
         # .. parent
         valid_bp_neighbours += [ p for p in self.bodyparts for e in p.edges if e.child == bp ]
-#        for p in self.bodyparts:
-#            for e in p.edges:
-#                if e.child == bp:
-#                    valid_bp_neighbours.append(p)
         for neighbour in valid_bp_neighbours:
             assert neighbour in self.bodyparts
         log.debug('valid bp neighbours = %s', valid_bp_neighbours)
@@ -303,7 +299,6 @@ class BodyPartGraph(Persistent):
         able to succeed in connecting every input node up.        
         """
         log.debug('BodyPartGraph.connectInputNodes(self=%s)', self)
-        #print 'cin'
         if self.unrolled:
             log.debug('self.unrolled=1')
             backannotate = 0
@@ -320,6 +315,9 @@ class BodyPartGraph(Persistent):
         log.debug('p_bpg=%s (bodyparts=%s)'%(p_bpg, p_bpg.bodyparts))
         backannotate=1
         # find all unconnected nodes/motors
+        for bp in p_bpg.bodyparts:
+            for n in bp.network:
+                assert not n.deleted
         un = set([ (p_bp, p_signal) for p_bp in p_bpg.bodyparts for p_signal in p_bp.network.inputs if not p_signal.external_input ])
         un = un.union(set([ (p_bp, 'MOTOR_%d'%i) for p_bp in p_bpg.bodyparts for i in 0,1,2 if not p_bp.motor_input[i] ]))
 
@@ -384,18 +382,13 @@ class BodyPartGraph(Persistent):
                 (sbp, ssig) = p_source
                 log.debug('p_bp.motor_input[%d]=(%s,%s)'%(i,sbp,ssig))
                 assert sbp in p_bpg.bodyparts
-                #import pdb
-                #pdb.set_trace()
                 p_bp.motor_input[i] = p_source
 
-        #print 'PHEN BPG BODYPARTS is ',p_bpg.bodyparts
         for bp in p_bpg.bodyparts:
             for i in 0,1,2:
                 (b,s) = bp.motor_input[i]
                 log.debug('p_bpg.bodyparts[%d].motor_input[%d]=(%s,%s)'%(p_bpg.bodyparts.index(bp),i,b,s))
                 assert b in p_bpg.bodyparts
-        #print 'p_bpg=',p_bpg
-        #print '2p_bpg.bodyparts=',p_bpg.bodyparts
         if sanitycheck:
             p_bpg.sanityCheck()
 
@@ -405,11 +398,9 @@ class BodyPartGraph(Persistent):
         "Write string s to a file and run dot"
         view = 0
         if filename:
-            
             if filename == '-':
                 view = 1
                 filename = 'tmp.pdf'
-
             (fbase, ext) = os.path.splitext(filename)
             ext = ext[1:]
             f = open(fbase+'.dot', 'w')
@@ -423,7 +414,6 @@ class BodyPartGraph(Persistent):
                 else:
                     os.system('dot -T%s -o%s.%s %s.dot'%(ext, fbase, ext, fbase))
                     os.remove(fbase+'.dot')
-            
             if view:
                 os.system('kpdf tmp.pdf')
 
@@ -461,23 +451,17 @@ class BodyPartGraph(Persistent):
             s += bp.network.plotEdges(toponly, prefix)
             if bp.joint == 'hinge':
                 motors = ['MOTOR_2']
-                #un = ['MOTOR_0', 'MOTOR_1']
             elif bp.joint == 'universal':
                 motors = ['MOTOR_0', 'MOTOR_1']
-                #un = ['MOTOR_3']
             elif bp.joint == 'ball':
                 motors = ['MOTOR_0', 'MOTOR_1', 'MOTOR_2']
-                #un = []
             signals = ['CONTACT', 'JOINT_0', 'JOINT_1', 'JOINT_2']
 
-            for signal in signals + motors: # + un:
+            for signal in signals + motors:
                 if toponly:
-                    #if signal not in un:
                     s += '  %s%s [shape=point]\n'%(prefix, signal)
                 else:
                     style = ''
-                    #if signal in un:
-                    #    style = ',style=filled,color=lightgrey'
                     s += '  %s%s [label="%s"%s]\n'%(prefix, signal, signal, style)
             s += ' }\n'
 
@@ -537,8 +521,6 @@ class BodyPartGraph(Persistent):
                     label += 'joint_end=%d,terminal_only=%d' % (edge.joint_end, edge.terminal_only)
                 s += ' '*4 + 'n%d -> n%d [label="%s"]\n' % (i, child_index, label)
             # plot all incoming sensory edges
-            #import pdb
-            #pdb.set_trace()
             sources = self.getInputs(bp)
             for (tsignal, (sbp, ssignal)) in sources:
                 if toponly:
@@ -561,9 +543,6 @@ class BodyPartGraph(Persistent):
         # return graph as a string
         return s
 
-#    def enableTrace(self):
-#        fixme
-
     def unroll(self):
         """Returns new BPG, of possibly 0 size.
 
@@ -580,18 +559,9 @@ class BodyPartGraph(Persistent):
             b._v_instance_count = 0
         for b in self.bodyparts:
             assert b._v_instance_count == 0
-        #new_bp_list = []
-        #self.bodyparts[self.root].unroll(None, None, new_bp_list)
-        #bpg = BodyPartGraph(new_bp_list, 0)
-
-        #self.sanityCheck()
-
         bpg = unroll_bodypart(self.root)
         bpg.unrolled = 1
         log.debug('/BodyPartGraph.unroll (bpg size %d -> size %d)', len(self.bodyparts), len(bpg.bodyparts))
-
-        #bpg.sanityCheck()
-
         return bpg
 
     def sanityCheck(self):
@@ -664,13 +634,6 @@ class BodyPartGraph(Persistent):
                             assert ssignal in sbp.network
                         else:
                             assert ssignal in ['JOINT_0', 'JOINT_1', 'JOINT_2', 'CONTACT']
-                        #assert sneuron in []
-
-##     def fixup(self):
-##         unrolled_bpg = self.unroll()
-##         # are all InputNodes and Motors connected?
-##         for bp in unrolled_bpg.bodyparts:
-##             bp.network.inputs
 
     def fixup(self):
         """Fix any problems with this BodyPartGraph (ie. invalid connections,
@@ -688,44 +651,26 @@ class BodyPartGraph(Persistent):
                 bp.edges.remove(e)
         # make sure root exists
         if self.root not in self.bodyparts:
-            #self.bodyparts.remove(self.root)
             # randomly select the root node
             self.root = random.choice(self.bodyparts)
-            #self.root.setRoot()
-            
-            # FIXME: FIX INPUTMAP FOR BODYPART c
-        #    for 
         # remove input_map entries that are invalid
         for bp in self.bodyparts:
             if bp.input_map:
-#                print 'bodyparts=%s'%self.bodyparts
-#                print 'bp=%s'%(bp)
-#                print 'input_map.items()=%s'%(bp.input_map.items())
                 # we need to keep a list and erase at the end otherwise we fall into
                 # the trap of removing items for a mutable list whilst iterating
                 # over it
                 for (tneuron, srclist) in bp.input_map.items():
-                    #toremove = []
                     if tneuron not in bp.network.inputs:
                         del bp.input_map[tneuron]
                     else:
                         for (sbp, sneuron) in srclist[:]:
                             if sbp not in self.bodyparts or sneuron not in sbp.network:
-#                                print 'removing bp.input_map[tneuron=%s] sbp=%s'%(tneuron, sbp)
-                                #toremove.append((sbp, sneuron))
                                 srclist.remove((sbp, sneuron))
-                                #bp.input_map[tneuron].remove((sbp, sneuron))
-                        #print 'srclist=%s'%srclist
-                        #print 'toremove=%s'%toremove
-                        #for x in toremove:
-                        #    srclist.remove(x)
-                            #assert (sbp, sneuron) not in bp.input_map[tneuron]
         for bp in self.bodyparts:
             if bp.input_map:
                 for (tneuron, srclist) in bp.input_map.items():
                     for (sbp, sneuron) in srclist:
                         assert sbp in self.bodyparts
-                            #assert sbp not in self.bodyparts
 
         # check whether input_map entries are still valid
         for bp in self.bodyparts:
@@ -745,24 +690,9 @@ class BodyPartGraph(Persistent):
             for k in krm:
                 del bp.input_map[k]
 
-                    
-        #self.sanityCheck()
         # fix input_map so all input nodes are connected
         self.connectInputNodes()
-        #            assert sbp in self.bodyparts
-        #            if type(sneuron) is node.Node:
-        #                assert sneuron in sbp.network
-
         self.sanityCheck()
-
-#    def step(self):
-#        "Step the network of each bodypart. Sensors and motors?"
-
-        # Sensed values come from ode objects.
-        # Ode motor values get updated.
-        #
-	#fixme
- #       pass
 
     def mutate_delete_edges(self, p):
         "Randomly erase edges in this BodyPartGraph with probability p"
@@ -772,10 +702,6 @@ class BodyPartGraph(Persistent):
                     # delete edge
                     log.debug('delete edge')
                     self.mutations += 1
-                    #x = random.randint(0, len(self.bodyparts)-1)
-                    #bp = self.bodyparts[x]
-                    #if bp.edges:
-                    #    y = random.randint(0, len(bp.edges)-1)
                     del bp.edges[i]
                     self.fixup()
                     self.sanityCheck()
@@ -788,9 +714,6 @@ class BodyPartGraph(Persistent):
                 # add edge
                 log.debug('add edge')
                 self.mutations += 1
-                #s = random.randint(0, len(self.bodyparts)-1)
-                #s_bp = self.bodyparts[s]
-                #t = random.randint(0, len(self.bodyparts)-1)
                 t_bp = random.choice(self.bodyparts)
                 e = Edge(t_bp, random.choice([-1,1]), random.choice([0,1]))
                 s_bp.edges.append(e)
@@ -801,52 +724,33 @@ class BodyPartGraph(Persistent):
         
     def mutate_delete_nodes(self, p):
         "Randomly delete nodes in this BodyPartGraph with probability p"
-        #if random.random() < p and len(self.bodyparts) > 1:
         for i in range(len(self.bodyparts)-1, -1, -1):
             if random.random() < p and len(self.bodyparts) > 1:
                 # delete node
                 log.debug('delete node')
                 self.mutations += 1
-                #x = random.randint(0, len(self.bodyparts)-1)
                 bp_del = self.bodyparts[i]
-                #print 'deleting ',bp_del
-                #print 'self.bodyparts = ',self.bodyparts
                 # delete all edges pointing to this node
                 for bp in self.bodyparts:
-                    #print 'bp = ',bp
-                    #print 'bp.edges=',bp.edges
                     edges_to_remove = []
                     for e in bp.edges:
-                        #print 'e = ',e
                         if e.child == bp_del:
-                            #print 'removing edge ',e
-                            #bp.edges.remove(e)
                             edges_to_remove.append(e)
-                            #print 'now bp.edges = ',bp.edges
-                            #self.sanityCheck()
-                            #del bp.edges[bp.edges.index(e)]
                     for e in edges_to_remove:
                         bp.edges.remove(e)
-                #del bp_del
-                #self.sanityCheck()
-                #print 'removing ',bp_del,' from ',self.bodyparts
                 self.bodyparts.remove(bp_del)
                 if bp_del == self.root:
                     self.root = random.choice(self.bodyparts)
-                #print 'self.bodyparts = ',self.bodyparts
                 self.fixup()
                 self.sanityCheck()
 
     def mutate_copy_nodes(self, p):
         "Randomly copy nodes in this BodyPartGraph with probability p"
-#        if random.random() < p and len(self.bodyparts) < BPG_MAX_NODES:
         for i in range(len(self.bodyparts)):
             if random.random() < p and len(self.bodyparts) < BPG_MAX_NODES:
                 # copy and mutate node
                 log.debug('copy node')
                 self.mutations += 1
-                #s = random.randint(0, len(self.bodyparts)-1)
-                #s_bp = self.bodyparts[s]
                 c = copy.deepcopy(self.bodyparts[i])
                 # we did in fact just copy everything the bp links to ...
                 # fixme: correct? yes? efficient? probably not.
@@ -861,8 +765,6 @@ class BodyPartGraph(Persistent):
                     e = Edge(c, random.choice([-1,1]), random.choice([0,1]))
                     s_bp = random.choice(self.bodyparts)
                     s_bp.edges.append(e)
-
-                #self.sanityCheck()
 
                 # random outgoing edges
                 i = random.randint(1, len(self.bodyparts)/2)
@@ -885,17 +787,7 @@ class BodyPartGraph(Persistent):
                     del bp.input_map[di]
         self.connectInputNodes()
         self.sanityCheck()
-
-#            if random.random() < p:
-#                log.debug('mutate input_map')
-#                self.mutations += 1
-#                # select a bodypart and mutate its input_map
-#                #bp = random.choice(self.bodyparts)
-#                #bp.input_map = PersistentDict()
-#                i = random.randint(0, len(
-#                self.connectInputNodes()
-#                self.sanityCheck()
-
+        
     def mutate(self, p):
         "Mutate the BodyPartGraph nodes, edges, and all parameters."
         log.debug('bpg.mutate(p=%f)', p)
@@ -921,20 +813,5 @@ class BodyPartGraph(Persistent):
 
         self.sanityCheck()
 
-        #print '%d bpg mutations'%self.mutations
         log.debug('/bpg.mutate')
         return self.mutations
-
-## class MorphologyEvolver(Evolver):
-##     """Evolve BodyPart graphs, with a suitable Simulation as fitness test"""
-
-
-##     def createSim(self, bpg):
-##         #assert isinstance(soln, BodyPartRoot)
-##         # unroll, then add to sim
-##         log.debug('MorphologyEvolver.createSim')
-##         sim = eval(self.sim+'()')
-##         #sim = self.sim()
-##         sim.setSolution(bpg)
-##         log.debug('/MorphologyEvolver.createSim')
-##         return sim
