@@ -14,12 +14,12 @@ from test_common import *
 
 rl = logging.getLogger()
 
-class BodyPart(unittest.TestCase):
+class BodyPartTestCase(unittest.TestCase):
     def test_0_init(self):
         "BodyPart.__init__"
         self.bp = bpg.BodyPart(new_network_args)
 
-class BodyPartGraph(unittest.TestCase):
+class BodyPartGraphTestCase(unittest.TestCase):
 
     def setUp(self):
         if not os.path.exists('test'):

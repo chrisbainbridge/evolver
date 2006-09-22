@@ -105,7 +105,8 @@ class Sim(object):
         log.debug('num geoms = %d', self.space.getNumGeoms())
         while not self.finished:
             self.step()
-            self.finished = 1
+        if self.siglog:
+            self.siglog.close()
 
     def __del__(self):
         log.debug('Sim.__del__()')
@@ -148,7 +149,7 @@ class BpgSim(Sim):
         return locals()
     max_simsecs = property(**dict(max_simsecs()))
 
-    def doSignalLog(self, fname):
+    def initSignalLog(self, fname):
         self.siglog = open(fname, 'w')
         assert self.bpgs
         s = '# time '
@@ -543,6 +544,7 @@ class BpgSim(Sim):
     def fail(self):
         self.score = -1
         self.finished = 1
+        log.info('sim failed - early exit')
 
     def relax(self):
         "Relax bpg until total velocity is less than some threshold."
@@ -551,7 +553,6 @@ class BpgSim(Sim):
             self.contacts.empty()
             self.space.collide(None, self.collision_callback)
             self.world.step(self.dt)
-            self.total_time += self.dt
             # calc total linear velocity
             total = 0
             for g in self.space:
@@ -580,6 +581,19 @@ class BpgSim(Sim):
             if count > HZ * 10:
                 return 1
 
+    def logSignals(self):
+        if self.siglog:
+            s = ''
+            first = 1
+            for bg in self.bpgs:
+                for bp in bg.bodyparts:
+                    for n in bp.network:
+                        if not first:
+                            s += ' '
+                            first = 0
+                        s += '%f'%n.output
+            self.siglog.flush()
+
     def step(self):
         """Sim loop needs to:
 
@@ -605,6 +619,8 @@ class BpgSim(Sim):
             if e:
                 self.fail()
                 return
+
+        self.logSignals()
                 
         for g in self.geom_contact:
             self.geom_contact[g] = 0 # reset contact sensors

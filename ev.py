@@ -106,10 +106,10 @@ def setup_logging():
 def cleanup():
     log.debug('ev.py cleanup')
     transaction.get().abort()
-    if evolve.conn:
-        evolve.conn.close()
-    if evolve.db:
-        evolve.db.close()
+    if db.conn:
+        db.conn.close()
+#    if evolve.db:
+#        evolve.db.close()
 
 def main():
     log.debug('sys.argv = %s', sys.argv)
@@ -297,7 +297,7 @@ def main():
         elif topology == '3d':
             num_nodes = num_nodes**3
 
-        new_node_fns = { 'sigmoid' : node.Sigmoid }
+        new_node_fns = { 'sigmoid' : node.SigmoidNode }
         new_node_fn = new_node_fns[node_type]
         new_node_args = PersistentMapping(
                 { 'bias_domain': dom_bias,
@@ -414,7 +414,7 @@ def main():
         #random.setstate(root[g].random_state)
         # set up tracing
         if tracefile:
-            s.doSignalLog(tracefile)
+            s.initSignalLog(tracefile)
 #        import psyco
 #        psyco.full()
         if gui:

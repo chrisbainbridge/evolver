@@ -597,7 +597,7 @@ class GLWidget(QGLWidget):
     def screenshot(self, single=0):
         "Save the currently rendered framebuffer to a .png file"
         (x,y,w,h) = self.getViewport()
-        log.debug('screenshot x,y,width,height = %d,%d,%d,%d', x, y, width, height)
+        log.debug('screenshot x,y,width,height = %d,%d,%d,%d', x, y, w, h)
         img = self.grabFrameBuffer()
         if single:
             fname = 'screenshot.jpg'

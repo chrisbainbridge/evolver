@@ -12,7 +12,7 @@ from test_common import *
 evolve.master = 1
 rl = logging.getLogger()
 
-class Generation(unittest.TestCase):
+class GenerationTestCase(unittest.TestCase):
 
     def setUp(self):
         random.seed()
@@ -35,6 +35,10 @@ class Generation(unittest.TestCase):
             #g.evaluate(x)
             x.score = random.uniform(0,10)
         g.update()
+
+    def test_3_quantised(self):
+        new_node_args['quanta'] = 8
+        self.test_2_elitistUpdate()
 
 ##     def test_NetworkEvolver___init__(self):
 ##         "NetworkEvolver.__init__"
@@ -79,7 +83,7 @@ class Generation(unittest.TestCase):
 ##             assert ne.gen_num == 3
 
 
-suite = unittest.makeSuite(Generation, 'test')
+suite = unittest.makeSuite(GenerationTestCase, 'test')
 
 if __name__ == "__main__":
     setup_logging(rl)

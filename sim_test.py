@@ -8,6 +8,7 @@ import sys
 import math
 import ode
 import testoob
+import copy
 
 from persistent.list import PersistentList
 from cgkit.cgtypes import vec3
@@ -19,10 +20,10 @@ from test_common import *
 import network
 
 TESTDIR = '/tmp/'
-SECONDS = 30
+SECONDS = 20
 rl = logging.getLogger()
 
-class TestBp(bpg.BodyPart):
+class TestBodyPart(bpg.BodyPart):
     """Create a random test BodyPart aligned along z axis"""
     def __init__(self, network_args, jtype='hinge'):
         rl.debug('TestBp.__init__')
@@ -32,18 +33,18 @@ class TestBp(bpg.BodyPart):
         self.recursive_limit = 2
         self.joint = jtype
 
-class TestBpg(bpg.BodyPartGraph):
+class TestBodyPartGraph(bpg.BodyPartGraph):
     "Create a BPG containing num_bodyparts BodyParts"
     def __init__(self, network_args, num_bodyparts, jtype='hinge'):
         rl.debug('TestBpg.__init__')
         self.bodyparts = PersistentList()
         self.unrolled = 0
         rl.debug('Creating %d random BodyParts'%(num_bodyparts))
-        p = TestBp(network_args, jtype)
+        p = TestBodyPart(network_args, jtype)
         self.bodyparts.append(p)
         self.root = p
         for _ in range(1, num_bodyparts):
-            bp = TestBp(network_args, jtype)
+            bp = TestBodyPart(network_args, jtype)
             self.bodyparts.append(bp)
             e = bpg.Edge(bp, 1, 0)
             p.edges.append(e)
@@ -57,6 +58,8 @@ class BpgTestCase(unittest.TestCase):
         s = 445
         print 'seed = ',s
         random.seed(s)
+        if not os.path.exists('test'):
+            os.mkdir('test')
 
     def test_0_init(self):
         sim.BpgSim()
@@ -85,15 +88,45 @@ class BpgTestCase(unittest.TestCase):
         #assert s.score == -1 or round(s.total_time) == round(30+s.relax_time)
 
     def test_4_run(self):
-        b = TestBpg(new_network_args, 5, 'hinge')
+        b = TestBodyPartGraph(new_network_args, 5, 'hinge')
         s = sim.BpgSim(SECONDS)
         s.add(b)
         s.run()
         assert s.score == -1 or s.score >= 0
         #assert s.score == -1 or round(s.total_time) == round(30+s.relax_time)
 
+    def test_5_siglog(self):
+        b = TestBodyPartGraph(new_network_args, 5, 'universal')
+        s = sim.BpgSim(SECONDS)
+        s.add(b)
+        siglog = 'test/sim_test_siglog.trace'
+        s.initSignalLog(siglog)
+        s.run()
+        assert os.path.exists(siglog)
+        assert os.path.getsize(siglog)
+        
+    def test_6_siglog_quanta(self):
+        args = copy.deepcopy(new_network_args)
+        args['new_node_args']['quanta'] = 4
+        b = TestBodyPartGraph(args, 5, 'universal')
+        s = sim.BpgSim(SECONDS)
+        s.add(b)
+        siglog = 'test/sim_test_siglog_quanta.trace'
+        s.initSignalLog(siglog)
+        s.run()
+        assert os.path.exists(siglog)
+        assert os.path.getsize(siglog)
+
+    def test_7_run_ca(self):
+        args = copy.deepcopy(new_network_args)
+        args['new_node_fn'] = node.Logical
+        b = TestBodyPartGraph(args, 5, 'hinge')
+        s = sim.BpgSim(SECONDS)
+        s.add(b)
+        s.run()
+        assert s.score == -1 or s.score >= 0
+
 def runVisualSim(sim, record=0, avifile=None, qtargs=[]):
-    return
     "Open the QT renderer and run the simulation"
     from qtapp import MyApp
     myapp = MyApp([sys.argv[0]]+qtargs, sim)
@@ -113,13 +146,13 @@ def nudgeGeomsInSpace(s):
             g.getBody().addForce((f(),f(),f()))
 
 def createAndRunVisualSim(jtype):
-    b = TestBpg(new_network_args, 5, jtype)
+    b = TestBodyPartGraph(new_network_args, 5, jtype)
     s = sim.BpgSim(SECONDS)
     s.add(b)
     nudgeGeomsInSpace(s)
     runVisualSim(s)
 
-class VisualTestCase(unittest.TestCase):
+class BpgSimVisualTestCase(unittest.TestCase):
 
     def setUp(self):
         # This ensures that the tests are reproducible identically no matter
@@ -130,7 +163,7 @@ class VisualTestCase(unittest.TestCase):
         pass
         
     def test_1_single_bodypart(self):
-        b = TestBpg(new_network_args, 1)
+        b = TestBodyPartGraph(new_network_args, 1)
         s = sim.BpgSim(SECONDS)
         s.add(b)
         for i in range(s.space.getNumGeoms()):
@@ -149,7 +182,7 @@ class VisualTestCase(unittest.TestCase):
         createAndRunVisualSim('ball')
 
     def do_joint_motor(self, jointtype, record=0):
-        b = TestBpg(new_network_args, 2, jointtype)
+        b = TestBodyPartGraph(new_network_args, 2, jointtype)
         b.bodyparts[0].rotation = (0, (1,0,0))
         b.bodyparts[1].rotation = (math.pi/2, (0,1,0))
         for i in 0,1:
@@ -197,14 +230,14 @@ class VisualTestCase(unittest.TestCase):
         os.system(cmd)
         os.system('rm %s/record_test.avi'%TESTDIR)
 
-class PoleBalanceTestCase(unittest.TestCase):
+class PoleBalanceSimTestCase(unittest.TestCase):
 
     def setUp(self):
         random.seed()
 
     def test_1_random_network_control(self):
         s = sim.PoleBalanceSim(SECONDS)
-        s.network = network.Network(10, 2, 1, node.Sigmoid, {}, 'full', 'async')
+        s.network = network.Network(10, 2, 1, node.SigmoidNode, {}, 'full', 'async')
         runVisualSim(s)
         
     def test_2_random_network_control_impulse_response(self):

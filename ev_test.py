@@ -10,7 +10,7 @@ from test_common import *
 
 rl = logging.getLogger()
 
-class main(unittest.TestCase):
+class EvTestCase(unittest.TestCase):
 
     def test_0_createpop(self):
         sys.argv = 'ev.py -r ev_test -e'.split()

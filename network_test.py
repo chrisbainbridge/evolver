@@ -28,12 +28,11 @@ def setup_logging():
         l.setLevel(level)
     logging.basicConfig()
 
-class Network(unittest.TestCase):
+class NetworkTestCase(unittest.TestCase):
 
     def setUp(self):
         random.seed()
         self.fprefix = 'test/Network_'
-        print 'XX',sys.getrefcount(node.Sigmoid),
     
     def dot(self, n, name):
         name = self.fprefix + name
@@ -42,15 +41,15 @@ class Network(unittest.TestCase):
         os.popen('kghostview %s.ps'%name)
 
     def test_01_sigmoid_1d(self):
-        n = network.Network(4,0,0, node.Sigmoid, {}, '1d', 'async')
+        n = network.Network(4,0,0, node.SigmoidNode, {}, '1d', 'async')
         self.dot(n, '01_sigmoid_1d')
 
     def test_02_sigmoid_2d(self):
-        net = network.Network(9,0,0, node.Sigmoid, {}, '2d', 'async')
+        net = network.Network(9,0,0, node.SigmoidNode, {}, '2d', 'async')
         self.dot(net, '02_sigmoid_2d')
 
     def test_03_sigmoid_full(self):
-        net = network.Network(4,0,0, node.Sigmoid, {}, 'full', 'async')
+        net = network.Network(4,0,0, node.SigmoidNode, {}, 'full', 'async')
         self.dot(net, '03_sigmoid_full')
 
 #    def test_03_sigmoid_3d(self):
@@ -58,8 +57,14 @@ class Network(unittest.TestCase):
 #        self.dot(n, '03_sigmoid_3d')
 
     def test_04_sigmoid_2d_with_3i2o(self):
-        n = network.Network(9,3,2, node.Sigmoid, {}, '2d', 'async')
+        n = network.Network(9,3,2, node.SigmoidNode, {}, '2d', 'async')
         self.dot(n, '04_sigmoid_2d_with_3i2o')
+        assert len(n.inputs) == 3
+        assert len(n.outputs) == 2
+
+    def test_05_init_multi_value_net(self):
+        n = network.Network(9,3,2, node.Logical, {}, '2d', 'sync')
+        self.dot(n, '05_sigmoid_2d_with_3i2o')
         assert len(n.inputs) == 3
         assert len(n.outputs) == 2
 

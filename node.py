@@ -79,7 +79,7 @@ def quantise(value, quanta):
     assert 0 <= value <= 1
     return round(quanta*value)/quanta
 
-class Sigmoid(Node):
+class SigmoidNode(Node):
     """A sigmoid neural node.
 
     The neurons are simple models (fixme: proper name?) that
@@ -186,8 +186,10 @@ class Sigmoid(Node):
         return locals()
     output = property(**output())
 
-class MultiValueLogical(PersistentList):
-    """logical function of k inputs. outputs in the domain [low,high]"""
+class MultiValueLogicFunction(PersistentList):
+    """logical function of k inputs. outputs in the domain [low,high]
+    
+    Used by Logical node."""
     def __init__(self, k=2, states=[0,1]):
         self.states = states # we have 2 quanta, we want states 0,1
         # each entry is a single bit, so init them randomly
@@ -200,20 +202,17 @@ class MultiValueLogical(PersistentList):
                 #x = randint(0,len(self)-1)
                 self[x] = random.randint(0, self.states-1)
 
-class Logical(Node):
+class LogicalNode(Node):
     """Output is a logical function of k inputs."""
 
-    def __init__(self):
+    def __init__(self, useOwnFunction=1):
         Node.__init__(self)
-
-    def useSharedFunction(self, function):
-        self.function = function
-        self.shared_function = 1
-
-    def useOwnRandomFunction(self):
-        # the logic function
-        self.function = MultiValueLogicFunction(self.network.k, self.network.quanta)
-        self.shared_function = 0
+        if useOwnFunction:
+            self.function = MultiValueLogicFunction(self.network.k, self.network.quanta)
+            self.shared_function = 0
+        else:
+            self.function = function
+            self.shared_function = 1
 
     def preUpdate(self):
         # get input values from self.inputs

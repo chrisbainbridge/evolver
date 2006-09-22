@@ -16,7 +16,7 @@ def setup_logging(rootlogger):
         l.setLevel(level)
     logging.basicConfig()
 
-new_node_fn = node.Sigmoid 
+new_node_fn = node.SigmoidNode 
 new_node_args = { 'bias_domain' : (-5,5),
                   'weight_domain' : (-7,7),
                   'quanta': None }

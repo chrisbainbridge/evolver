@@ -172,10 +172,10 @@ class BodyPart(Persistent):
             'axis2' : 'tuple(vec3((0,0,1)).cross(vec3(self.axis1)))',
             'ball_rot' : 'randomQuat()',
             'rotation' : 'randomQuat()',
-            'lostop' : 'random.choice([-Infinity, random.uniform(-math.pi, 0)])',
+            'lostop' : 'random.choice([-Infinity, random.uniform(0, -math.pi)])',
             # axis1 angle must be in -pi/2..pi/2 to avoid a singularity in ode
-            'lostop2' : 'random.uniform(-math.pi/2, 0)',
-            'lostop3' : 'random.choice([-Infinity, random.uniform(-math.pi, 0)])',
+            'lostop2' : 'random.uniform(0, -math.pi/2)',
+            'lostop3' : 'random.choice([-Infinity, random.uniform(0, -math.pi)])',
             'histop' : 'random.choice([Infinity, random.uniform(0, math.pi)])',
             'histop2' : 'random.uniform(0, math.pi/2)',
             'histop3' : 'random.choice([Infinity, random.uniform(0, math.pi)])',
