@@ -364,8 +364,6 @@ class GLWidget(QGLWidget):
                 # render the axes
                 m = joint.motor
                 a0 = vec3(m.getAxis(0))
-                a1 = vec3(m.getAxis(1))
-                a2 = vec3(m.getAxis(2))
                 p = vec3(joint.getBody(0).getPosition())
                 glColor(1,0,0)
                 glDisable(GL_LIGHTING)

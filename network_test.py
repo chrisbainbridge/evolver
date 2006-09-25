@@ -3,7 +3,6 @@
 import unittest
 import logging
 import random
-import time
 import sys
 import os
 import testoob
@@ -11,7 +10,7 @@ import testoob
 from persistent.list import PersistentList
 from cgkit.cgtypes import vec3
 
-import network
+from network import Network
 import node
 
 rl = logging.getLogger()
@@ -41,53 +40,46 @@ class NetworkTestCase(unittest.TestCase):
         os.popen('kghostview %s.ps'%name)
 
     def test_01_sigmoid_1d(self):
-        n = network.Network(4,0,0, node.SigmoidNode, {}, '1d', 'async')
+        n = Network(4,0,0, node.SigmoidNode, {}, '1d', 'async')
         self.dot(n, '01_sigmoid_1d')
 
     def test_02_sigmoid_2d(self):
-        net = network.Network(9,0,0, node.SigmoidNode, {}, '2d', 'async')
+        net = Network(9,0,0, node.SigmoidNode, {}, '2d', 'async')
         self.dot(net, '02_sigmoid_2d')
 
     def test_03_sigmoid_full(self):
-        net = network.Network(4,0,0, node.SigmoidNode, {}, 'full', 'async')
+        net = Network(4,0,0, node.SigmoidNode, {}, 'full', 'async')
         self.dot(net, '03_sigmoid_full')
 
-#    def test_03_sigmoid_3d(self):
-#        n = network.Network(20,0,0, node.Sigmoid, {}, '3d', 'async')
-#        self.dot(n, '03_sigmoid_3d')
-
     def test_04_sigmoid_2d_with_3i2o(self):
-        n = network.Network(9,3,2, node.SigmoidNode, {}, '2d', 'async')
+        n = Network(9,3,2, node.SigmoidNode, {}, '2d', 'async')
         self.dot(n, '04_sigmoid_2d_with_3i2o')
         assert len(n.inputs) == 3
         assert len(n.outputs) == 2
 
-    def test_05_init_multi_value_net(self):
-        n = network.Network(9,3,2, node.Logical, {}, '2d', 'sync')
-        self.dot(n, '05_sigmoid_2d_with_3i2o')
+    def test_05_init_logical_net(self):
+        n = Network(9,3,2, node.LogicalNode, {'numberOfStates':2}, '2d', 'sync')
+        self.dot(n, '05_logical_2d_with_3i2o')
         assert len(n.inputs) == 3
         assert len(n.outputs) == 2
 
-#    def test_02_init_mvlf(self):
-#        network.Network(20,0,0, lambda : node.MultiValueLogical())
-#
-#    def test_03_init_logical(self):
-#        network.Network(20,0,0, lambda : node.Logical())
-#
-#    def test_05_init_mvlf_io(self):
-#        network.Network(20,4,3, lambda : node.MultiValueLogical())
-#
-#    def test_06_init_logical_io(self):
-#        network.Network(20,4,3, lambda : node.Logical())
-#
-#
-#    def test_10_connect_randomk(self):
-#        n = network.Network(20,4,3, lambda : node.Sigmoid(), 'randomk')
-#        self.dot(n, '10_connect_randomk')
-#
-#    def test_11_connect_full(self):
-#        n = network.Network(20,4,3, lambda : node.Sigmoid(), 'full')
-#        self.dot(n, '11_connect_full')
+    def test_06_run_sigmoid_net_with_all_topologies(self):
+        for topology in Network.TOPOLOGIES:
+            net = Network(9,3,2, node.SigmoidNode, {}, topology, 'sync')
+            for n in net:
+                n.preUpdate()
+            for n in net:
+                n.postUpdate()
+
+    def test_07_run_logical_net_with_all_topologies(self):
+        for topology in Network.TOPOLOGIES:
+            net = Network(9,3,2, node.LogicalNode, {'numberOfStates':5}, topology, 'sync')
+            for n in net:
+                n.randomiseState()
+            for n in net:
+                n.preUpdate()
+            for n in net:
+                n.postUpdate()
 
 if __name__ == "__main__":
     setup_logging()

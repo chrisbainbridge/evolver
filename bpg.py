@@ -779,7 +779,7 @@ class BodyPartGraph(Persistent):
     def mutate_inputmaps(self, p):
         "Randomly rewire input_maps in each BodyPart with probability p"
         for bp in self.bodyparts:
-            for i in range(len(bp.input_map)):
+            for _ in range(len(bp.input_map)):
                 if random.random() < p:
                     log.debug('mutate input_map')
                     self.mutations += 1

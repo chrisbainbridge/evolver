@@ -43,8 +43,8 @@ viewstats:
 clean:
 	rm -f *.pyc 
 	rm -f qtgui.py 
-
 	rm -rf types/* test/* *~
+	rm -f divx2pass.log
 
 memprof:
 	rm -rf types/*

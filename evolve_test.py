@@ -37,7 +37,7 @@ class GenerationTestCase(unittest.TestCase):
         g.update()
 
     def test_3_quantised(self):
-        new_node_args['quanta'] = 8
+        new_node_args_sigmoid['quanta'] = 8
         self.test_2_elitistUpdate()
 
 ##     def test_NetworkEvolver___init__(self):

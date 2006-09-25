@@ -30,6 +30,7 @@
        -k x           Specify k inputs for randomk topology
      --update x       Update style [sync,async]
      --node_type x    Type of node [sigmoid,logical]
+     --states x       Number of states per cell [logical only]
      --nodes x    (1d, randomk, full) - Total number of nodes 
                       (2d, 3d) - length of a dimension
                       number x includes network inputs and outputs
@@ -74,8 +75,6 @@ import time
 import random
 import cPickle
 import getopt
-import asyncore
-import thread
 import transaction
 import logging
 
@@ -112,10 +111,10 @@ def cleanup():
 #        evolve.db.close()
 
 def main():
-    log.debug('sys.argv = %s', sys.argv)
+    log.debug(' '.join(sys.argv))
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:ln:p:q:sz:t:uvm', ['qt=','topology=','update=','node_type=','nodes=','dom_bias=','dom_value=','dom_weight=','nodes_per_input=','network=','plotbpg=','plotnets=','unroll','nb_dist=','toponly','movie=','sim=','statlog='])
+        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:ln:p:q:sz:t:uvm', ['qt=','topology=','update=','node_type=','nodes=','dom_bias=','dom_value=','dom_weight=','nodes_per_input=','network=','plotbpg=','plotnets=','unroll','nb_dist=','toponly','movie=','sim=','states=','statlog='])
         log.debug('opts %s', opts)
         log.debug('args %s', args)
         # print help for no args
@@ -245,6 +244,8 @@ def main():
             evolve.master = 1
         elif o == '--statlog':
             evolve.statlog = a
+        elif o == '--states':
+            numberOfStates = int(a)
         else:
             log.critical('unhandled option %s',o)
             return 1
@@ -297,17 +298,22 @@ def main():
         elif topology == '3d':
             num_nodes = num_nodes**3
 
-        new_node_fns = { 'sigmoid' : node.SigmoidNode }
-        new_node_fn = new_node_fns[node_type]
-        new_node_args = PersistentMapping(
-                { 'bias_domain': dom_bias,
-                  'weight_domain' : dom_weight,
-                  'quanta': quanta })
+        new_node_arg_class_map = { 'sigmoid' : node.SigmoidNode,
+                         'logical': node.LogicalNode}
+        new_node_class = new_node_arg_class_map[node_type]
+        if new_node_class == node.SigmoidNode:
+            new_node_args = PersistentMapping(
+                    { 'bias_domain': dom_bias,
+                      'weight_domain' : dom_weight,
+                      'quanta': quanta })
+        elif new_node_class == node.LogicalNode:
+            new_node_args = PersistentMapping(
+                    { 'numberOfStates': numberOfStates })
         new_network_args = PersistentMapping(
                 { 'num_nodes' : num_nodes,
                   'num_inputs' : num_inputs,
                   'num_outputs' : num_outputs,
-                  'new_node_fn': new_node_fn,
+                  'new_node_class': new_node_class,
                   'new_node_args' : new_node_args,
                   'topology' : topology,
                   'update_style' : update_style,

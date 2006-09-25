@@ -14,26 +14,26 @@ from persistent.list import PersistentList
 from cgkit.cgtypes import vec3
 
 import sim
-import bpg
-import node
+from bpg import Edge, BodyPart, BodyPartGraph
+from node import SigmoidNode, LogicalNode
 from test_common import *
-import network
+from network import Network
 
 TESTDIR = '/tmp/'
 SECONDS = 20
 rl = logging.getLogger()
 
-class TestBodyPart(bpg.BodyPart):
+class TestBodyPart(BodyPart):
     """Create a random test BodyPart aligned along z axis"""
     def __init__(self, network_args, jtype='hinge'):
         rl.debug('TestBp.__init__')
-        bpg.BodyPart.__init__(self, network_args)
+        BodyPart.__init__(self, network_args)
         # override some values
         self.scale = 2.0
         self.recursive_limit = 2
         self.joint = jtype
 
-class TestBodyPartGraph(bpg.BodyPartGraph):
+class TestBodyPartGraph(BodyPartGraph):
     "Create a BPG containing num_bodyparts BodyParts"
     def __init__(self, network_args, num_bodyparts, jtype='hinge'):
         rl.debug('TestBpg.__init__')
@@ -46,7 +46,7 @@ class TestBodyPartGraph(bpg.BodyPartGraph):
         for _ in range(1, num_bodyparts):
             bp = TestBodyPart(network_args, jtype)
             self.bodyparts.append(bp)
-            e = bpg.Edge(bp, 1, 0)
+            e = Edge(bp, 1, 0)
             p.edges.append(e)
             p = bp
         self.connectInputNodes()
@@ -56,7 +56,6 @@ class BpgTestCase(unittest.TestCase):
     def setUp(self):
 #        s = random.randint(0,1000)
         s = 445
-        print 'seed = ',s
         random.seed(s)
         if not os.path.exists('test'):
             os.mkdir('test')
@@ -65,27 +64,25 @@ class BpgTestCase(unittest.TestCase):
         sim.BpgSim()
 
     def test_1_addBP(self):
-        bp = bpg.BodyPart(new_network_args)
+        bp = BodyPart(new_network_args)
         s = sim.BpgSim()
         s.addBP(bp)
 
     def test_2_add(self):
-        b = bpg.BodyPartGraph(new_network_args)
+        b = BodyPartGraph(new_network_args)
         b = b.unroll()
         b.connectInputNodes()
         s = sim.BpgSim()
         s.add(b)
 
     def test_3_run(self):
-        b = bpg.BodyPartGraph(new_network_args)
+        b = BodyPartGraph(new_network_args)
         b = b.unroll()
         b.connectInputNodes()
         s = sim.BpgSim(SECONDS)
         s.add(b)
         s.run()
         assert s.score == -1 or s.score >= 0
-        del s
-        #assert s.score == -1 or round(s.total_time) == round(30+s.relax_time)
 
     def test_4_run(self):
         b = TestBodyPartGraph(new_network_args, 5, 'hinge')
@@ -93,7 +90,6 @@ class BpgTestCase(unittest.TestCase):
         s.add(b)
         s.run()
         assert s.score == -1 or s.score >= 0
-        #assert s.score == -1 or round(s.total_time) == round(30+s.relax_time)
 
     def test_5_siglog(self):
         b = TestBodyPartGraph(new_network_args, 5, 'universal')
@@ -119,7 +115,7 @@ class BpgTestCase(unittest.TestCase):
 
     def test_7_run_ca(self):
         args = copy.deepcopy(new_network_args)
-        args['new_node_fn'] = node.Logical
+        args['new_node_fn'] = LogicalNode
         b = TestBodyPartGraph(args, 5, 'hinge')
         s = sim.BpgSim(SECONDS)
         s.add(b)
@@ -155,8 +151,6 @@ def createAndRunVisualSim(jtype):
 class BpgSimVisualTestCase(unittest.TestCase):
 
     def setUp(self):
-        # This ensures that the tests are reproducible identically no matter
-        # what order they're run in from the command line
         random.seed()
         
     def tearDown(self):
@@ -205,7 +199,6 @@ class BpgSimVisualTestCase(unittest.TestCase):
         m = s.bpgs[0].bodyparts[1].motor
         m.desired_axisangle[0] = math.pi*3/2
         m.desired_axisangle[2] = 5*math.pi/4
-        # REMOVEME!!!!
         #b0.addForce((0,0,10000))
 
         if not record:
@@ -223,7 +216,7 @@ class BpgSimVisualTestCase(unittest.TestCase):
         self.do_joint_motor('ball')
     
     def test_8_record_movie(self):
-        self.do_joint_motor(jointtype='ball', record=1) 
+        self.do_joint_motor(jointtype='ball', record=1)
         cmd = 'mplayer %s/record_test.avi'%TESTDIR
         if rl.level != logging.DEBUG:
             cmd += ' &> /dev/null'
@@ -237,14 +230,14 @@ class PoleBalanceSimTestCase(unittest.TestCase):
 
     def test_1_random_network_control(self):
         s = sim.PoleBalanceSim(SECONDS)
-        s.network = network.Network(10, 2, 1, node.SigmoidNode, {}, 'full', 'async')
+        s.network = Network(10, 2, 1, SigmoidNode, {}, 'full', 'async')
         runVisualSim(s)
         
     def test_2_random_network_control_impulse_response(self):
         s = sim.PoleBalanceSim(SECONDS)
         # apply unit impulse
         s.pole_geom.getBody().addForce((1,0,0))
-        #s.network = network.Network(10, 2, 1, node.Sigmoid, {}, 'full', 'async')
+        s.network = Network(10, 2, 1, SigmoidNode, {}, 'full', 'async')
         runVisualSim(s)
         
     def test_3_lqr_control_impulse_response(self):

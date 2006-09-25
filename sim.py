@@ -518,7 +518,7 @@ class BpgSim(Sim):
                 (radius, length) = cylinder.getParams()
                 # is collision point c in an endpoint?
                 ep0 = p + r*vec3(0, 0, -length/2)
-                ep1 = p + r*vec3(0, 0, +length/2)
+                ep1 = p + r*vec3(0, 0, length/2)
                 (cpos, cnor, cdep, cg1, cg2) = c.getContactGeomParams()
                 # is cpos in sphere around ep0 or ep1?
                 epc = None
@@ -580,6 +580,7 @@ class BpgSim(Sim):
             # seconds of waiting for the body to be still, and quit.
             if count > HZ * 10:
                 return 1
+        return 0
 
     def logSignals(self):
         if self.siglog:

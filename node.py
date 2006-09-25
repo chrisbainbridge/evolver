@@ -33,7 +33,6 @@ class Node(Persistent):
 
     def destroy(self):
         # delete references that can cause cycles
-        del self.weights
         del self.inputs
         del self.external_input
 
@@ -101,6 +100,10 @@ class SigmoidNode(Node):
         self.quanta = quanta
         self.bias = randomFromDomain(self.bias_domain, quanta)
         self.randomiseState()
+
+    def destroy(self):
+        Node.destroy(self)
+        del self.weights
 
     def randomiseState(self):
         self.state = randomFromDomain((0,1), self.quanta)
@@ -170,78 +173,89 @@ class SigmoidNode(Node):
             self.weights[a] = self.weights[b]
             del self.weights[b]
 
-    def output():
+    def getOutput(self):
         """The output attribute is a generic way to access the output value of
         any node. It should lie in the domain [0, 1]. If an output is set, use
         it, otherwise calculate one from the current state. In this case we can
         use the state directly since it should already be in 0..1"""
-        def fget(self):
-            return self.state
-        def fset(self, value):
-            if self.quanta:
-                value = quantise(value, self.quanta)
-            self.state = value
-        def fdel(self):
-            del self.state
-        return locals()
-    output = property(**output())
+        return self.state
+
+    def setOutput(self, value):
+        if self.quanta:
+            value = quantise(value, self.quanta)
+        self.state = value
+
+    output = property(getOutput, setOutput)
 
 class MultiValueLogicFunction(PersistentList):
     """logical function of k inputs. outputs in the domain [low,high]
     
     Used by Logical node."""
-    def __init__(self, k=2, states=[0,1]):
-        self.states = states # we have 2 quanta, we want states 0,1
-        # each entry is a single bit, so init them randomly
-        for _ in range(states**k):
-            self.append(random.randint(0, states-1))
+
+    def __init__(self, numberOfInputs, numberOfStates):
+        "Create a new random lookup table"
+        PersistentList.__init__(self)
+        self.numberOfStates = numberOfStates
+        for _ in range(int(round(numberOfStates ** numberOfInputs))):
+            self.append(self.getRandomValue())
+        log.debug('MultiValueLogicFunction created %d entries', len(self))
+
+    def getRandomValue(self):
+        "Returns a random but valid value"
+        randomValue = random.randint(0, self.numberOfStates-1)
+        return randomValue
+
+    def getValue(self, x):
+        "Returns a stored value from the table"
+        return self[x]
+    
     def mutate(self, p):
+        "Change a value in the table"
         # find a random row in the table, replace output with new randint
+        m = 0
         for x in range(len(self)):
-            if random() < p:
-                #x = randint(0,len(self)-1)
-                self[x] = random.randint(0, self.states-1)
+            if random.random() < p:
+                self[x] = self.getRandomValue()
+                m += 1
+        return m
 
 class LogicalNode(Node):
     """Output is a logical function of k inputs."""
 
-    def __init__(self, useOwnFunction=1):
+    def __init__(self, numberOfInputs=None, numberOfStates=None, function=None):
+        "Either use a previously generated function table, or make a new one"
         Node.__init__(self)
-        if useOwnFunction:
-            self.function = MultiValueLogicFunction(self.network.k, self.network.quanta)
-            self.shared_function = 0
-        else:
+        if function:
             self.function = function
-            self.shared_function = 1
+        else:
+            assert numberOfInputs and numberOfStates
+            self.function = MultiValueLogicFunction(numberOfInputs, numberOfStates)
 
     def preUpdate(self):
-        # get input values from self.inputs
-        # look up in self.function
-        values = []
-        for n in self.inputs:
-            values.append(n.state)
-        x = bin2int(values)
-        self.state_next = self.function[x]
-        assert(0 <= self.state_next <= 1)
+        "Convert inputs to a decimal value and lookup in logic function"
+        x = 0
+        for i in range(len(self.inputs)):
+            x += i * self.function.numberOfStates * self.inputs[i].state
+        assert isinstance(x, int)
+        self.state_next = self.function.getValue(x)
 
     def postUpdate(self):
         self.state = self.state_next
 
-    def randomValue(self):
-        assert self.network.state_domain[0] == 0
-        self.state = random.randint(self.network.state_domain[0], self.network.state_domain[1])
+    def randomiseState(self):
+        self.state = self.function.getRandomValue()
 
     def mutate(self, p):
-        """mutate the node values.
+        "Mutate the function"
+        m = self.function.mutate(p)
+        return m
 
-        Only mutates the function if it's not shared"""
-        assert not hasattr(self.network, 'function')
-        self.function.mutate(p)
+    def getOutput(self):
+        x = self.state / (self.function.numberOfStates-1)
+        return x
 
-    def addInput(self, source):
-        Node.addInput(self, source)
-        log.debug('fixme: add input to function')
-
-    def delInput(self, source):
-        Node.delInput(self, source)
-        log.debug('fixme: remove input from function')
+    def setOutput(self, x):
+        self.state = int(round(x * (self.function.numberOfStates-1)))
+        assert isinstance(self.state, int)
+    
+    output = property(getOutput, setOutput)

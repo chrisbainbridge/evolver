@@ -16,15 +16,16 @@ def setup_logging(rootlogger):
         l.setLevel(level)
     logging.basicConfig()
 
-new_node_fn = node.SigmoidNode 
-new_node_args = { 'bias_domain' : (-5,5),
+new_node_class = node.SigmoidNode
+new_node_args_sigmoid = { 'bias_domain' : (-5,5),
                   'weight_domain' : (-7,7),
                   'quanta': None }
+new_node_args_logical = {'numberOfStates':2}
 new_network_args = { 'num_nodes' : 5,
                      'num_inputs' : 2,
                      'num_outputs' : 3,
-                     'new_node_fn': new_node_fn,
-                     'new_node_args' : new_node_args,
+                     'new_node_class': new_node_class,
+                     'new_node_args' : new_node_args_sigmoid,
                      'topology' : '1d',
                      'update_style' : 'async',
                      'nb_dist' : 1 }

@@ -7,7 +7,7 @@ from cPickle import loads, dumps
 from persistent import Persistent
 from persistent.list import PersistentList
 from persistent.mapping import PersistentMapping
-from node import *
+from node import SigmoidNode, LogicalNode
 
 import logging
 log = logging.getLogger('neural')
@@ -15,7 +15,10 @@ log.setLevel(logging.INFO)
 
 class Network(PersistentList):
     "Model of a control network; nodes, edges, weights."
-    def __init__(self, num_nodes, num_inputs, num_outputs, new_node_fn,
+
+    TOPOLOGIES = '1d', '2d', 'randomk', 'full'
+
+    def __init__(self, num_nodes, num_inputs, num_outputs, new_node_class,
             new_node_args, topology, update_style, nb_dist=1):
         # what about k, quanta, nodes_per_input
         PersistentList.__init__(self)
@@ -32,14 +35,17 @@ class Network(PersistentList):
         assert num_nodes >= num_inputs
         assert num_nodes >= num_outputs
         # create nodes
+        inputsPerNode = self.getNumberOfInputsPerNode(topology, nb_dist, num_nodes)
+        if new_node_class == LogicalNode:
+            new_node_args['numberOfInputs'] = inputsPerNode
         for _ in range(num_nodes):
-            n = new_node_fn(**dict(new_node_args))
+            n = new_node_class(**dict(new_node_args))
             self.append(n)
         # select input nodes
         self.inputs = PersistentList()
         for _ in range(num_inputs):
             while 1:
-                n = random.choice(self)
+                n = choice(self)
                 if not n in self.inputs:
                     self.inputs.append(n)
                     break
@@ -47,18 +53,30 @@ class Network(PersistentList):
         self.outputs = PersistentList()
         for _ in range(num_outputs):
             while 1:
-                n = random.choice(self)
+                n = choice(self)
                 if not n in self.outputs:
                     self.outputs.append(n)
                     break
 
-        if topology:
-            self.connect(topology, nb_dist)
+        self.connect(topology, nb_dist)
+        for n in self:
+            assert len(n.inputs) == inputsPerNode
 
     def destroy(self):
         for n in self:
             n.destroy()
             
+    def getNumberOfInputsPerNode(self, topology, neighbourhood_dist, num_nodes):
+        if topology == '1d':
+            return neighbourhood_dist * 2
+        elif topology == '2d':
+            neighbour_len = neighbourhood_dist*2+1
+            return neighbour_len**2 - 1
+        elif topology == 'randomk':
+            return neighbourhood_dist
+        else: #if topology == 'full':
+            return num_nodes - 1
+        
     def mutate(self, p):
         """Mutate the network with probability p of mutating each parameter.
 
@@ -69,7 +87,7 @@ class Network(PersistentList):
         mutations = 0
         for a_index in range(len(self)):
             # Since a change mutates two nodes, we halve p
-            if random.random() < p/2:
+            if random() < p/2:
                 mutations += 1
                 # choose another node to swap with
                 b_index = a_index
@@ -116,10 +134,10 @@ class Network(PersistentList):
         # mutate inputs and outputs
         for puts in self.inputs, self.outputs:
             for i in range(len(puts)):
-                if random.random() < p:
+                if random() < p:
                     mutations += 1
                     old = puts[i]
-                    new = random.choice([x for x in self if x != old])
+                    new = choice([x for x in self if x != old])
                     puts[i] = new
         return mutations
 
@@ -241,16 +259,16 @@ class Network(PersistentList):
 
     def connect(self, topology, neighbourhood_dist=1):
         log.debug('connect(%s)', topology)
+        for n in self:
+            assert not n.inputs
         if topology == '1d':
                 self.connect1D(neighbourhood_dist)
         elif topology == '2d':
             self.connect2D(neighbourhood_dist)
         elif topology == 'randomk':
-            self.connectRandomK()
+            self.connectRandomK(neighbourhood_dist)
         elif topology == 'full':
             self.connectFull()
-        else:
-            fail
 
     def connect1D(self, neighbourhood_dist):
         "1D ring, cells connect to every other cell in neighbourhood"
@@ -309,15 +327,19 @@ class Network(PersistentList):
         for n in self:
             assert len(n.inputs) == neighbour_len**2-1 
 
-    def connectRandomK(self, listofnodes):
+    def connectRandomK(self, k):
         """Each node has a fixed number of inputs randomly chosen from other nodes.
 
         Since the topology is random it can be mutated, unlike most Networks."""
         log.debug('connectRandomK(%d)', k)
-        fixme - arg is distance, not listofnodes
-        # initialise self.inputs
-        for _ in range(self.k):
-            self.inputs.append(choice(listofnodes))
+        for n in self:
+            for _ in range(k):
+                while 1:
+                    r = choice(self)
+                    if r != n and r not in n.inputs:
+                        n.addInput(r)
+                        break
+
 
     def connectFull(self):
         "Create connections joining every node to every other node"
