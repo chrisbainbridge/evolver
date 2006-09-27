@@ -1,6 +1,5 @@
 "bpg.py - this file holds all classes necessary for body part graphs."
 
-import pdb
 import random
 import copy
 import math
@@ -49,10 +48,7 @@ def unroll_bodypart_copy(bp_o):
     bp_c.edges = PersistentList()
     bp_c.input_map = None
     bp_c.motor_input = PersistentList([None,None,None])
-    try:
-        bp_c._v_instance_count = bp_o._v_instance_count
-    except:
-        pdb.set_trace()
+    bp_c._v_instance_count = bp_o._v_instance_count
     assert bp_c._v_instance_count != None
     bp_c.genotype = bp_o
     return bp_c
@@ -589,10 +585,7 @@ class BodyPartGraph(Persistent):
         for i in range(len(self.bodyparts)):
             bp = self.bodyparts[i]
             for e in bp.edges:
-                try:
-                    assert self.bodyparts.count(e.child) == 1
-                except AssertionError:
-                    pdb.set_trace()
+                assert self.bodyparts.count(e.child) == 1
 
         # make sure that everything is connected
         if self.unrolled:

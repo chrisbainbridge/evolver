@@ -23,7 +23,7 @@ import transaction
 import logging
 logging.basicConfig()
 log = logging.getLogger('evolve')
-log.setLevel(logging.INFO)
+log.setLevel(logging.ERROR)
 
 log.debug('recursion limit is %d, setting to 4000', sys.getrecursionlimit())
 sys.setrecursionlimit(4000)
@@ -94,7 +94,6 @@ class Generation(PersistentList):
         num_elites = max(int(round(len(self.prev_gen)/100.0*50)), 1)
         #num_elites = 0 # FORCE NON-ELITIST GA
         log.debug('%d elites',num_elites)
-        print '%d elites'%num_elites
 
         # copy the elites into next generation
         self.prev_gen.sort(lambda x,y: cmp(y.score, x.score))
@@ -117,7 +116,7 @@ class Generation(PersistentList):
             mutations.append(m)
             self.append(child)
             transaction.savepoint()
-        print 'mutations',mutations
+        log.debug('child mutations = %s', str(mutations))
 
     def randomUpdate(self):
         "Random search, top 1 survives but "
@@ -179,9 +178,10 @@ class Generation(PersistentList):
         self.prev_gen = self[:]
         del self[:]
 
-        print 'top 5 of new gen scores are:'
+        s = 'top 5 of new gen scores are:'
         for i in range(len(self.prev_gen)):
-            print self.prev_gen[i].score
+           s += str(self.prev_gen[i].score)
+        log.debug(s)
         self.elitistUpdate()
         #self.randomUpdate()
         # reset everything

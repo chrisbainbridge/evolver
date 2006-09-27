@@ -622,7 +622,6 @@ class GLWidget(QGLWidget):
             if log.level != logging.DEBUG:
                 cmd += ' &> /dev/null'
             log.debug('executing %s', cmd)
-            print cmd
             res = os.system(cmd)
             if res:
                 log.critical('cmd fail: %s', cmd)

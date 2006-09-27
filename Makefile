@@ -1,6 +1,6 @@
-export COVERAGE_FILE=test/coverage
-
-SRC = glwidget.py bpg.py daemon.py ev.py evolve.py qtgui.py network.py node.py qtapp.py sim.py trace.py qtgui.py
+EV_SRC = bpg.py ev.py evolve.py network.py node.py sim.py daemon.py 
+VIS_SRC = glwidget.py qtgui.py qtapp.py qtgui.py
+SRC = $(EV_SRC) $(VIS_SRC)
 TEST = bpg_test.py evolve_test.py network_test.py sim_test.py ev_test.py
 
 .PHONY: clean test checker pop run popd
@@ -9,21 +9,13 @@ qtgui.py: qtgui.ui
 	pyuic -p0 qtgui.ui -o qtgui.py
 
 test: $(SRC) $(TEST)
-	coverage.py -e
-	-for t in $(TEST); do coverage.py -x $$t -v; done
-	coverage.py -r $(SRC)
-
-tags:
-	exuberant-ctags -e -R
+	-for t in $(TEST); do echo $$t; $$t -v; done
 
 checker:
 	pychecker *.py
 
 %.ps: %.dot
 	@dot -Tps -o$@ $<
-
-%.ps: %.py
-	enscript -E -C -2r -T4 --highlight-bar-gray=0.87 --mark-wrapped-lines=arrow -fCourier6.6 -o $@ $<
 
 popd:
 	rm -f evo.stats
@@ -45,6 +37,7 @@ clean:
 	rm -f qtgui.py 
 	rm -rf types/* test/* *~
 	rm -f divx2pass.log
+	rm -rf doc
 
 memprof:
 	rm -rf types/*
@@ -53,6 +46,5 @@ memprof:
 	gwenview types/*.png
 
 uml:
-	autodia.pl -l python -i "bpg.py evolve.py network.py sim.py"
-	dia autodia.out.xml
-	# happydoc can also generate uml ... may be better
+	happydoc --dia $(EV_SRC)
+	dia doc/dia.dia

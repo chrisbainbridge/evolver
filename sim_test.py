@@ -22,6 +22,7 @@ from network import Network
 TESTDIR = '/tmp/'
 SECONDS = 20
 rl = logging.getLogger()
+interactive = 0
 
 class TestBodyPart(BodyPart):
     """Create a random test BodyPart aligned along z axis"""
@@ -115,7 +116,8 @@ class BpgTestCase(unittest.TestCase):
 
     def test_7_run_ca(self):
         args = copy.deepcopy(new_network_args)
-        args['new_node_fn'] = LogicalNode
+        args['new_node_class'] = node.LogicalNode
+        args['new_node_args'] = new_node_args_logical
         b = TestBodyPartGraph(args, 5, 'hinge')
         s = sim.BpgSim(SECONDS)
         s.add(b)
@@ -133,6 +135,15 @@ def runVisualSim(sim, record=0, avifile=None, qtargs=[]):
     assert not err
     myapp.destroy()
 
+def runNonVisualSim(sim):
+    sim.run()
+
+def runSim(sim, record=0, avifile=None, qtargs=[]):
+    if interactive:
+        runVisualSim(sim, record, avifile, qtargs)
+    else:
+        runNonVisualSim(sim)
+
 def nudgeGeomsInSpace(s):
     "Apply a small force to every geom in space s"
     for i in range(s.space.getNumGeoms()):
@@ -141,14 +152,14 @@ def nudgeGeomsInSpace(s):
             f = lambda : random.uniform(0.0, 0.01)
             g.getBody().addForce((f(),f(),f()))
 
-def createAndRunVisualSim(jtype):
+def createAndRunSim(jtype):
     b = TestBodyPartGraph(new_network_args, 5, jtype)
     s = sim.BpgSim(SECONDS)
     s.add(b)
     nudgeGeomsInSpace(s)
-    runVisualSim(s)
+    runSim(s)
 
-class BpgSimVisualTestCase(unittest.TestCase):
+class BpgSimTestCase(unittest.TestCase):
 
     def setUp(self):
         random.seed()
@@ -164,16 +175,16 @@ class BpgSimVisualTestCase(unittest.TestCase):
             g = s.space.getGeom(i)
             if type(g) is ode.GeomCCylinder:
                 g.getBody().addForce((0.1,0,0))
-        runVisualSim(s)
+        runSim(s)
 
     def test_2_bodyparts_with_hinge_joints(self):
-        createAndRunVisualSim('hinge')
+        createAndRunSim('hinge')
 
     def test_3_bodyparts_with_universal_joints(self):
-        createAndRunVisualSim('universal')
+        createAndRunSim('universal')
 
     def test_4_bodyparts_with_ball_joints(self):
-        createAndRunVisualSim('ball')
+        createAndRunSim('ball')
 
     def do_joint_motor(self, jointtype, record=0):
         b = TestBodyPartGraph(new_network_args, 2, jointtype)
@@ -202,9 +213,9 @@ class BpgSimVisualTestCase(unittest.TestCase):
         #b0.addForce((0,0,10000))
 
         if not record:
-            runVisualSim(s)
+            runSim(s)
         else:
-            runVisualSim(s, 1, '%s/record_test.avi'%TESTDIR, ['-geometry','640x480'])
+            runSim(s, 1, '%s/record_test.avi'%TESTDIR, ['-geometry','640x480'])
 
     def test_5_hinge_motor(self):
         self.do_joint_motor('hinge')
@@ -217,11 +228,12 @@ class BpgSimVisualTestCase(unittest.TestCase):
     
     def test_8_record_movie(self):
         self.do_joint_motor(jointtype='ball', record=1)
-        cmd = 'mplayer %s/record_test.avi'%TESTDIR
-        if rl.level != logging.DEBUG:
-            cmd += ' &> /dev/null'
-        os.system(cmd)
-        os.system('rm %s/record_test.avi'%TESTDIR)
+        if interactive:
+            cmd = 'mplayer %s/record_test.avi'%TESTDIR
+            if rl.level != logging.DEBUG:
+                cmd += ' &> /dev/null'
+            os.system(cmd)
+            os.system('rm %s/record_test.avi'%TESTDIR)
 
 class PoleBalanceSimTestCase(unittest.TestCase):
 
@@ -231,20 +243,23 @@ class PoleBalanceSimTestCase(unittest.TestCase):
     def test_1_random_network_control(self):
         s = sim.PoleBalanceSim(SECONDS)
         s.network = Network(10, 2, 1, SigmoidNode, {}, 'full', 'async')
-        runVisualSim(s)
+        runSim(s)
         
     def test_2_random_network_control_impulse_response(self):
         s = sim.PoleBalanceSim(SECONDS)
         # apply unit impulse
         s.pole_geom.getBody().addForce((1,0,0))
         s.network = Network(10, 2, 1, SigmoidNode, {}, 'full', 'async')
-        runVisualSim(s)
+        runSim(s)
         
     def test_3_lqr_control_impulse_response(self):
         s = sim.PoleBalanceSim(SECONDS)
         s.setUseLqr()
-        runVisualSim(s)
+        runSim(s)
 
 if __name__ == "__main__":
+    if '-i' in sys.argv:
+        interactive = 1
+        sys.argv.remove('-i')
     setup_logging(rl)
     testoob.main()

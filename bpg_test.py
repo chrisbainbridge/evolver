@@ -13,10 +13,10 @@ import node
 from test_common import *
 
 rl = logging.getLogger()
+interactive = 0
 
 class BodyPartTestCase(unittest.TestCase):
     def test_0_init(self):
-        "BodyPart.__init__"
         self.bp = bpg.BodyPart(new_network_args)
 
 class BodyPartGraphTestCase(unittest.TestCase):
@@ -29,6 +29,10 @@ class BodyPartGraphTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def gv(self, f):
+        if interactive:
+            os.system('kghostview %s.ps'%f)
+
     def test_1_init(self):
         self.bpg = new_individual_fn(**new_individual_args)
         self.bpg.sanityCheck()
@@ -38,7 +42,7 @@ class BodyPartGraphTestCase(unittest.TestCase):
         fname = self.fprefix + '2_plotBpg'
         self.bpg.plotBpg(fname+'.dot')
         os.system('dot -Tps -o %s.ps %s.dot'%(fname, fname))
-        os.system('kghostview %s.ps'%fname)
+        self.gv(fname)
 
     def test_3_unroll(self):
         self.test_1_init()
@@ -52,7 +56,7 @@ class BodyPartGraphTestCase(unittest.TestCase):
         fname = self.fprefix + '3_unroll_before'
         self.bpg.plotBpg(fname+'.dot')
         self.bpg.plotBpg(fname+'.ps')
-        os.system('kghostview %s.ps'%fname)
+        self.gv(fname)
         ur_bpg = self.bpg.unroll()
         ur_bpg.sanityCheck()
         f = open(self.fprefix+'3_unroll_after.pickle','w')
@@ -62,7 +66,7 @@ class BodyPartGraphTestCase(unittest.TestCase):
         fname = self.fprefix + '3_unroll_after'
         ur_bpg.plotBpg(fname+'.dot')
         ur_bpg.plotBpg(fname+'.ps')
-        os.system('kghostview %s.ps'%fname)
+        self.gv(fname)
 
     def test_4_mutate(self):
         self.test_1_init()
@@ -124,5 +128,8 @@ class BodyPartGraphTestCase(unittest.TestCase):
 ##             log.debug('got fitness high %f', me.generation[0].score)
 
 if __name__ == "__main__":
+    if '-i' in sys.argv:
+        interactive = 1
+        sys.argv.remove('-i')
     setup_logging(rl)
     testoob.main()

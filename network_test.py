@@ -14,6 +14,7 @@ from network import Network
 import node
 
 rl = logging.getLogger()
+interactive = 0
 
 def setup_logging():
     level = logging.INFO
@@ -37,7 +38,8 @@ class NetworkTestCase(unittest.TestCase):
         name = self.fprefix + name
         n.plot(name+'.dot')
         os.popen('dot -Tps -o %s.ps %s.dot'%(name,name))
-        os.popen('kghostview %s.ps'%name)
+        if interactive:
+            os.popen('kghostview %s.ps'%name)
 
     def test_01_sigmoid_1d(self):
         n = Network(4,0,0, node.SigmoidNode, {}, '1d', 'async')
@@ -73,7 +75,7 @@ class NetworkTestCase(unittest.TestCase):
 
     def test_07_run_logical_net_with_all_topologies(self):
         for topology in Network.TOPOLOGIES:
-            net = Network(9,3,2, node.LogicalNode, {'numberOfStates':5}, topology, 'sync')
+            net = Network(9,3,2, node.LogicalNode, {'numberOfStates':2}, topology, 'sync')
             for n in net:
                 n.randomiseState()
             for n in net:
@@ -82,5 +84,8 @@ class NetworkTestCase(unittest.TestCase):
                 n.postUpdate()
 
 if __name__ == "__main__":
+    if '-i' in sys.argv:
+        interactive = 1
+        sys.argv.remove('-i')
     setup_logging()
     testoob.main()

@@ -10,7 +10,8 @@ from test_common import *
 
 rl = logging.getLogger()
 
-POPS = ['ev_test_sigmoid', 'ev_test_logical']
+POPS = ['ev_test_sigmoid', 'ev_test_sigmoid_quantised', 'ev_test_logical']
+SECONDS = 20
 
 class EvTestCase(unittest.TestCase):
 
@@ -20,20 +21,27 @@ class EvTestCase(unittest.TestCase):
             ev.main()
 
     def test_1_createpop_sigmoid(self):
-        sys.argv = ('ev.py -r %s -p 3 -t 1 -g 5' \
+        sys.argv = ('ev.py -r ev_test_sigmoid -p 3 -t %d -g 5' \
                     ' --topology 1d --update async' \
                     ' --node_type sigmoid --nodes 10' \
-                    ' --sim bpg'%POPS[0]).split()
+                    ' --sim bpg'%SECONDS).split()
         ev.main()
         
-    def test_2_createpop_logical(self):
-        sys.argv = ('ev.py -r %s -p 3 -t 1 -g 5' \
+    def test_2_createpop_sigmoid_quantised(self):
+        sys.argv = ('ev.py -r ev_test_sigmoid_quantised -p 3 -t %d -g 5' \
+                    ' --topology 1d --update async' \
+                    ' --node_type sigmoid --nodes 10' \
+                    ' --sim bpg -q 32'%SECONDS).split()
+        ev.main()
+        
+    def test_3_createpop_logical(self):
+        sys.argv = ('ev.py -r ev_test_logical -p 3 -t %d -g 5' \
                     ' --topology 1d --update async' \
                     ' --node_type logical --states 2 --nodes 10' \
-                    ' --sim bpg'%POPS[1]).split()
+                    ' --sim bpg'%SECONDS).split()
         ev.main()
 
-    def test_3_evolvepops(self):
+    def test_4_evolvepops(self):
         for pop in POPS:
             sys.argv = ('ev.py -r %s -c -m'%pop).split()
             ev.main()

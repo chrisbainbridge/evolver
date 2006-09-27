@@ -99,17 +99,12 @@ class Sim(object):
         self.contacts = ode.JointGroup()
         self.joints = []
         self.contactslist = []
-
-    def run(self):
-        log.debug('Sim.run (secs=%f, dt=%f)', self.max_simsecs, self.dt)
-        log.debug('num geoms = %d', self.space.getNumGeoms())
-        while not self.finished:
-            self.step()
-        if self.siglog:
-            self.siglog.close()
+        self.relax_time = 0
 
     def __del__(self):
         log.debug('Sim.__del__()')
+        if self.siglog:
+            self.siglog.close()
         for j in self.joints:
             j.attach(None, None)
         for g in self.space:
@@ -123,6 +118,57 @@ class Sim(object):
         for bg in self.bpgs:
             bg.destroy()
         log.debug('/Sim.__del__()')
+
+    def run(self):
+        log.debug('Sim.run (secs=%f, dt=%f)', self.max_simsecs, self.dt)
+        log.debug('num geoms = %d', self.space.getNumGeoms())
+        while not self.finished:
+            self.step()
+
+    def handleContact(g1, g2, c):
+        "By default return all contacts as valid and do nothing else"
+        return 1
+
+    def handleCollide(self, args, geom1, geom2):
+        """Callback function for the geometry collide() method
+        
+        Finds intersection points and calls self.handleContact with each"""
+        log.debug('handleCollide')
+        # calculate intersection points
+        contacts = ode.collide(geom1, geom2)
+        for c in contacts:
+            log.debug('collision between %s and %s', str(geom1), str(geom2))
+            valid = self.handleContact(geom1, geom2, c)
+            if not valid:
+                return
+            else:
+                # create contact joint
+                j = ode.ContactJoint(self.world, self.contacts, c)
+                j.attach(geom1.getBody(), geom2.getBody())
+        log.debug('/handleCollide')
+
+    def step(self):
+        "Single step of sim. Sets self.finished when sim is over"
+        log.debug('step')
+        self.space.collide(None, self.handleCollide) # generate contacts
+        self.world.step(self.dt)
+        self.contacts.empty()
+        self.total_time += self.dt
+        log.debug('stepped world by %f time is %f', self.dt, self.total_time)
+        # check for sim blowing up
+        for g in self.space:
+            if g.placeable():
+                v = vec3(g.getBody().getLinearVel())
+                if v.length() > 150:
+                    self.fail() # blew up, early exit
+                    return
+        nan = [g for g in self.space if g.placeable() for p in g.getPosition() if str(p)=='nan']
+        if nan and self.max_simsecs != 0:
+            self.fail()
+        elif self.total_time > self.max_simsecs and self.max_simsecs != 0:
+            self.finished = 1
+        elif self.relax_time and self.total_time > self.relax_time:
+            self.updateFitness()
         
 class BpgSim(Sim):
     "Simulate articulated bodies built from BodyPartGraphs"
@@ -491,67 +537,18 @@ class BpgSim(Sim):
             log.critical('score is %s', self.score)
             assert type(self.score) in [float, int]
 
-    def collision_callback(self, args, geom1, geom2):
-        "Callback function for the geometry collide() method"
-        log.debug('collision_callback')
-        # calculate intersection points
-        contacts = ode.collide(geom1, geom2)
-        for c in contacts:
-            mu = 0 # default
-            log.debug('collision: creating contact between %s %s', str(geom1), str(geom2))
-            if type(geom1) is ode.GeomCCylinder and type(geom2) is ode.GeomCCylinder:
-                # no collision detect between body parts!
-                return
-
-            (cpos, cnor, cdep, cg1, cg2) = c.getContactGeomParams()
-            if (type(geom1) is ode.GeomPlane and type(geom2) is ode.GeomCCylinder) \
-            or (type(geom1) is ode.GeomCCylinder and type(geom2) is ode.GeomPlane):
-                # intersection between cylinder and the ground
-                # figure out which cylinder foot it was, and apply correct friction
-                if type(geom1) is ode.GeomCCylinder:
-                    cylinder = geom1
-                elif type(geom2) is ode.GeomCCylinder:
-                    cylinder = geom2
-                # find endpoints of cylinder
-                r = mat3(cylinder.getRotation())
-                p = vec3(cylinder.getPosition())
-                (radius, length) = cylinder.getParams()
-                # is collision point c in an endpoint?
-                ep0 = p + r*vec3(0, 0, -length/2)
-                ep1 = p + r*vec3(0, 0, length/2)
-                (cpos, cnor, cdep, cg1, cg2) = c.getContactGeomParams()
-                # is cpos in sphere around ep0 or ep1?
-                epc = None
-                for ep in ep0, ep1:
-                    cpos = vec3(cpos)
-                    d2 = (cpos-ep).length()
-                    if (d2 <= radius**2*1.01):
-                        epc = ep
-                # friction mu is from evolved bp
-                if epc == ep0:
-                    mu = cylinder.friction_left
-                elif epc == ep1:
-                    mu = cylinder.friction_right
-            c.setMu(mu)
-            # create contact joint
-            j = ode.ContactJoint(self.world, self.contacts, c)
-            j.attach(geom1.getBody(), geom2.getBody())
-            # remember contact for touch sensors
-            self.geom_contact[geom1] = 1
-            self.geom_contact[geom2] = 1
-        log.debug('/collision_callback')
         
     def fail(self):
         self.score = -1
         self.finished = 1
-        log.info('sim failed - early exit')
+        log.debug('sim early exit')
 
     def relax(self):
         "Relax bpg until total velocity is less than some threshold."
         count = 0
         while 1:
             self.contacts.empty()
-            self.space.collide(None, self.collision_callback)
+            self.space.collide(None, self.handleCollide)
             self.world.step(self.dt)
             # calc total linear velocity
             total = 0
@@ -595,6 +592,49 @@ class BpgSim(Sim):
                         s += '%f'%n.output
             self.siglog.flush()
 
+    def handleContact(self, geom1, geom2, c):
+        """Ignore contacts between bodyparts, else add friction based on evolved
+        parameter and remember contact for geom sensors."""
+        mu = 0 # default
+        if type(geom1) is ode.GeomCCylinder and type(geom2) is ode.GeomCCylinder:
+            # no collision detect between body parts!
+            return 0
+
+        (cpos, cnor, cdep, cg1, cg2) = c.getContactGeomParams()
+        if (type(geom1) is ode.GeomPlane and type(geom2) is ode.GeomCCylinder) \
+        or (type(geom1) is ode.GeomCCylinder and type(geom2) is ode.GeomPlane):
+            # intersection between cylinder and the ground
+            # figure out which cylinder foot it was, and apply correct friction
+            if type(geom1) is ode.GeomCCylinder:
+                cylinder = geom1
+            elif type(geom2) is ode.GeomCCylinder:
+                cylinder = geom2
+            # find endpoints of cylinder
+            r = mat3(cylinder.getRotation())
+            p = vec3(cylinder.getPosition())
+            (radius, length) = cylinder.getParams()
+            # is collision point c in an endpoint?
+            ep0 = p + r*vec3(0, 0, -length/2)
+            ep1 = p + r*vec3(0, 0, length/2)
+            (cpos, cnor, cdep, cg1, cg2) = c.getContactGeomParams()
+            # is cpos in sphere around ep0 or ep1?
+            epc = None
+            for ep in ep0, ep1:
+                cpos = vec3(cpos)
+                d2 = (cpos-ep).length()
+                if (d2 <= radius**2*1.01):
+                    epc = ep
+            # friction mu is from evolved bp
+            if epc == ep0:
+                mu = cylinder.friction_left
+            elif epc == ep1:
+                mu = cylinder.friction_right
+        c.setMu(mu)
+        # remember contact for touch sensors
+        self.geom_contact[geom1] = 1
+        self.geom_contact[geom2] = 1
+        return 1
+
     def step(self):
         """Sim loop needs to:
 
@@ -607,13 +647,6 @@ class BpgSim(Sim):
           * Go through all BodyParts, for each motor, find connected
             OutputNode (if any) and get value."""
 
-        log.debug('step')
-        for g in self.space:
-            if g.placeable():
-                v = vec3(g.getBody().getLinearVel())
-                if v.length() > 150:
-                    self.fail() # blew up, early exit
-                    return
                 
         if not self.relaxed:
             e = self.relax()
@@ -625,7 +658,6 @@ class BpgSim(Sim):
                 
         for g in self.geom_contact:
             self.geom_contact[g] = 0 # reset contact sensors
-        self.space.collide(None, self.collision_callback) # generate contacts
         
         # update sensor input values
         for bg in self.bpgs:
@@ -696,21 +728,8 @@ class BpgSim(Sim):
                             s += '%f '%(n.output)
                 s += '\n'
                 self.siglog.write(s)
-        # step ode
-        self.world.step(self.dt)
-        # Remove all contact joints
-        self.contacts.empty()
-        self.total_time += self.dt
-        log.debug('stepped world by %f time is %f', self.dt, self.total_time)
-        # check if simulation blew up 
-        nan = [g for g in self.space if g.placeable() for p in g.getPosition() if str(p)=='nan']
-        if nan and self.max_simsecs != 0:
-            self.fail()
-        elif self.total_time > self.max_simsecs and self.max_simsecs != 0:
-            self.finished = 1
-        elif self.total_time > self.relax_time:
-            self.updateFitness()
-            
+
+        Sim.step(self)
         log.debug('/step')
 
 class LqrController:
@@ -855,6 +874,10 @@ class PoleBalanceSim(Sim):
         self.pole_body.addForce((force, 0, 0))
         self.last_hit = self.total_time
         
+    def updateFitness(self):
+        self.score = self.total_time
+        log.debug('current score is %f', self.score)
+
     def step(self):
         """Run the simulation for one time step.
 
@@ -873,18 +896,11 @@ class PoleBalanceSim(Sim):
         if self.regular_random_force and self.total_time > self.last_hit + 2.0:
             self.applyRandomForce()
 
-        self.world.step(self.dt)
-        self.total_time += self.dt
-        log.debug('stepped world by %f time is %f', self.dt, self.total_time)
         log.debug('absolute value of angle is %f', abs(self.hinge_joint.getAngle()))
         
-        if not self.finished:
-            # set finished if the pole has fallen beyond pi/2
-            if abs(self.hinge_joint.getAngle()) > math.pi/2 and self.max_simsecs != 0:
+        # set finished if the pole has fallen beyond pi/2
+        if not self.finished and abs(self.hinge_joint.getAngle()) > math.pi/2 and self.max_simsecs != 0:
                 log.debug('angle too high, simulation finished')
                 self.finished = 1
-            else:
-                # nope, so increase our score
-                self.score = self.total_time
-                log.debug('current score is %f', self.score)
 
+        Sim.step(self)

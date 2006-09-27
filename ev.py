@@ -93,7 +93,7 @@ import sim
 log = logging.getLogger('ev')
 
 def setup_logging():
-    level = logging.INFO
+    level = logging.ERROR
     if '-d' in sys.argv:
         level = logging.DEBUG
         sys.argv.remove('-d')
@@ -368,7 +368,7 @@ def main():
             # print list of generations
             for (k,i) in root.iteritems():
                 if isinstance(i, evolve.Generation):
-                    print 'Generation: ',k #,i
+                    print 'Generation: %s [gen=%d max=%s]'%(k, i.gen_num, i[0].score) #,i
         else:
             # print list of individuals in a generation
             print 'Num\t| Score'
