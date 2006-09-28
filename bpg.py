@@ -20,7 +20,7 @@ BPG_MAX_EDGES = 6
 BP_MAX_RECURSIVE_LIMIT = 2
 BP_MIN_LENGTH = 3
 BP_MAX_LENGTH = 10
-BPG_MIN_UNROLLED_BODYPARTS = 5
+BPG_MIN_UNROLLED_BODYPARTS = 2
 
 log = logging.getLogger('bpg')
 log.setLevel(logging.INFO)
@@ -39,12 +39,15 @@ class Edge(Persistent):
     def __repr__(self):
         return 'Edge(child=%s, joint_end=%d, terminal_only=%d)'%(self.child, self.joint_end, self.terminal_only)
 
-def unroll_bodypart_copy(bp_o):
+def unroll_bodypart_copy(bp_o, skipNetwork):
     "return a copy of bp_o, without edges"
     # shallow copy first
     bp_c = copy.copy(bp_o)
     # now replace anything that we can't share or don't want
-    bp_c.network = copy.deepcopy(bp_o.network)
+    if skipNetwork:
+        bp_c.network = None
+    else:
+        bp_c.network = copy.deepcopy(bp_o.network)
     bp_c.edges = PersistentList()
     bp_c.input_map = None
     bp_c.motor_input = PersistentList([None,None,None])
@@ -53,7 +56,7 @@ def unroll_bodypart_copy(bp_o):
     bp_c.genotype = bp_o
     return bp_c
 
-def unroll_bodyparts(bp_o, bpg_c, bp_c):
+def unroll_bodyparts(bp_o, bpg_c, bp_c, skipNetwork):
     """bp_o -- original bodypart, we already copied this so consider its children
     bpg_c -- new graph, for adding new bodyparts to
     bp_c -- copy of bp_o (ie. parent of any copies we make)"""
@@ -66,7 +69,7 @@ def unroll_bodyparts(bp_o, bpg_c, bp_c):
             or ((bp_o._v_instance_count == bp_o.recursive_limit) and e.terminal_only)) \
             and e.child._v_instance_count < e.child.recursive_limit:
             # copy the child bodypart
-            child_bp_c = unroll_bodypart_copy(e.child)
+            child_bp_c = unroll_bodypart_copy(e.child, skipNetwork)
             e.child._v_instance_count += 1
             # add it to the copied bpg
             bpg_c.bodyparts.append(child_bp_c)
@@ -74,7 +77,7 @@ def unroll_bodyparts(bp_o, bpg_c, bp_c):
             e_c = Edge(child_bp_c, e.joint_end, e.terminal_only)
             bp_c.edges.append(e_c)
             # recurse
-            unroll_bodyparts(e.child, bpg_c, child_bp_c)
+            unroll_bodyparts(e.child, bpg_c, child_bp_c, skipNetwork)
             # restore instance count
             e.child._v_instance_count -= 1
         else:
@@ -86,18 +89,18 @@ def unroll_bodyparts(bp_o, bpg_c, bp_c):
             b = e.child._v_instance_count < e.child.recursive_limit
             log.debug('e.child._v_instance_count < e.child.recursive_limit: %d', b)
 
-def unroll_bodypart(bp_o):
+def unroll_bodypart(bp_o, skipNetwork):
     "bp_o -- root BodyPart original."
     bpg_c = BodyPartGraph()
     if bp_o:
         # ignore rules.. we may as well always have a root bodypart if theres something there
-        bp_c = unroll_bodypart_copy(bp_o)
+        bp_c = unroll_bodypart_copy(bp_o, skipNetwork)
         bp_o._v_instance_count += 1
         assert bp_c
         bpg_c.root = bp_c
         bpg_c.bodyparts.append(bp_c)
         log.debug('unroll: added root bp')
-        unroll_bodyparts(bp_o, bpg_c, bp_c)
+        unroll_bodyparts(bp_o, bpg_c, bp_c, skipNetwork)
         bp_o._v_instance_count -= 1
     else:
         log.warn('unroll_bodypart: empty bpg')
@@ -209,11 +212,7 @@ class BodyPartGraph(Persistent):
             # this is used for unrolled bodypart copies
             self.root = None
         else:
-            while 1:
-                self.randomInit(network_args)
-                u = self.unroll()
-                if len(u.bodyparts) >= BPG_MIN_UNROLLED_BODYPARTS:
-                    break
+            self.randomInit(network_args)
                 
     def destroy(self):
         for bp in self.bodyparts:
@@ -227,43 +226,47 @@ class BodyPartGraph(Persistent):
                 bp.motor.step()
                 
     def randomInit(self, network_args):
-        # create graph randomly
-        del self.bodyparts[:]
-        num_bodyparts = random.randint(2, BPG_MAX_NODES)
-        log.debug('Creating %d random BodyParts'%(num_bodyparts))
-        for _ in range(num_bodyparts):
-            bp = BodyPart(network_args)
-            self.bodyparts.append(bp)
-        # randomly select the root node
-        self.root = random.choice(self.bodyparts)
-        root_index = self.bodyparts.index(self.root)
-        # possible n^2 connections
-        num_connects = random.randint(1, BPG_MAX_EDGES)
-        log.debug('creating upto %d random connections', num_connects)
-        # Now select randomly and use to create actual connect
-        inset = [root_index]
-        outset = range(0,root_index) + range(root_index+1, num_bodyparts)
-        for _ in range(num_connects):
-            # select from inset
-            src_i = random.randint(0, len(inset)-1)
-            if not outset:
+        while 1:
+            # create graph randomly
+            del self.bodyparts[:]
+            num_bodyparts = random.randint(2, BPG_MAX_NODES)
+            log.debug('Creating %d random BodyParts'%(num_bodyparts))
+            for _ in range(num_bodyparts):
+                bp = BodyPart(network_args)
+                self.bodyparts.append(bp)
+            # randomly select the root node
+            self.root = random.choice(self.bodyparts)
+            root_index = self.bodyparts.index(self.root)
+            # possible n^2 connections
+            num_connects = random.randint(1, BPG_MAX_EDGES)
+            log.debug('creating upto %d random connections', num_connects)
+            # Now select randomly and use to create actual connect
+            inset = [root_index]
+            outset = range(0,root_index) + range(root_index+1, num_bodyparts)
+            for _ in range(num_connects):
+                # select from inset
+                src_i = random.randint(0, len(inset)-1)
+                if not outset:
+                    break
+                inoutset = inset + outset
+                dst_i = random.randint(0, len(inoutset)-1)
+                src = self.bodyparts[inset[src_i]]
+                bodyparts_dst_i = inoutset[dst_i]
+                dst = self.bodyparts[bodyparts_dst_i]
+                src.connectTo(dst)
+                # there is no check for an existing edge, so we can get multiple edges between src and dst
+                if not bodyparts_dst_i in inset:
+                    inset.append(bodyparts_dst_i)
+                if bodyparts_dst_i in outset:
+                    outset.remove(bodyparts_dst_i)
+            u = self.unroll(1)
+            if len(u.bodyparts) >= BPG_MIN_UNROLLED_BODYPARTS:
+                self.connectInputNodes()
+                for bp in self.bodyparts:
+                    for i in 0,1,2:
+                        assert not bp.motor_input[i]
+                self.sanityCheck()
                 break
-            inoutset = inset + outset
-            dst_i = random.randint(0, len(inoutset)-1)
-            src = self.bodyparts[inset[src_i]]
-            bodyparts_dst_i = inoutset[dst_i]
-            dst = self.bodyparts[bodyparts_dst_i]
-            src.connectTo(dst)
-            # there is no check for an existing edge, so we can get multiple edges between src and dst
-            if not bodyparts_dst_i in inset:
-                inset.append(bodyparts_dst_i)
-            if bodyparts_dst_i in outset:
-                outset.remove(bodyparts_dst_i)
-        self.connectInputNodes()
-        for bp in self.bodyparts:
-            for i in 0,1,2:
-                assert not bp.motor_input[i]
-        self.sanityCheck()
 
     def getNeighbours(self, bp):
         """Calculate the set of valid neighbour bodyparts of bp
@@ -539,7 +542,7 @@ class BodyPartGraph(Persistent):
         # return graph as a string
         return s
 
-    def unroll(self):
+    def unroll(self, skipNetwork=0):
         """Returns new BPG, of possibly 0 size.
 
         The BPG will be unrolled. Each path through the network will
@@ -555,7 +558,7 @@ class BodyPartGraph(Persistent):
             b._v_instance_count = 0
         for b in self.bodyparts:
             assert b._v_instance_count == 0
-        bpg = unroll_bodypart(self.root)
+        bpg = unroll_bodypart(self.root, skipNetwork)
         bpg.unrolled = 1
         log.debug('/BodyPartGraph.unroll (bpg size %d -> size %d)', len(self.bodyparts), len(bpg.bodyparts))
         return bpg
