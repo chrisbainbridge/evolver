@@ -19,6 +19,7 @@ MAX_UNROLLED_BODYPARTS = 20
 SOFT_WORLD = 1
 JOINT_MAXFORCE = 6 * CYLINDER_DENSITY * CYLINDER_RADIUS
 HZ = 50
+RELAX_TIME = 5.0 # seconds to relax bpg for
 
 log = logging.getLogger('sim')
 log.setLevel(logging.INFO)
@@ -81,6 +82,7 @@ class Sim(object):
         # create world, set default gravity, geoms, flat ground, spaces etc.
         assert type(max_simsecs) is float or type(max_simsecs) is int
         self.total_time = 0.0
+        self.relax_time = 0
         self.max_simsecs = float(max_simsecs)
         self.dt = 1.0/HZ
         self.world = ode.World()
@@ -99,7 +101,6 @@ class Sim(object):
         self.contacts = ode.JointGroup()
         self.joints = []
         self.contactslist = []
-        self.relax_time = 0
 
     def __del__(self):
         log.debug('Sim.__del__()')
@@ -167,33 +168,35 @@ class Sim(object):
             self.fail()
         elif self.total_time > self.max_simsecs and self.max_simsecs != 0:
             self.finished = 1
-        elif self.relax_time and self.total_time > self.relax_time:
+        else:
             self.updateFitness()
         
 class BpgSim(Sim):
     "Simulate articulated bodies built from BodyPartGraphs"
 
-    def __init__(self, max_simsecs=30.0):
-        self.relax_time = 0
+    def __init__(self, max_simsecs=30.0, fitnessName='mean-distance'):
         Sim.__init__(self, max_simsecs)
         log.debug('BPGSim.__init__')
         self.geom_contact = {}
         self.startpos = vec3(0, 0, 0) 
         self.relaxed = 0
         self.prev_v = []
-
-    def max_simsecs():
+        fitnessMap = { 'mean-distance' : self.fitnessMeanDistance, 'cumulative-z' : self.fitnessCumulativeZ }
+        self.fitnessMethod = fitnessMap[fitnessName]
+        self.relax_time = RELAX_TIME
+    
+    def getMaxSimTime(self):
         """max_simsecs attribute. add relax time to the sim time when set. 
             return the real full sim time so that it can be rendered correctly."""
-        def fget(self):
-            return self.max_simsecs_value
-        def fset(self, v):
-            if v == 0:
-                self.max_simsecs_value = 0
-            else:
-                self.max_simsecs_value = self.relax_time + v
-        return locals()
-    max_simsecs = property(**dict(max_simsecs()))
+        return self.max_simsecs_value
+
+    def setMaxSimTime(self, v):
+        if v == 0:
+            self.max_simsecs_value = 0
+        else:
+            self.max_simsecs_value = self.relax_time + v
+
+    max_simsecs = property(getMaxSimTime, setMaxSimTime)
 
     def initSignalLog(self, fname):
         self.siglog = open(fname, 'w')
@@ -486,7 +489,7 @@ class BpgSim(Sim):
                 (gx, gy, gz) = geom.getPosition()
                 geom.setPosition((gx+x, gy+y, gz+z))
 
-    def fitnessMeanZ(self):
+    def fitnessCumulativeZ(self):
         # fitness is mean z over bodies over time
         total_z = 0.0
         count = 0
@@ -497,17 +500,6 @@ class BpgSim(Sim):
                 total_z += z
                 count += 1
         self.score += total_z
-
-    def fitnessMeanDistance(self):
-        total = 0.0
-        count = 0
-        for i in range(self.space.getNumGeoms()):
-            geom = self.space.getGeom(i)
-            if type(geom) is not ode.GeomPlane:
-                (x, y, z) = geom.getPosition()
-                total += math.sqrt(x**2+y**2+z**2) 
-                count += 1
-        self.score += total/count
 
     def meanPos(self, bpg):
         tx = 0.0
@@ -520,28 +512,24 @@ class BpgSim(Sim):
             tz += z
         return vec3(tx, ty, tz) / len(bpg.bodyparts)
 
-    def fitnessDistFromOrigin(self):
+    def fitnessMeanDistance(self):
         "Geometric distance from post-relax start position"
         mpos = self.meanPos(self.bpgs[0])
         self.score = (mpos - self.startpos).length()
 
     def updateFitness(self):
         try:
-            # FIXME: command line argument
-            #self.fitnessMeanZ()
-            # self.fitnessMeanDistance()
-            self.fitnessDistFromOrigin()
+            self.fitnessMethod()
         except OverflowError:
             self.fail()
         if type(self.score) not in [float, int]:
             log.critical('score is %s', self.score)
             assert type(self.score) in [float, int]
-
         
     def fail(self):
         self.score = -1
         self.finished = 1
-        log.debug('sim early exit')
+        log.info('sim early exit - relax failed, or sim blew up')
 
     def relax(self):
         "Relax bpg until total velocity is less than some threshold."
@@ -646,7 +634,6 @@ class BpgSim(Sim):
 
           * Go through all BodyParts, for each motor, find connected
             OutputNode (if any) and get value."""
-
                 
         if not self.relaxed:
             e = self.relax()

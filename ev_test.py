@@ -24,21 +24,21 @@ class EvTestCase(unittest.TestCase):
         sys.argv = ('ev.py -r ev_test_sigmoid -p 3 -t %d -g 5' \
                     ' --topology 1d --update async' \
                     ' --node_type sigmoid --nodes 10' \
-                    ' --sim bpg'%SECONDS).split()
+                    ' --sim bpg --fitness mean-distance'%SECONDS).split()
         ev.main()
         
     def test_2_createpop_sigmoid_quantised(self):
         sys.argv = ('ev.py -r ev_test_sigmoid_quantised -p 3 -t %d -g 5' \
                     ' --topology 1d --update async' \
                     ' --node_type sigmoid --nodes 10' \
-                    ' --sim bpg -q 32'%SECONDS).split()
+                    ' --sim bpg -q 32 --fitness mean-distance'%SECONDS).split()
         ev.main()
         
     def test_3_createpop_logical(self):
         sys.argv = ('ev.py -r ev_test_logical -p 3 -t %d -g 5' \
                     ' --topology 1d --update async' \
                     ' --node_type logical --states 2 --nodes 10' \
-                    ' --sim bpg'%SECONDS).split()
+                    ' --sim bpg --fitness mean-distance'%SECONDS).split()
         ev.main()
 
     def test_4_evolvepops(self):

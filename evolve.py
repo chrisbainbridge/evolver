@@ -52,7 +52,7 @@ class Generation(PersistentList):
         for _ in range(size):
             log.debug('.')
             # Generate new individual
-            x = new_individual_fn(**dict(new_individual_args)) 
+            x = new_individual_fn(**dict(new_individual_args))
             x.score = None
             self.append(x)
             transaction.savepoint()

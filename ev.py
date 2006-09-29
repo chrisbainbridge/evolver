@@ -40,6 +40,9 @@
      --dom_weight x,y Domain for weight values (default [-7,7])
      --nb_dist x      Max distance of a nodes neighbour in any dimension (default 1)
                       Note: neighbourhoods are squares not crosses
+     --fitness x      Specify fitness function [bpgsim only], can be:
+                        cumulative-z : average z value of all body parts summed over time
+                        mean-distance : average Euclidean distance of all body parts
 
 ===== Unlock =====
 
@@ -93,7 +96,7 @@ import sim
 log = logging.getLogger('ev')
 
 def setup_logging():
-    level = logging.ERROR
+    level = logging.INFO
     if '-d' in sys.argv:
         level = logging.DEBUG
         sys.argv.remove('-d')
@@ -114,7 +117,7 @@ def main():
     log.debug(' '.join(sys.argv))
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:ln:p:q:sz:t:uvm', ['qt=','topology=','update=','node_type=','nodes=','dom_bias=','dom_value=','dom_weight=','nodes_per_input=','network=','plotbpg=','plotnets=','unroll','nb_dist=','toponly','movie=','sim=','states=','statlog='])
+        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:ln:p:q:sz:t:uvm', ['qt=','topology=','update=','node_type=','nodes=','dom_bias=','dom_value=','dom_weight=','nodes_per_input=','network=','plotbpg=','plotnets=','unroll','nb_dist=','toponly','movie=','sim=','states=','statlog=', 'fitness='])
         log.debug('opts %s', opts)
         log.debug('args %s', args)
         # print help for no args
@@ -161,6 +164,7 @@ def main():
     toponly = 0
     g_index = None
     runsim = 0
+    fitnessFunctionName = None 
     for o, a in opts:
         log.debug('parsing %s,%s',o,a)
         if o == '-c':
@@ -246,6 +250,8 @@ def main():
             evolve.statlog = a
         elif o == '--states':
             numberOfStates = int(a)
+        elif o == '--fitness':
+            fitnessFunctionName = a
         else:
             log.critical('unhandled option %s',o)
             return 1
@@ -318,16 +324,21 @@ def main():
                   'topology' : topology,
                   'update_style' : update_style,
                   'nb_dist' : nb_dist })
+        new_sim_args = PersistentMapping ({ 'max_simsecs' : max_simsecs })
         if simulation == 'bpg':
             new_individual_fn = bpg.BodyPartGraph
             new_individual_args = PersistentMapping(
                     { 'network_args' : new_network_args })
             new_sim_fn = sim.BpgSim
+            if not fitnessFunctionName:
+                log.critical('must specify --fitness for new population')
+                return 1
+
+            new_sim_args['fitnessName'] = fitnessFunctionName
         elif simulation == 'pb':
             new_individual_fn = network.Network
             new_individual_args = new_network_args
             new_sim_fn = sim.PoleBalanceSim
-        new_sim_args = PersistentMapping ({ 'max_simsecs' : max_simsecs })
 
         root[g] = evolve.Generation(popsize, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args)
 
@@ -413,8 +424,10 @@ def main():
             secs = max_simsecs
         else:
             secs = root[g].new_sim_args['max_simsecs']
+        if fitnessFunctionName is None:
+            fitnessFunctionName = root[g].new_sim_args['fitnessName']
 
-        s = root[g].new_sim_fn(secs)
+        s = root[g].new_sim_fn(secs, fitnessFunctionName)
         s.add(root[g][i])
         # restore saved random state - ensures simulation reproducibility
         #random.setstate(root[g].random_state)
@@ -424,7 +437,7 @@ def main():
 #        import psyco
 #        psyco.full()
         if gui:
-            log.info('Launching GUI')
+            log.debug('Launching GUI')
             # start the qt app
             from qtapp import MyApp
             myapp = MyApp([sys.argv[0]]+qtopts.split(), s)
