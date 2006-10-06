@@ -379,7 +379,7 @@ def main():
             # print list of generations
             for (k,i) in root.iteritems():
                 if isinstance(i, evolve.Generation):
-                    print 'Generation: %s [gen=%d max=%s]'%(k, i.gen_num, i[0].score) #,i
+                    print 'Generation: %s [gen=%d/%d max=%s]'%(k, i.gen_num, i.final_gen_num, i[0].score) #,i
         else:
             # print list of individuals in a generation
             print 'Num\t| Score'
