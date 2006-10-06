@@ -58,6 +58,7 @@ class Generation(PersistentList):
             transaction.savepoint()
         self.random_state = random.getstate()
         self.prev_gen = []
+        self.next_gen_lock = None
 
     def recordStats(self):
         "Record statistics"

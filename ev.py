@@ -403,7 +403,7 @@ def main():
         for r in runs:
             if root[r].gen_num <= root[r].final_gen_num:
                 log.debug('client evaluating %s',r)
-                root[g].runClientLoop()
+                root[r].runClientLoop()
             else:
                 log.debug('run %s is done (%d/%d)', r, root[r].gen_num,
                           root[r].final_gen_num)

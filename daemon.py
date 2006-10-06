@@ -87,7 +87,10 @@ def createDaemon():
 
    for fd in range(0, maxfd):
       try:
-         os.close(fd)
+          # we can't close the fds because we get an error from os.urandom about
+          # the fd having disappeared...
+#         os.close(fd)
+          pass
       except OSError:   # ERROR (ignore)
          pass
 
