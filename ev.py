@@ -80,6 +80,7 @@ import cPickle
 import getopt
 import transaction
 import logging
+import re
 
 from ZODB.FileStorage import FileStorage
 from ZEO.ClientStorage import ClientStorage
@@ -144,8 +145,12 @@ def main():
     simulation = 'bpg'
     #discrete = 0
     quanta = None
-    server_addr = 'localhost'
+    if re.match(r'bw240n\d\d.inf.ed.ac.uk',  socket.gethostname()):
+        server_addr = 'bw240n01.inf.ed.ac.uk'
+    else:
+        server_addr = 'localhost'
     client = 0
+    master = 0
     g = None
     create_initial_population = 0
     background = 0
@@ -245,7 +250,7 @@ def main():
             assert a in ('bpg', 'pb')
             simulation = a
         elif o == '-m':
-            evolve.master = 1
+            master = 1
         elif o == '--statlog':
             evolve.statlog = a
         elif o == '--states':
@@ -260,8 +265,8 @@ def main():
         qtopts = '-geometry 640x480'
 
     # check options
-    if gui + client + create_initial_population > 1 :
-        log.critical('gui, client, create_initial are mutually exclustive modes')
+    if gui + client + master + create_initial_population > 1 :
+        log.critical('gui, client, master, create_initial are mutually exclustive modes')
         return 1
     if g_index != None and not runsim and not plotbpg and not plotnets:
         log.critical('What do you want me to do with that individual?')
@@ -392,8 +397,8 @@ def main():
         root[g].final_gen_num = root[g].gen_num + evolve_for_generations
         transaction.commit()
 
-    if client:
-        log.debug('client mode')
+    if client or master:
+        log.debug('master/client mode')
         # look for jobs
         if g:
             runs = [g]
@@ -403,7 +408,7 @@ def main():
         for r in runs:
             if root[r].gen_num <= root[r].final_gen_num:
                 log.debug('client evaluating %s',r)
-                root[r].runClientLoop()
+                root[r].runClientLoop(master, client)
             else:
                 log.debug('run %s is done (%d/%d)', r, root[r].gen_num,
                           root[r].final_gen_num)

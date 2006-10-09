@@ -28,7 +28,6 @@ log.setLevel(logging.ERROR)
 log.debug('recursion limit is %d, setting to 4000', sys.getrecursionlimit())
 sys.setrecursionlimit(4000)
 
-master = 0
 statlog = None
 
 class Generation(PersistentList):
@@ -181,7 +180,7 @@ class Generation(PersistentList):
 
         s = 'top 5 of new gen scores are:'
         for i in range(len(self.prev_gen)):
-           s += str(self.prev_gen[i].score)
+           s += str(self.prev_gen[i].score) + ' '
         log.debug(s)
         self.elitistUpdate()
         #self.randomUpdate()
@@ -200,27 +199,20 @@ class Generation(PersistentList):
 
         if type(x) is int:
             x = self[x]
-        # get lock on this individual
-        transaction.begin()
-        x.in_progress = (socket.gethostname(), time.time())
-        x.score = None
-        transaction.commit()
-        # random seed the same for each evaluation
+        # set random seed the same for each evaluation
         log.debug('evaluating individual %d', self.index(x))
-        #random.setstate(self.random_state)
-        random.seed()
+        currentRandomState = random.getstate()
+        random.setstate(self.random_state)
         # do sim
         sim = self.new_sim_fn(**dict(self.new_sim_args))
         sim.add(x)
         sim.run()
         # record score, clear lock, cleanup
         x.score = sim.score
-        del x.in_progress
         transaction.commit()
-        self.sort(lambda x,y: cmp(y.score, x.score))
-        transaction.commit()
+        random.setstate(currentRandomState)
 
-    def runClientLoop(self):
+    def runClientLoop(self, master, client):
         """Evolve client.
 
         Make sure everything in the current generation is evaluated,
@@ -232,20 +224,12 @@ class Generation(PersistentList):
 
         while 1:
             try:
-                # start new transaction
                 db.sync()
-                transaction.begin()
-                # find ready individuals
-                ready = []
-                for x in self:
-                    if x.score == None:
-                        ready.append(x)
-                if ready:
-                    # evaluate a random individual
+                ready = [ x for x in self if x.score == None ]
+                if client and ready:
                     x = random.choice(ready)
                     self.evaluate(x)
-                elif master or not master and self.next_gen_lock \
-                and int(time.time() - self.next_gen_lock[1]) > 1200:
+                elif master and not ready:
                     # finalise this generation
                     self.recordStats()
                     if self.gen_num < self.final_gen_num:
@@ -258,7 +242,7 @@ class Generation(PersistentList):
                     # all individuals in final generation are done, so exit
                     break
                 else:
-                    # the master must be busy.. wait a bit
+                    # nothing to do. wait a bit
                     time.sleep(15)
             except ConflictError:
                 # Someone beat us to a lock or update
