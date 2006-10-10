@@ -265,8 +265,8 @@ def main():
         qtopts = '-geometry 640x480'
 
     # check options
-    if gui + client + master + create_initial_population > 1 :
-        log.critical('gui, client, master, create_initial are mutually exclustive modes')
+    if gui + (client | master) + create_initial_population > 1 :
+        log.critical('gui, client/master, create_initial are mutually exclustive modes')
         return 1
     if g_index != None and not runsim and not plotbpg and not plotnets:
         log.critical('What do you want me to do with that individual?')
