@@ -4,6 +4,7 @@ import unittest
 import logging
 import sys
 import testoob
+import new
 
 import ev
 from test_common import *
@@ -11,40 +12,42 @@ from test_common import *
 rl = logging.getLogger()
 
 POPS = ['ev_test_sigmoid', 'ev_test_sigmoid_quantised', 'ev_test_logical']
+
 SECONDS = 20
+DEFAULT_CREATE_ARGS = '-p 3 -t %d -g 5' \
+                    ' --topology 1d --update async' \
+                    ' --nodes 10' \
+                    ' --sim bpg --fitness mean-distance '%SECONDS
+CREATE_ARGS = {
+        'ev_test_sigmoid' : DEFAULT_CREATE_ARGS + '--node_type sigmoid', 
+        'ev_test_sigmoid_quantised' : DEFAULT_CREATE_ARGS + '--node_type sigmoid -q 32',
+        'ev_test_logical' : DEFAULT_CREATE_ARGS + '--node_type logical --states 2'
+        }
+
+def getCreateArgs(popName):
+    return ('ev.py -r %s %s'%(popName, CREATE_ARGS[popName]))
 
 class EvTestCase(unittest.TestCase):
+    pass
 
-    def test_0_deletepops(self):
-        for pop in POPS:
-            sys.argv = ('ev.py -r %s -e'%pop).split()
-            ev.main()
+def createFunc(name, args):
+    def func(self):
+        sys.argv = args.split()
+        ev.main()
+    m = new.instancemethod(func, None, EvTestCase)
+    setattr(EvTestCase, name, m)
 
-    def test_1_createpop_sigmoid(self):
-        sys.argv = ('ev.py -r ev_test_sigmoid -p 3 -t %d -g 5' \
-                    ' --topology 1d --update async' \
-                    ' --node_type sigmoid --nodes 10' \
-                    ' --sim bpg --fitness mean-distance'%SECONDS).split()
-        ev.main()
-        
-    def test_2_createpop_sigmoid_quantised(self):
-        sys.argv = ('ev.py -r ev_test_sigmoid_quantised -p 3 -t %d -g 5' \
-                    ' --topology 1d --update async' \
-                    ' --node_type sigmoid --nodes 10' \
-                    ' --sim bpg -q 32 --fitness mean-distance'%SECONDS).split()
-        ev.main()
-        
-    def test_3_createpop_logical(self):
-        sys.argv = ('ev.py -r ev_test_logical -p 3 -t %d -g 5' \
-                    ' --topology 1d --update async' \
-                    ' --node_type logical --states 2 --nodes 10' \
-                    ' --sim bpg --fitness mean-distance'%SECONDS).split()
-        ev.main()
+x = 0
+def getName(op):
+    global x
+    s = 'test_%d_%s_%s'%(x, op, pop)
+    x += 1
+    return s
 
-    def test_4_evolvepops(self):
-        for pop in POPS:
-            sys.argv = ('ev.py -r %s -c -m'%pop).split()
-            ev.main()
+for pop in POPS:
+    createFunc(getName('delete'), 'ev.py -r %s -e'%pop)
+    createFunc(getName('create'), getCreateArgs(pop))
+    createFunc(getName('run'), 'ev.py -r %s -c -m'%pop)
 
 if __name__ == "__main__":
     setup_logging(rl)
