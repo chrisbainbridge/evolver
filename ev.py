@@ -96,6 +96,9 @@ import sim
 
 log = logging.getLogger('ev')
 
+CLUSTER_MASTER = 'bw64node01.inf.ed.ac.uk'
+CLUSTER_REGEXP = r'bw240n\d\d.inf.ed.ac.uk'
+
 def setup_logging():
     level = logging.INFO
     if '-d' in sys.argv:
@@ -145,10 +148,18 @@ def main():
     simulation = 'bpg'
     #discrete = 0
     quanta = None
-    if re.match(r'bw240n\d\d.inf.ed.ac.uk',  socket.gethostname()):
-        server_addr = 'bw240n01.inf.ed.ac.uk'
+    if re.match(CLUSTER_REGEXP,  socket.gethostname()):
+        server_addr = CLUSTER_MASTER
     else:
-        server_addr = 'localhost'
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            s.connect(('localhost', 12345))
+            s.close()
+            server_addr = 'localhost'
+        except:
+            server_addr = CLUSTER_MASTER
+    log.debug('zodb server is %s', server_addr)
+
     client = 0
     master = 0
     g = None
