@@ -4,9 +4,9 @@ set terminal postscript eps noenhanced color solid defaultplex
 set out 'stats.eps'
 
 plot \
-'evo.stats' using 1:2 title 'min' , \
-'evo.stats' using 1:3 title 'mean' , \
-'evo.stats' using 1:4 title 'max' 
+'fitnessValues.tmp' using 1:2 title 'min' , \
+'fitnessValues.tmp' using 1:3 title 'mean' , \
+'fitnessValues.tmp' using 1:4 title 'max' 
 
 clear
 

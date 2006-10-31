@@ -58,6 +58,7 @@
  --plotbpg f.type     Plot to file. Type can be dot, ps, png, etc.
      --toponly         Only draw topology - no weights or bi-connects
      --unroll          Unroll bpg before converting to dot file
+ --plotfitness f.pdf  Plot min/mean/max fitness graph for specified generation
 
 ===== Sim =====
 
@@ -81,6 +82,7 @@ import getopt
 import transaction
 import logging
 import re
+import Gnuplot
 
 from ZODB.FileStorage import FileStorage
 from ZEO.ClientStorage import ClientStorage
@@ -97,9 +99,6 @@ import daemon
 
 log = logging.getLogger('ev')
 
-CLUSTER_MASTER = 'bw64node01.inf.ed.ac.uk'
-CLUSTER_REGEXP = r'bw240n\d\d.inf.ed.ac.uk'
-
 def setup_logging():
     level = logging.INFO
     if '-d' in sys.argv:
@@ -115,14 +114,12 @@ def cleanup():
     transaction.get().abort()
     if db.conn:
         db.conn.close()
-#    if evolve.db:
-#        evolve.db.close()
 
 def main():
     log.debug(' '.join(sys.argv))
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:ln:p:q:sz:t:uvm', ['qt=','topology=','update=','node_type=','nodes=','dom_bias=','dom_value=','dom_weight=','nodes_per_input=','network=','plotbpg=','plotnets=','unroll','nb_dist=','toponly','movie=','sim=','states=','statlog=', 'fitness='])
+        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:ln:p:q:sz:t:uvm', ['qt=','topology=','update=','node_type=','nodes=','dom_bias=','dom_value=','dom_weight=','nodes_per_input=','network=','plotbpg=','plotfitness=','plotnets=','unroll','nb_dist=','toponly','movie=','sim=','states=','statlog=', 'fitness='])
         log.debug('opts %s', opts)
         log.debug('args %s', args)
         # print help for no args
@@ -149,17 +146,8 @@ def main():
     simulation = 'bpg'
     #discrete = 0
     quanta = None
-    if re.match(CLUSTER_REGEXP,  socket.gethostname()):
-        server_addr = CLUSTER_MASTER
-    else:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            s.connect(('localhost', 12345))
-            s.close()
-            server_addr = 'localhost'
-        except:
-            server_addr = CLUSTER_MASTER
-    log.debug('zodb server is %s', server_addr)
+    server_addr = db.getDefaultServer()
+    plotfitness = None
 
     client = 0
     master = 0
@@ -250,6 +238,8 @@ def main():
             plotbpg = a
         elif o == '--plotnets':
             plotnets = a
+        elif o == '--plotfitness':
+            plotfitness = a
         elif o == '--unroll':
             unroll = 1
         elif o == '--nb_dist':
@@ -290,6 +280,7 @@ def main():
         # record pid so it can be used by monitoring programs
         open('/tmp/client.pid', 'w').write('%d'%(os.getpid()))
 
+    log.debug('zodb server is %s', server_addr)
     root = db.connect(server_addr)
 
     if unlock:
@@ -363,8 +354,8 @@ def main():
         log.debug('commit done, end of create_initial_population')
 
     elif g and g not in root:
-            log.debug('Generation %s not in db %s', g, root.keys())
-            return
+        log.debug('Generation %s not in db %s', g, root.keys())
+        return
 
     if delete:
         if not g:
@@ -373,6 +364,22 @@ def main():
         del(root[g])
         transaction.commit()
 
+    if plotfitness:
+        if not g:
+            log.critical('which generation?')
+            return 1
+        gp = Gnuplot.Gnuplot()
+        gp('set style data line')
+        gp('set terminal pdf')
+        gp('set output "%s"'%plotfitness)
+        d = root[g].fitnessList
+        d0 = Gnuplot.Data([x[0] for x in d], title='min')
+        d1 = Gnuplot.Data([x[1] for x in d], title='mean')
+        d2 = Gnuplot.Data([x[2] for x in d], title='max')
+        gp.xlabel('Generation')
+        gp.ylabel('Fitness')
+        gp.plot(d0, d1, d2)
+    
     if plotbpg or plotnets:
         if not g:
             log.critical('which generation?')

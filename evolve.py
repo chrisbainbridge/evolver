@@ -11,6 +11,7 @@ import random
 import time
 import sys
 import os
+from numpy import matrix
 
 import db
 
@@ -58,9 +59,16 @@ class Generation(PersistentList):
         self.random_state = random.getstate()
         self.prev_gen = []
         self.next_gen_lock = None
+        self.fitnessList = PersistentList()
 
     def recordStats(self):
         "Record statistics"
+        fitnessValues = [x.score for x in self]
+        m = matrix([fitnessValues])
+        if len(self.fitnessList) > self.gen_num:
+            self.fitnessList = self.fitnessList[:self.gen_num]
+        self.fitnessList.append((m.min(), m.mean(), m.max()))
+        transaction.commit()
         if statlog:
             if not os.path.exists(statlog):
                 f = open(statlog, 'w')
@@ -178,7 +186,7 @@ class Generation(PersistentList):
         self.prev_gen = self[:]
         del self[:]
 
-        s = 'top 5 of new gen scores are:'
+        s = 'top %d of new gen scores are:'%len(self.prev_gen)
         for i in range(len(self.prev_gen)):
            s += str(self.prev_gen[i].score) + ' '
         log.debug(s)
@@ -228,21 +236,23 @@ class Generation(PersistentList):
                 ready = [ x for x in self if x.score == None ]
                 if client and ready:
                     x = random.choice(ready)
+                    log.debug('client evaluating %s', x)
                     self.evaluate(x)
                 elif master and not ready:
+                    log.debug('all evals done, updating generation')
                     # finalise this generation
                     self.recordStats()
                     if self.gen_num < self.final_gen_num:
                         # make next generation
                         self.update()
                     else:
-                        # final generation is done, so exit
+                        log.debug('final generation is done, so exit')
                         break
                 elif self.gen_num == self.final_gen_num:
-                    # all individuals in final generation are done, so exit
+                    log.debug('all individuals done in final generation, exiting')
                     break
                 else:
-                    # nothing to do. wait a bit
+                    log.debug('nothing to do, sleeping...')
                     time.sleep(15)
             except ConflictError:
                 # Someone beat us to a lock or update
