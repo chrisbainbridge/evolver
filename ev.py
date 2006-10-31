@@ -404,6 +404,8 @@ def main():
             print 'Generation: name=%s gen=%d final_gen_num=%d'%(g,
                                                           root[g].gen_num,
                                                           root[g].final_gen_num)
+            if root[g].next_gen_lock:
+                print 'Generation is currently being updated on %s, update running for %d seconds'%(root[g].next_gen_lock[0], time.time() - root[g].next_gen_lock[1])
     if change_generations or create_initial_population:
         root[g].final_gen_num = root[g].gen_num + evolve_for_generations
         transaction.commit()
