@@ -93,6 +93,7 @@ import evolve
 import network
 import node # ignore checker error about this import
 import sim
+import daemon
 
 log = logging.getLogger('ev')
 
@@ -284,8 +285,7 @@ def main():
         return 1
         
     # before we do anything, fork if necessary
-    if client and background:
-        import daemon
+    if (master or client) and background:
         daemon.createDaemon()
         # record pid so it can be used by monitoring programs
         open('/tmp/client.pid', 'w').write('%d'%(os.getpid()))
