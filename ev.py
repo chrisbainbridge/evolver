@@ -43,6 +43,9 @@
      --fitness x      Specify fitness function [bpgsim only], can be:
                         cumulative-z : average z value of all body parts summed over time
                         mean-distance : average Euclidean distance of all body parts
+ --ga-elite           Use an elitist GA
+ --ga-steady-state    Use a steady state parallel GA
+ --ga-random          Use a random search 
 
 ===== Unlock =====
 
@@ -82,7 +85,6 @@ import getopt
 import transaction
 import logging
 import re
-import Gnuplot
 
 from ZODB.FileStorage import FileStorage
 from ZEO.ClientStorage import ClientStorage
@@ -96,6 +98,11 @@ import network
 import node # ignore checker error about this import
 import sim
 import daemon
+import cluster
+
+# stuff that isn't needed on cluster hosts
+if not cluster.isHost():
+    import Gnuplot
 
 log = logging.getLogger('ev')
 
@@ -119,7 +126,7 @@ def main():
     log.debug(' '.join(sys.argv))
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:ln:p:q:sz:t:uvm', ['qt=','topology=','update=','node_type=','nodes=','dom_bias=','dom_value=','dom_weight=','nodes_per_input=','network=','plotbpg=','plotfitness=','plotnets=','unroll','nb_dist=','toponly','movie=','sim=','states=','statlog=', 'fitness='])
+        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:ln:p:q:sz:t:uvm', ['qt=','topology=','update=','node_type=','nodes=','dom_bias=','dom_value=','dom_weight=','ga-elite', 'ga-steady-state','nodes_per_input=','network=','plotbpg=','plotfitness=','plotnets=','unroll','nb_dist=','toponly','movie=','sim=','states=','statlog=', 'fitness='])
         log.debug('opts %s', opts)
         log.debug('args %s', args)
         # print help for no args
@@ -170,6 +177,7 @@ def main():
     g_index = None
     runsim = 0
     fitnessFunctionName = None 
+    ga = 'elite'
     for o, a in opts:
         log.debug('parsing %s,%s',o,a)
         if o == '-c':
@@ -232,6 +240,10 @@ def main():
             # FIXME: THIS IS NOT BEING USED
             nodes_per_input = int(a)
             fixme
+        elif o == 'ga-elite':
+            ga = 'elite'
+        elif o == 'ga-steady-state':
+            ga = 'steady-state'
         elif o == '-i':
             g_index = int(a)
         elif o == '--plotbpg':
@@ -278,7 +290,9 @@ def main():
     if (master or client) and background:
         daemon.createDaemon()
         # record pid so it can be used by monitoring programs
-        open('/tmp/client.pid', 'w').write('%d'%(os.getpid()))
+        f = open('/tmp/client.pid', 'w')
+        f.write('%d\n'%(os.getpid()))
+        f.close()
 
     log.debug('zodb server is %s', server_addr)
     root = db.connect(server_addr)
@@ -347,7 +361,7 @@ def main():
             new_individual_args = new_network_args
             new_sim_fn = sim.PoleBalanceSim
 
-        root[g] = evolve.Generation(popsize, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args)
+        root[g] = evolve.Generation(popsize, ga, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args)
 
         log.debug('committing all subtransactions')
         transaction.commit()

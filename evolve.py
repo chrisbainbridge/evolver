@@ -33,14 +33,17 @@ statlog = None
 
 class Generation(PersistentList):
 
-    def __init__(self, size, new_individual_fn=None, new_individual_args=None, new_sim_fn=None, new_sim_args=None):
+        # cons sig must be ok when called with only self,size args due to
+        # assumptions of UserList.__getslice__ 
+
+    def __init__(self, sizeOrList, ga='elite', new_individual_fn=None, new_individual_args=None, new_sim_fn=None, new_sim_args=None):
         """Create an initial generation
 
         size -- number of solutions
         """
-        # hack because UserList methods treat __init__ like its own
-        if type(size) is not int:
-            PersistentList.__init__(self, size)
+        # hack because UserList methods like __getslice_ treat __init__ like its own
+        if type(sizeOrList) is list:
+            PersistentList.__init__(self, sizeOrList)
             return
         PersistentList.__init__(self)
         log.debug('Generation.__init__')
@@ -60,6 +63,7 @@ class Generation(PersistentList):
         self.prev_gen = []
         self.next_gen_lock = None
         self.fitnessList = PersistentList()
+        self.ga = ga
 
     def recordStats(self):
         "Record statistics"
@@ -105,11 +109,14 @@ class Generation(PersistentList):
 
         # copy the elites into next generation
         self.prev_gen.sort(lambda x,y: cmp(y.score, x.score))
+        count = 1
         for x in self.prev_gen[:num_elites]:
             y = copy.deepcopy(x)
             #y.mutate(0.0) # aging damage (0.15)
             self.append(y)
             transaction.savepoint()
+            log.info('.' * count)
+            count += 1
         log.debug('elites = %s'%self)
 
         # we now have some elites. copy them and mutate to generate children.
@@ -124,6 +131,8 @@ class Generation(PersistentList):
             mutations.append(m)
             self.append(child)
             transaction.savepoint()
+            log.info('.' * count)
+            count += 1
         log.debug('child mutations = %s', str(mutations))
 
     def randomUpdate(self):
@@ -178,7 +187,7 @@ class Generation(PersistentList):
         log.debug('update()')
         self.next_gen_lock = (socket.gethostname(), time.time())
         transaction.commit()
-        log.debug('hah, we got the lock. Evolving generation %d', self.gen_num)
+        log.info('Making new generation %d', self.gen_num + 1)
 
         transaction.begin()
         for bg in self.prev_gen:
@@ -190,7 +199,10 @@ class Generation(PersistentList):
         for i in range(len(self.prev_gen)):
            s += str(self.prev_gen[i].score) + ' '
         log.debug(s)
-        self.elitistUpdate()
+        if self.ga == 'elite':
+            self.elitistUpdate()
+        elif self.ga == 'steady-state':
+            bad
         #self.randomUpdate()
         # reset everything
         for x in self:
@@ -236,20 +248,20 @@ class Generation(PersistentList):
                 ready = [ x for x in self if x.score == None ]
                 if client and ready:
                     x = random.choice(ready)
-                    log.debug('client evaluating %s', x)
+                    log.info('client evaluating %s', x)
                     self.evaluate(x)
                 elif master and not ready:
-                    log.debug('all evals done, updating generation')
+                    log.info('all evals done, updating generation')
                     # finalise this generation
                     self.recordStats()
                     if self.gen_num < self.final_gen_num:
                         # make next generation
                         self.update()
                     else:
-                        log.debug('final generation is done, so exit')
+                        log.info('final generation is done, so exit')
                         break
                 elif self.gen_num == self.final_gen_num:
-                    log.debug('all individuals done in final generation, exiting')
+                    log.info('all individuals done in final generation, exiting')
                     break
                 else:
                     log.debug('nothing to do, sleeping...')

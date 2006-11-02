@@ -7,9 +7,7 @@ import thread
 import asyncore
 import re
 import socket
-
-CLUSTER_MASTER = 'bw64node01.inf.ed.ac.uk'
-CLUSTER_REGEXP = r'bw240n\d\d.inf.ed.ac.uk'
+import cluster
 
 conn = None
 once_only = 1 # don't run stuff twice when main is called in test harness
@@ -34,8 +32,8 @@ def sync():
         conn.sync()
 
 def getDefaultServer():
-    if re.match(CLUSTER_REGEXP,  socket.gethostname()):
-        server_addr = CLUSTER_MASTER
+    if cluster.isHost():
+        server_addr = cluster.MASTER
     else:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
@@ -43,5 +41,5 @@ def getDefaultServer():
             s.close()
             server_addr = 'localhost'
         except:
-            server_addr = CLUSTER_MASTER
+            server_addr = cluster.MASTER
     return server_addr

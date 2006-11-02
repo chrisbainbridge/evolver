@@ -85,12 +85,12 @@ def createDaemon():
    except (AttributeError, ValueError):
       maxfd = 256       # default maximum
 
+# we can't close the fds because we get an error from os.urandom about
+# the fd having disappeared...
+   maxfd = 3
    for fd in range(0, maxfd):
       try:
-          # we can't close the fds because we get an error from os.urandom about
-          # the fd having disappeared...
-#         os.close(fd)
-          pass
+         os.close(fd)
       except OSError:   # ERROR (ignore)
          pass
 
