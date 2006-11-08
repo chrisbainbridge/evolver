@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import unittest
+from unittest import TestCase
 import logging
 import sys
 import testoob
@@ -11,43 +11,56 @@ from test_common import *
 
 rl = logging.getLogger()
 
-POPS = ['ev_test_sigmoid', 'ev_test_sigmoid_quantised', 'ev_test_logical']
-
 SECONDS = 20
-DEFAULT_CREATE_ARGS = '-p 3 -t %d -g 5' \
+DEFAULT_CREATE_ARGS = '-p 3 -t %d -g 3' \
                     ' --topology 1d --update async' \
                     ' --nodes 10' \
                     ' --sim bpg --fitness mean-distance '%SECONDS
-CREATE_ARGS = {
-        'ev_test_sigmoid' : DEFAULT_CREATE_ARGS + '--node_type sigmoid', 
-        'ev_test_sigmoid_quantised' : DEFAULT_CREATE_ARGS + '--node_type sigmoid -q 32',
-        'ev_test_logical' : DEFAULT_CREATE_ARGS + '--node_type logical --states 2'
-        }
 
-def getCreateArgs(popName):
-    return ('ev.py -r %s %s'%(popName, CREATE_ARGS[popName]))
+def main(s):
+    sys.argv = s.split()
+    ev.main()
 
-class EvTestCase(unittest.TestCase):
-    pass
+def delete(gen):
+    main('ev.py -r %s -e'%gen)
 
-def createFunc(name, args):
-    def func(self):
-        sys.argv = args.split()
-        ev.main()
-    m = new.instancemethod(func, None, EvTestCase)
-    setattr(EvTestCase, name, m)
+def create(gen, args):
+    main('ev.py -r %s %s %s'%(gen, DEFAULT_CREATE_ARGS, args))
 
-x = 0
-def getName(op):
-    global x
-    s = 'test_%d_%s_%s'%(x, op, pop)
-    x += 1
-    return s
+def run(gen):
+    main('ev.py -r %s -c -m'%gen)
 
-for pop in POPS:
-    createFunc(getName('delete'), 'ev.py -r %s -e'%pop)
-    createFunc(getName('create'), getCreateArgs(pop))
-    createFunc(getName('run'), 'ev.py -r %s -c -m'%pop)
+class TestSigmoid(TestCase):
+    def test_1_delete(self):
+        delete('test_sigmoid')
+    def test_2_create(self):
+        create('test_sigmoid', '--node_type sigmoid')
+    def test_3_run(self):
+        run('test_sigmoid')
+        
+class TestSigmoidQuantised(TestCase):
+    def test_1_delete(self):
+        delete('test_sigmoid_q')
+    def test_2_create(self):
+        create('test_sigmoid_q', '--node_type sigmoid -q 32')
+    def test_3_run(self):
+        run('test_sigmoid_q')
+
+class TestLogical(TestCase):
+    def test_1_delete(self):
+        delete('test_logical')
+    def test_2_create(self):
+        create('test_logical', '--node_type logical --states 2')
+    def test_3_run(self):
+        run('test_logical')
+
+class TestSteadyState(TestCase):
+    def test_1_delete(self):
+        delete('test_steadystate')
+    def test_2_create(self):
+        create('test_steadystate', '--node_type sigmoid --ga-steady-state')
+    def test_3_run(self):
+        run('test_steadystate')
 
 if __name__ == "__main__":
     setup_logging(rl)
