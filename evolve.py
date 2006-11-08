@@ -33,10 +33,10 @@ statlog = None
 
 class Generation(PersistentList):
 
-        # cons sig must be ok when called with only self,size args due to
-        # assumptions of UserList.__getslice__ 
+    # cons sig must be ok when called with only self,size args due to
+    # assumptions of UserList.__getslice__ 
 
-    def __init__(self, sizeOrList, ga='elite', new_individual_fn=None, new_individual_args=None, new_sim_fn=None, new_sim_args=None):
+    def __init__(self, sizeOrList, new_individual_fn=None, new_individual_args=None, new_sim_fn=None, new_sim_args=None, ga='elite', mutationRate=0.01):
         """Create an initial generation
 
         size -- number of solutions
@@ -52,8 +52,8 @@ class Generation(PersistentList):
         self.new_individual_args = new_individual_args
         self.new_sim_fn = new_sim_fn
         self.new_sim_args = new_sim_args
-        for _ in range(size):
-            log.debug('.')
+        for i in range(sizeOrList):
+            log.debug('.'*(i+1))
             # Generate new individual
             x = new_individual_fn(**dict(new_individual_args))
             x.score = None
@@ -61,13 +61,15 @@ class Generation(PersistentList):
             transaction.savepoint()
         self.random_state = random.getstate()
         self.prev_gen = []
-        self.next_gen_lock = None
+        self.setUpdateInfo()
         self.fitnessList = PersistentList()
         self.ga = ga
+        self.numberOfEvaluations = 0
+        self.mutationRate = mutationRate
 
     def recordStats(self):
         "Record statistics"
-        fitnessValues = [x.score for x in self]
+        fitnessValues = [x.score for x in self if x.score != None]
         m = matrix([fitnessValues])
         if len(self.fitnessList) > self.gen_num:
             self.fitnessList = self.fitnessList[:self.gen_num]
@@ -125,9 +127,10 @@ class Generation(PersistentList):
             p = self.prev_gen[j%num_elites]
             child = copy.deepcopy(p)
             # FIXME: mutation prob. should be set on command line
-            m = 0
-            while m == 0:
-                m = child.mutate(0.01) # 0.10
+#            m = 0
+#            while m == 0:
+#                m = child.mutate(0.01) # 0.10
+            m = child.mutate(self.mutationRate)
             mutations.append(m)
             self.append(child)
             transaction.savepoint()
@@ -135,59 +138,14 @@ class Generation(PersistentList):
             count += 1
         log.debug('child mutations = %s', str(mutations))
 
-    def randomUpdate(self):
-        "Random search, top 1 survives but "
-        log.debug('randomUpdate()')
-
-        num_elites = max(int(round(len(self.prev_gen)/100.0*10)), 1)
-        # copy unchanged into next generation
-#        for x in self.prev_gen[:num_elites]:
-#            y = copy.deepcopy(x)
-#            if hasattr(y, 'sanityCheck'):
-#                y.sanityCheck()
-#            self.append(y)
-#            transaction.savepoint()
-
-        # copy unchanged elite or its child unless they were both beaten by a random
-        randoms_copied = []
-        for j in range(num_elites, num_elites*2):
-            if self.prev_gen[j-num_elites].score > self.prev_gen[j].score:
-                p = self.prev_gen[j-num_elites]
-            else:
-                p = self.prev_gen[j]
-            # did it get beaten by a random?
-            bestk = None
-            for k in range(num_elites**2, len(self.prev_gen)):
-                if k not in randoms_copied and self.prev_gen[k].score > p.score:
-                    p = self.prev_gen[k]
-                    bestk = k
-            if bestk != None:
-                randoms_copied.append(k)
-            child = copy.deepcopy(p)
-            #child.mutate(0.02)
-            self.append(child)
-            transaction.savepoint()
-
-        # children of elites
-        for j in range(num_elites):
-            child = copy.deepcopy(self.prev_gen[j])
-            child.mutate(0.02)
-            self.append(child)
-            transaction.savepoint()
-
-        # the rest random search
-        for j in range(num_elites*2, len(self.prev_gen)):
-            p = self.prev_gen[j]
-            child = copy.deepcopy(p)
-            child.mutate(0.02)
-            self.append(child)
-            transaction.savepoint()
+    def setUpdateInfo(self, updating=0):
+        self.updateInfo = (socket.gethostname(), time.time(), updating)
 
     def update(self):
         log.debug('update()')
-        self.next_gen_lock = (socket.gethostname(), time.time())
+        log.info('Making new generation %d (evals took %d seconds)', self.gen_num + 1, time.time() - self.updateInfo[1])
+        self.setUpdateInfo(1)
         transaction.commit()
-        log.info('Making new generation %d', self.gen_num + 1)
 
         transaction.begin()
         for bg in self.prev_gen:
@@ -203,15 +161,16 @@ class Generation(PersistentList):
             self.elitistUpdate()
         elif self.ga == 'steady-state':
             bad
-        #self.randomUpdate()
         # reset everything
         for x in self:
             x.score = None
-        self.next_gen_lock = None
 
         # set next random seed
         self.random_state = random.getstate()
         self.gen_num += 1
+        self.setUpdateInfo(0)
+        transaction.commit()
+        log.info('New generation created in %d seconds', time.time() - self.updateInfo[1])
         transaction.commit()
 
     def evaluate(self, x):
@@ -220,19 +179,20 @@ class Generation(PersistentList):
         if type(x) is int:
             x = self[x]
         # set random seed the same for each evaluation
-        log.debug('evaluating individual %d', self.index(x))
+        try:
+            log.debug('evaluating individual %d', self.index(x))
+        except:
+            log.debug('evaluating individual %s', x)
         currentRandomState = random.getstate()
         random.setstate(self.random_state)
         # do sim
         sim = self.new_sim_fn(**dict(self.new_sim_args))
         sim.add(x)
         sim.run()
-        # record score, clear lock, cleanup
-        x.score = sim.score
-        transaction.commit()
         random.setstate(currentRandomState)
+        x.score = sim.score
 
-    def runClientLoop(self, master, client):
+    def runClientLoop(self, master=1, client=1):
         """Evolve client.
 
         Make sure everything in the current generation is evaluated,
@@ -240,32 +200,80 @@ class Generation(PersistentList):
         self.generations which is persistent
         (root['runs']['run_name'].generations)."""
 
-        log.info('Starting evolve client, generation %d of %d', self.gen_num, self.final_gen_num)
+        log.info('runClientLoop, generation %d of %d', self.gen_num, self.final_gen_num)
 
         while 1:
             try:
                 db.sync()
-                ready = [ x for x in self if x.score == None ]
-                if client and ready:
-                    x = random.choice(ready)
-                    log.info('client evaluating %s', x)
-                    self.evaluate(x)
-                elif master and not ready:
-                    log.info('all evals done, updating generation')
-                    # finalise this generation
-                    self.recordStats()
-                    if self.gen_num < self.final_gen_num:
-                        # make next generation
-                        self.update()
-                    else:
-                        log.info('final generation is done, so exit')
+                if self.ga == 'steady-state' and client:
+                    log.debug('steady state update')
+                    if self.numberOfEvaluations == self.final_gen_num:
                         break
-                elif self.gen_num == self.final_gen_num:
-                    log.info('all individuals done in final generation, exiting')
-                    break
-                else:
-                    log.debug('nothing to do, sleeping...')
-                    time.sleep(15)
+                    # pick randomly, 
+                    x = random.choice(self)
+                    log.info('client evaluating %d', self.index(x))
+                    y = copy.deepcopy(x)
+                    m = 0
+                    while m == 0:
+                        # mutate changes x, but its ok cos we abort below
+                        m = y.mutate(self.mutationRate)
+                    self.evaluate(y)
+                    log.debug('steady state eval done')
+                    # did we beat anything?
+                    while 1:
+                        try:
+                            # loop syncing db and trying to overwrite an entry
+                            log.debug('db.sync')
+                            db.sync()
+                            self.numberOfEvaluations += 1
+                        
+                          
+                            none = [z for z in range(len(self)) if self[z].score == None]
+                            #z for z in self if z.score == None]
+                            lower = [z for z in range(len(self)) if self[z].score != None and self[z].score <= y.score]
+                            #z for z in self if z.score != None and z.score <= y.score]
+                            if none or lower:
+                                self.gen_num += 1
+                                if none:
+#                                    r = random.choice(none)
+                                    i = random.choice(none)
+                                else:
+                                    # maybe we should just replace the lowest?
+                                    #r = random.choice(lower)
+                                    i = random.choice(lower)
+                                #i = self.index(r)
+                                log.debug('overwrite %d', i)
+                                self[i] = y
+#                    self.recordStats()
+                                log.debug('trying commit')
+                                transaction.commit()
+                                log.debug('commit ok')
+                            break
+                        except ConflictError:
+                            pass
+
+                elif self.ga == 'elite':
+                    ready = [ x for x in self if x.score == None ]
+                    if client and ready:
+                        x = random.choice(ready)
+                        log.info('client evaluating %d', self.index(x))
+                        score = self.evaluate(x)
+                        transaction.commit()
+                    elif master and not ready:
+                        # finalise this generation
+                        self.recordStats()
+                        if self.gen_num < self.final_gen_num:
+                            # make next generation
+                            self.update()
+                        else:
+                            log.info('final generation is done, so exit')
+                            break
+                    elif self.gen_num == self.final_gen_num:
+                        log.info('all individuals done in final generation, exiting')
+                        break
+                    else:
+                        log.debug('nothing to do, sleeping...')
+                        time.sleep(15)
             except ConflictError:
                 # Someone beat us to a lock or update
                 pass

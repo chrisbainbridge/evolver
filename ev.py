@@ -45,7 +45,8 @@
                         mean-distance : average Euclidean distance of all body parts
  --ga-elite           Use an elitist GA
  --ga-steady-state    Use a steady state parallel GA
- --ga-random          Use a random search 
+ --mutation-rate x    Specify mutation probability
+ --gauss-noise x      Specify standard deviation of Gaussian noise applied to sensors and motors
 
 ===== Unlock =====
 
@@ -115,6 +116,7 @@ def setup_logging():
         l = logging.getLogger(m)
         l.setLevel(level)
     logging.basicConfig()
+    logging.getLogger('evolve').setLevel(logging.DEBUG)
 
 def cleanup():
     log.debug('ev.py cleanup')
@@ -126,7 +128,7 @@ def main():
     log.debug(' '.join(sys.argv))
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:ln:p:q:sz:t:uvm', ['qt=','topology=','update=','node_type=','nodes=','dom_bias=','dom_value=','dom_weight=','ga-elite', 'ga-steady-state','nodes_per_input=','network=','plotbpg=','plotfitness=','plotnets=','unroll','nb_dist=','toponly','movie=','sim=','states=','statlog=', 'fitness='])
+        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:ln:p:q:sz:t:uvm', ['qt=','topology=','update=','node_type=','nodes=','dom_bias=','dom_value=','dom_weight=','ga-elite', 'ga-steady-state','mutation-rate=','gauss-noise=','nodes_per_input=','network=','plotbpg=','plotfitness=','plotnets=','unroll','nb_dist=','toponly','movie=','sim=','states=','statlog=', 'fitness='])
         log.debug('opts %s', opts)
         log.debug('args %s', args)
         # print help for no args
@@ -178,6 +180,8 @@ def main():
     runsim = 0
     fitnessFunctionName = None 
     ga = 'elite'
+    mutationRate = 0.01
+    gaussNoise = 0.01
     for o, a in opts:
         log.debug('parsing %s,%s',o,a)
         if o == '-c':
@@ -240,10 +244,14 @@ def main():
             # FIXME: THIS IS NOT BEING USED
             nodes_per_input = int(a)
             fixme
-        elif o == 'ga-elite':
+        elif o == '--ga-elite':
             ga = 'elite'
-        elif o == 'ga-steady-state':
+        elif o == '--ga-steady-state':
             ga = 'steady-state'
+        elif o == '--mutation-rate':
+            mutationRate = float(a)
+        elif o == '--gauss-noise':
+            gaussNoise = float(a)
         elif o == '-i':
             g_index = int(a)
         elif o == '--plotbpg':
@@ -299,7 +307,6 @@ def main():
 
     if unlock:
         log.debug('release all locks')
-        root[g].next_gen_lock = 0
         for x in root[g]:
             if hasattr(x, 'in_progress'):
                 del x.in_progress
@@ -345,7 +352,8 @@ def main():
                   'topology' : topology,
                   'update_style' : update_style,
                   'nb_dist' : nb_dist })
-        new_sim_args = PersistentMapping ({ 'max_simsecs' : max_simsecs })
+        new_sim_args = PersistentMapping ({ 'max_simsecs' : max_simsecs ,
+                                            'gaussNoise' : gaussNoise})
         if simulation == 'bpg':
             new_individual_fn = bpg.BodyPartGraph
             new_individual_args = PersistentMapping(
@@ -361,7 +369,7 @@ def main():
             new_individual_args = new_network_args
             new_sim_fn = sim.PoleBalanceSim
 
-        root[g] = evolve.Generation(popsize, ga, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args)
+        root[g] = evolve.Generation(popsize, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args, ga, mutationRate)
 
         log.debug('committing all subtransactions')
         transaction.commit()
@@ -416,17 +424,17 @@ def main():
             # print list of generations
             for (k,i) in root.iteritems():
                 if isinstance(i, evolve.Generation):
-                    print 'Generation: %s [gen=%d/%d max=%s]'%(k, i.gen_num, i.final_gen_num, i[0].score) #,i
+                    print 'Generation: %s [ga=%s gen=%d/%d max=%s]'%(k, i.ga, i.gen_num, i.final_gen_num, i[0].score) #,i
         else:
             # print list of individuals in a generation
             print 'Num\t| Score'
             for i in range(len(root[g])):
                 print '%d\t| %s'%(i, str(root[g][i].score))
-            print 'Generation: name=%s gen=%d final_gen_num=%d'%(g,
+            print 'Generation: name=%s ga=%s gen=%d final_gen_num=%d'%(g, root[g].ga,
                                                           root[g].gen_num,
                                                           root[g].final_gen_num)
-            if root[g].next_gen_lock:
-                print 'Generation is currently being updated on %s, update running for %d seconds'%(root[g].next_gen_lock[0], time.time() - root[g].next_gen_lock[1])
+            if root[g].updateInfo[2]:
+                print 'Generation is currently being updated on %s, update running for %d seconds'%(root[g].updateInfo[0], time.time() - root[g].updateInfo[1])
     if change_generations or create_initial_population:
         root[g].final_gen_num = root[g].gen_num + evolve_for_generations
         transaction.commit()
@@ -441,7 +449,11 @@ def main():
         # run evolution
         for r in runs:
             if root[r].gen_num <= root[r].final_gen_num:
-                log.debug('client evaluating %s',r)
+                if client:
+                    s = 'client'
+                if master:
+                    s = 'master'
+                log.info('%s mode on run %s', s, r)
                 root[r].runClientLoop(master, client)
             else:
                 log.debug('run %s is done (%d/%d)', r, root[r].gen_num,

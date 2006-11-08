@@ -77,7 +77,7 @@ class MyMotor(ode.AMotor):
 class Sim(object):
     "Simulation class, responsible for everything in the physical sim."
 
-    def __init__(self, max_simsecs):
+    def __init__(self, max_simsecs, gaussNoise):
         log.debug('Sim.__init__(max_simsecs=%s)', max_simsecs)
         # create world, set default gravity, geoms, flat ground, spaces etc.
         assert type(max_simsecs) is float or type(max_simsecs) is int
@@ -101,6 +101,7 @@ class Sim(object):
         self.contacts = ode.JointGroup()
         self.joints = []
         self.contactslist = []
+        self.gaussNoise = gaussNoise
 
     def __del__(self):
         log.debug('Sim.__del__()')
@@ -174,8 +175,8 @@ class Sim(object):
 class BpgSim(Sim):
     "Simulate articulated bodies built from BodyPartGraphs"
 
-    def __init__(self, max_simsecs=30.0, fitnessName='mean-distance'):
-        Sim.__init__(self, max_simsecs)
+    def __init__(self, max_simsecs=30.0, fitnessName='mean-distance', gaussNoise=0.01):
+        Sim.__init__(self, max_simsecs, gaussNoise)
         log.debug('BPGSim.__init__')
         self.geom_contact = {}
         self.startpos = vec3(0, 0, 0) 
@@ -690,7 +691,7 @@ class BpgSim(Sim):
                     assert 0 <= value <= 1
                     
                     # gaussian noise on sensors and motors
-                    value = random.gauss(value, 0.01)
+                    value = random.gauss(value, self.gaussNoise)
                     if value < 0: value = 0
                     if value > 1: value = 1
                     # send the value to the right place
@@ -746,9 +747,9 @@ class PoleBalanceSim(Sim):
       Inputs[0] -- angle of hinge joint between the boxes
       Outputs[0] -- desired velocity of the horizontal travelling box"""
 
-    def __init__(self, max_simsecs=30, net=None):
+    def __init__(self, max_simsecs=30, net=None, gaussNoise=0.01):
         """Creates the ODE and Geom bodies for this simulation"""
-        Sim.__init__(self, max_simsecs)
+        Sim.__init__(self, max_simsecs, gaussNoise)
         log.debug('init PoleBalance sim')
         self.network = net
         
@@ -828,10 +829,10 @@ class PoleBalanceSim(Sim):
 
     def applyLqrForce(self):
         # construct state vector (x, xdot, theta, thetadot)
-        state = matrix([[self.cart_body.getPosition()[0]], 
-                        [self.cart_body.getLinearVel()[0]], 
-                        [self.hinge_joint.getAngle()], 
-                        [self.hinge_joint.getAngleRate()]]) 
+        state = matrix([[self.cart_body.getPosition()[0]],
+                        [self.cart_body.getLinearVel()[0]],
+                        [self.hinge_joint.getAngle()],
+                        [self.hinge_joint.getAngleRate()]])
         # calculate and apply input force from LQR control matrix
         fx = self.lqr.calculateResponse(state)
         if self.init_u_count < len(self.INIT_U):
@@ -840,15 +841,16 @@ class PoleBalanceSim(Sim):
         self.cart_body.addForce((fx, 0, 0))
 
     def applyNetworkForce(self):
-        scaled_angle = (self.hinge_joint.getAngle() + math.pi/4)/(math.pi/2)
-#        angle = random.gauss(angle, 0.01) # random noise
-        scaled_angle = max(0, min(scaled_angle, 1)) # clip
+        angle = (self.hinge_joint.getAngle() + math.pi/4)/(math.pi/2)
+        angle = random.gauss(angle, self.gaussNoise) # random noise
+        angle = max(0, min(angle, 1)) # clip
         # send angle to network
-        self.network.inputs[0].output = scaled_angle
+        self.network.inputs[0].output = angle
         self.network.step()
         # read network, get desired force/velocity
         v = self.network.outputs[0].output
-        v = min(1, max(0, random.gauss(v, 0.01))) # add gaussian noise
+        v = random.gauss(v, self.gaussNoise)
+        v = min(1, max(0, v))
         v = (v-0.5)*50 # map [0,1] -> [-25,25]
         self.slider_joint.setParam(ode.ParamVel, v)
         self.cart_body.addForce((v, 0, 0))

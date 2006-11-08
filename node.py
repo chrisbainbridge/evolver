@@ -29,7 +29,6 @@ class Node(Persistent):
         # (note - this can also come from its own network, so its really a
         # non-topological input ie. external to the network topology)
         self.external_input = None
-        self.deleted = 0
 
     def destroy(self):
         # delete references that can cause cycles
@@ -49,7 +48,7 @@ class Node(Persistent):
                 self.inputs[i] = a
 
     def addInput(self, source):
-        log.debug('addInput(source=%s)', source)
+        log.debug('addInput(source=%s, inputs=%s)', source, self.inputs)
         # make sure we have no connections from this source
         assert source not in self.inputs
         self.inputs.append(source)

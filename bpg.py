@@ -306,54 +306,74 @@ class BodyPartGraph(Persistent):
             log.debug('self.unrolled=0')
             backannotate = 1
             p_bpg = self.unroll()
+        # check that all motor inputs come from valid bodyparts
         for bp in p_bpg.bodyparts:
             for i in 0,1,2:
                 if bp.motor_input[i]:
                     (b,s) = bp.motor_input[i]
                     assert b in p_bpg.bodyparts
         log.debug('p_bpg=%s (bodyparts=%s)'%(p_bpg, p_bpg.bodyparts))
-        backannotate=1
-        # find all unconnected nodes/motors
-        for bp in p_bpg.bodyparts:
-            for n in bp.network:
-                assert not n.deleted
-        un = set([ (p_bp, p_signal) for p_bp in p_bpg.bodyparts for p_signal in p_bp.network.inputs if not p_signal.external_input ])
-        un = un.union(set([ (p_bp, 'MOTOR_%d'%i) for p_bp in p_bpg.bodyparts for i in 0,1,2 if not p_bp.motor_input[i] ]))
+        # find all unconnected nodes
+        un = set([ (p_dst_bp, p_dst_signal) for p_dst_bp in p_bpg.bodyparts for p_dst_signal in p_dst_bp.network.inputs if not p_dst_signal.external_input ])
+        # and unconnected motors
+        un = un.union(set([ (p_dst_bp, 'MOTOR_%d'%i) for p_dst_bp in p_bpg.bodyparts for i in 0,1,2 if not p_dst_bp.motor_input[i] ]))
 
-        for (p_bp, p_signal) in un:
+        for (p_dst_bp, p_dst_signal) in un:
+            log.debug('UNCONNECTED bp %s signal %s', p_dst_bp, p_dst_signal)
             # find corresponding genotype of this node/motor
-            g_bp = p_bp.genotype
-            if isinstance(p_signal, node.Node):
-                g_signal = g_bp.network[p_bp.network.index(p_signal)]
-                assert g_signal in g_bp.network.inputs
+            g_bp = p_dst_bp.genotype
+            if isinstance(p_dst_signal, node.Node):
+                g_dst_signal = g_bp.network[p_dst_bp.network.index(p_dst_signal)]
+                assert g_dst_signal in g_bp.network.inputs
             else:
-                g_signal = p_signal
+                g_dst_signal = p_dst_signal
             # is there an entry in g_bp.input_map for the target node/motor? 
-            p_neighbours = p_bpg.getNeighbours(p_bp)
-            if not g_bp.input_map.has_key(g_signal):
-                g_bp.input_map[g_signal] = PersistentList()
+            if not g_bp.input_map.has_key(g_dst_signal):
+                g_bp.input_map[g_dst_signal] = PersistentList()
             # are there matching maps for this phenotype topology?
-            m = [ (g_src_bp, g_src_signal, p_src_bp) for (g_src_bp, g_src_signal) in g_bp.input_map[g_signal] for p_src_bp in p_neighbours if p_src_bp.genotype is g_src_bp]
+            p_neighbours = p_bpg.getNeighbours(p_dst_bp)
+            # find all neighbour bps with valid src bp,signal for this dst in input_map
+            matches = [ (g_src_bp, g_src_signal, p_src_bp) for (g_src_bp, g_src_signal) in g_bp.input_map[g_dst_signal] for p_src_bp in p_neighbours if p_src_bp.genotype is g_src_bp]
 
-            if m:
-                # yes. use the first one to connect the node/motor.
-                (g_src_bp, g_src_signal, p_src_bp) = m[0]
-                if isinstance(g_src_signal, node.Node):
-                    # find phenotype Node
-                    node_index = g_src_bp.network.index(g_src_signal)
-                    p_node = p_src_bp.network[node_index]
-                    # set source to a phenotype (bp,s)
-                    p_source = (p_src_bp, p_node)
-                else:
+            log.debug('input_map matches = %s', matches)
+            p_source = None
+            for (g_src_bp, g_src_signal, p_src_bp) in matches:
+                log.debug('using prestored map g_src_bp=%s g_src_signal=%s', g_src_bp, g_src_signal)
+                # convert genotype src signal to phenotype value
+                if type(g_src_signal) is str:
                     p_source = (p_src_bp, g_src_signal)
+                    break
+                else:
+                    # find phenotype src node
+                    g_src_index = g_src_bp.network.index(g_src_signal)
+                    p_src_node = p_src_bp.network[g_src_index]
+                    # don't allow an external_input if the connection
+                    # already exists internaly to the network
+                    if not isinstance(p_dst_signal, node.Node) or p_src_node not in p_dst_signal.inputs:
+                        # set source to a phenotype (bp,s)
+                        p_source = (p_src_bp, p_src_node)
+                        break
+                    log.debug('rejected map - nodes already connected')
 
-            else:
+            if not p_source:
                 # no entry in input_map for this node/motor
                 # raise error if we aren't connecting up a genotype bpg
                 assert backannotate
                 # pick a random (bp, signal) from p_bp and backannotate into g_bp.input_map
                 p_src_bp = random.choice(p_neighbours)
-                p_src_signal = random.choice(p_src_bp.network.outputs+['CONTACT', 'JOINT_0', 'JOINT_1', 'JOINT_2'])
+                # disallow connects from outnode to innode of same network
+                posSrcs = ['CONTACT', 'JOINT_0', 'JOINT_1', 'JOINT_2']
+                if type(p_dst_signal) == str or p_src_bp != p_dst_bp:
+                    posSrcs += p_src_bp.network.outputs
+                if isinstance(p_dst_signal, node.Node):
+                    for x in posSrcs:
+                        assert x not in p_dst_signal.inputs
+                    # remove any possible srcs that node is already connected to
+                    posSrcs = [x for x in posSrcs if x not in p_dst_signal.inputs]
+                log.debug('possible connects %s <- %s', p_dst_signal, posSrcs)
+                p_src_signal = random.choice(posSrcs)
+                if isinstance(p_dst_signal, node.Node):
+                    assert p_src_signal not in p_dst_signal.inputs
                 p_source = (p_src_bp, p_src_signal)
 
                 # find genotype of the chosen phenotype (bp,s)
@@ -366,28 +386,32 @@ class BodyPartGraph(Persistent):
                 else:
                     genosource = (g_src_bp, p_src_signal)
 
-                log.debug('entering %s -> %s into bp.input_map', genosource, g_signal)
+                log.debug('entering %s -> %s into bp.input_map', genosource, g_dst_signal)
                 # add to genotype.input_map our backannotated source
-                g_bp.input_map[g_signal].append(genosource)
+                assert (g_dst_signal, genosource) not in g_bp.input_map.items()
+                g_bp.input_map[g_dst_signal].append(genosource)
                 assert g_bp in [ pbp.genotype for pbp in p_bpg.bodyparts ]
 
             # add to signal target.
-            if isinstance(p_signal, node.Node):
-                assert not p_signal.external_input
-                p_signal.external_input = p_source
-            elif p_signal[:6] == 'MOTOR_':
-                i = ord(p_signal[6])-ord('0')
-                assert not p_bp.motor_input[i]
+            if isinstance(p_dst_signal, node.Node):
+                assert not p_dst_signal.external_input
+                p_dst_signal.addInput(p_source[1])
+                p_dst_signal.external_input = p_source
+            elif p_dst_signal[:6] == 'MOTOR_':
+                i = ord(p_dst_signal[6])-ord('0')
+                assert not p_dst_bp.motor_input[i]
                 (sbp, ssig) = p_source
                 log.debug('p_bp.motor_input[%d]=(%s,%s)'%(i,sbp,ssig))
                 assert sbp in p_bpg.bodyparts
-                p_bp.motor_input[i] = p_source
+                p_dst_bp.motor_input[i] = p_source
 
         for bp in p_bpg.bodyparts:
             for i in 0,1,2:
                 (b,s) = bp.motor_input[i]
                 log.debug('p_bpg.bodyparts[%d].motor_input[%d]=(%s,%s)'%(p_bpg.bodyparts.index(bp),i,b,s))
                 assert b in p_bpg.bodyparts
+
+        log.debug('/connectInputNodes, calling sanityCheck')
         if sanitycheck:
             p_bpg.sanityCheck()
 
@@ -408,7 +432,7 @@ class BodyPartGraph(Persistent):
             if ext != 'dot':
                 if ext == 'pdf':
                     os.system('dot -Tps -o%s.eps %s.dot'%(fbase, fbase))
-                    os.system('epstopdf %s.eps %s.pdf'%(fbase, fbase))
+                    os.system('epstopdf %s.eps'%fbase)
                     os.remove(fbase+'.eps')
                 else:
                     os.system('dot -T%s -o%s.%s %s.dot'%(ext, fbase, ext, fbase))
@@ -487,7 +511,7 @@ class BodyPartGraph(Persistent):
                 ti = self.bodyparts.index(t)
                 s += ' bp%d_0 -> bp%d_0 [ltail=cluster%d, lhead=cluster%d, color=red]\n'%(i, ti, i, ti)
 
-        s += '}'
+        s += '}\n'
 
         self.dot(filename, s)
         return s
@@ -536,7 +560,7 @@ class BodyPartGraph(Persistent):
                     label = '%s -> %s'%(slabel, tlabel)
                 # edge between 2 bps labelled with signal source
                 s += ' '*4 + 'n%d -> n%d [style=dashed, label="%s"]\n' % (self.bodyparts.index(sbp), i, label)
-        s += '}'
+        s += '}\n'
 
         self.dot(filename, s)
         # return graph as a string

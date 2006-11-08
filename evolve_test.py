@@ -26,8 +26,9 @@ class GenerationTestCase(unittest.TestCase):
     def test_1_evaluate_bpgs(self):
         g = evolve.Generation(5, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args)
         g.evaluate(0)
-        self.assertTrue(type(g[0].score) is float or type(g[0].score) is int)
-        rl.debug('score was %f', g[0].score)
+        score = g[0].score
+        self.assertTrue(type(score) is float or type(score) is int)
+        rl.debug('score was %f', score)
 
     def test_2_elitistUpdate(self):
         g = evolve.Generation(10, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args)
@@ -36,9 +37,19 @@ class GenerationTestCase(unittest.TestCase):
             x.score = random.uniform(0,10)
         g.update()
 
-    def test_3_quantised(self):
+    def test_3_steadyState(self):
+        g = evolve.Generation(5, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args, 'steady-state')
+        g.final_gen_num = 10
+        g.runClientLoop()
+        
+    def test_4_quantised(self):
         new_node_args_sigmoid['quanta'] = 8
         self.test_2_elitistUpdate()
+
+    def test_5_mutation_rate(self):
+        g = evolve.Generation(3, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args, 'elite', 0.1)
+        g.final_gen_num = 3 
+        g.runClientLoop()
 
 ##     def test_NetworkEvolver___init__(self):
 ##         "NetworkEvolver.__init__"

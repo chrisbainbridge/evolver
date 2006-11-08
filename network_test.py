@@ -10,7 +10,7 @@ import testoob
 from persistent.list import PersistentList
 from cgkit.cgtypes import vec3
 
-from network import Network
+from network import Network, TOPOLOGIES
 import node
 
 rl = logging.getLogger()
@@ -42,7 +42,7 @@ class NetworkTestCase(unittest.TestCase):
             os.popen('kghostview %s.ps'%name)
 
     def test_01_sigmoid_1d(self):
-        n = Network(4,0,0, node.SigmoidNode, {}, '1d', 'async')
+        n = Network(4,1,1, node.SigmoidNode, {}, '1d', 'async')
         self.dot(n, '01_sigmoid_1d')
 
     def test_02_sigmoid_2d(self):
@@ -66,7 +66,7 @@ class NetworkTestCase(unittest.TestCase):
         assert len(n.outputs) == 2
 
     def test_06_run_sigmoid_net_with_all_topologies(self):
-        for topology in Network.TOPOLOGIES:
+        for topology in TOPOLOGIES:
             net = Network(9,3,2, node.SigmoidNode, {}, topology, 'sync')
             for n in net:
                 n.preUpdate()
@@ -74,7 +74,7 @@ class NetworkTestCase(unittest.TestCase):
                 n.postUpdate()
 
     def test_07_run_logical_net_with_all_topologies(self):
-        for topology in Network.TOPOLOGIES:
+        for topology in TOPOLOGIES:
             net = Network(9,3,2, node.LogicalNode, {'numberOfStates':2}, topology, 'sync')
             for n in net:
                 n.randomiseState()

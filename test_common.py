@@ -17,8 +17,8 @@ def setup_logging(rootlogger):
     logging.basicConfig()
 
 new_node_args_sigmoid = { 'bias_domain' : (-5,5),
-                  'weight_domain' : (-7,7),
-                  'quanta': None }
+                          'weight_domain' : (-7,7),
+                          'quanta': None }
 new_node_args_logical = {'numberOfStates':2}
 new_network_args = { 'num_nodes' : 5,
                      'num_inputs' : 2,
@@ -31,4 +31,5 @@ new_network_args = { 'num_nodes' : 5,
 new_individual_fn = bpg.BodyPartGraph
 new_individual_args = { 'network_args' : new_network_args }
 new_sim_fn = sim.BpgSim 
-new_sim_args = { 'max_simsecs' : 10 }
+new_sim_args = { 'max_simsecs' : 10,
+                 'gaussNoise' : 0.01 }

@@ -13,10 +13,10 @@ import logging
 log = logging.getLogger('neural')
 log.setLevel(logging.INFO)
 
+TOPOLOGIES = '1d', '2d', 'randomk', 'full'
+
 class Network(PersistentList):
     "Model of a control network; nodes, edges, weights."
-
-    TOPOLOGIES = '1d', '2d', 'randomk', 'full'
 
     def __init__(self, num_nodes, num_inputs, num_outputs, new_node_class,
             new_node_args, topology, update_style, nb_dist=1):
@@ -216,9 +216,14 @@ class Network(PersistentList):
         # write out all edges
         for target_index in range(len(self)):
             n = self[target_index]
-            if n in self.inputs:
-                continue
+#            if n in self.inputs:
+#                continue
             for i in n.inputs:
+                if i not in self:
+                    # external_input
+                    (bp, src) = n.external_input
+                    assert i == src
+                    continue
                 src_index = self.index(i)
                 if not toponly or not done.has_key((target_index,src_index)):
                     edge_label = ''
@@ -245,7 +250,7 @@ class Network(PersistentList):
         s = 'digraph G {\n'
         s += self.plotNodes(toponly)
         s += self.plotEdges(toponly)
-        s += '}'
+        s += '}\n'
         if filename:
             (fbase, ext) = os.path.splitext(filename)
             ext = ext[1:]
@@ -336,7 +341,7 @@ class Network(PersistentList):
             for _ in range(k):
                 while 1:
                     r = choice(self)
-                    if r != n and r not in n.inputs:
+                    if r != n: # and r not in n.inputs:
                         n.addInput(r)
                         break
 
