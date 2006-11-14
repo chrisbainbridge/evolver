@@ -314,7 +314,7 @@ class BodyPartGraph(Persistent):
                     assert b in p_bpg.bodyparts
         log.debug('p_bpg=%s (bodyparts=%s)'%(p_bpg, p_bpg.bodyparts))
         # find all unconnected nodes
-        un = set([ (p_dst_bp, p_dst_signal) for p_dst_bp in p_bpg.bodyparts for p_dst_signal in p_dst_bp.network.inputs if not p_dst_signal.external_input ])
+        un = set([ (p_dst_bp, p_dst_signal) for p_dst_bp in p_bpg.bodyparts for p_dst_signal in p_dst_bp.network.inputs if not p_dst_signal.externalInputs ])
         # and unconnected motors
         un = un.union(set([ (p_dst_bp, 'MOTOR_%d'%i) for p_dst_bp in p_bpg.bodyparts for i in 0,1,2 if not p_dst_bp.motor_input[i] ]))
 
@@ -347,6 +347,10 @@ class BodyPartGraph(Persistent):
                     # find phenotype src node
                     g_src_index = g_src_bp.network.index(g_src_signal)
                     p_src_node = p_src_bp.network[g_src_index]
+                    if isinstance(p_dst_signal, node.Node) and isinstance(p_src_node, node.Node) and p_src_bp == p_dst_bp:
+                        continue
+                    # assert not two nodes in same bp network
+                    assert not (isinstance(p_dst_signal, node.Node) and isinstance(p_src_node, node.Node)) or (p_src_bp != p_dst_bp)
                     # don't allow an external_input if the connection
                     # already exists internaly to the network
                     if not isinstance(p_dst_signal, node.Node) or p_src_node not in p_dst_signal.inputs:
@@ -394,9 +398,7 @@ class BodyPartGraph(Persistent):
 
             # add to signal target.
             if isinstance(p_dst_signal, node.Node):
-                assert not p_dst_signal.external_input
-                p_dst_signal.addInput(p_source[1])
-                p_dst_signal.external_input = p_source
+                p_dst_signal.addExternalInput(p_source)
             elif p_dst_signal[:6] == 'MOTOR_':
                 i = ord(p_dst_signal[6])-ord('0')
                 assert not p_dst_bp.motor_input[i]
@@ -446,7 +448,7 @@ class BodyPartGraph(Persistent):
         Returns: [ (targetbp, (srcbp, signal)), ... ]"""
 
         if self.unrolled:
-            sources = [ (neuron, neuron.external_input) for neuron in bp.network.inputs ]
+            sources = [ (neuron, externalInput) for neuron in bp.network.inputs for externalInput in neuron.externalInputs ]
             if bp.joint == 'hinge':
                 sources += [ ('MOTOR_2', bp.motor_input[2]) ]
             if bp.joint in [ 'universal', 'ball' ]:
@@ -625,13 +627,12 @@ class BodyPartGraph(Persistent):
         for bp in phen_bpg.bodyparts:
             for n in bp.network:
                 if n in bp.network.inputs:
-                    assert n.external_input
-                    (sbp, src) = n.external_input
-                    assert sbp in phen_bpg.bodyparts
-                    if isinstance(src, node.Node):
-                        assert src in sbp.network.outputs
-                else:
-                     assert not n.external_input
+                    assert n.externalInputs
+                    for (sbp, src) in n.externalInputs:
+                        assert sbp in phen_bpg.bodyparts
+                        if isinstance(src, node.Node):
+                            assert src in sbp.network.outputs
+                            assert bp != sbp # no inter-network connections
             # check motor connections
             for i in 0,1,2:
                 assert bp.motor_input[i]

@@ -18,22 +18,14 @@ class Node(Persistent):
     back to the network."""
 
     def __init__(self):
-        # self.inputs points to the source nodes for this node
-        # if this node is an input, there should be a single source pointing to
-        # (neighbour, output_node)
-        # internal_inputs are from other nodes in the same network. we treat
-        # them all the same
-        self.inputs = PersistentList()
-        # the external_input is from other networks, sensors etc. there should
-        # be only one external input.
-        # (note - this can also come from its own network, so its really a
-        # non-topological input ie. external to the network topology)
-        self.external_input = None
+        self.inputs = PersistentList() # list of internal inputs
+        # externalInputs[(bp,sig)] = signalvalue
+        self.externalInputs = PersistentMapping()
 
     def destroy(self):
         # delete references that can cause cycles
         del self.inputs
-        del self.external_input
+        del self.externalInputs
 
     def swapInputs(self, a, b):
         "If we have any inputs from a or b swap them over (for mutate)"
@@ -52,6 +44,12 @@ class Node(Persistent):
         # make sure we have no connections from this source
         assert source not in self.inputs
         self.inputs.append(source)
+
+    def addExternalInput(self, source):
+        log.debug('addExternalInput(source=%s, externalInputs=%s)', source, self.externalInputs)
+        # make sure we have no connections from this source
+        assert source not in self.externalInputs
+        self.externalInputs[source] = 0 # default initial value
 
     def delInput(self, source):
         # make sure we have one and only one connection from this source
@@ -80,7 +78,7 @@ def quantise(value, quanta):
 class SigmoidNode(Node):
     """A sigmoid neural node.
 
-    The neurons are simple models (fixme: proper name?) that
+    The neurons are sigmoidal models that
     have internal bias (but no learning coefficient).
 
     Every neuron has a list of its incoming and output Connects which
@@ -91,8 +89,6 @@ class SigmoidNode(Node):
     def __init__(self, bias_domain=(-5,5), weight_domain=(-7,7), quanta=None): #, network, discrete):
         #log.debug('creating SigmoidNode (network=%s, discrete=%s)', str(network), str(discrete))
         Node.__init__(self)
-        #self.network = network
-        #self.inputs = PersistentList()
         self.weights = PersistentMapping()
         self.bias_domain = bias_domain
         self.weight_domain = weight_domain
@@ -108,18 +104,19 @@ class SigmoidNode(Node):
         self.state = randomFromDomain((0,1), self.quanta)
 
     def preUpdate(self):
-        if not self.external_input:
-            cumulative = 0
-            for src in self.inputs:
-                cumulative += src.state * self.weights[src]
-                cumulative -= self.bias
-            self.next_state = 1/(1+math.e**(-cumulative))
-            if self.quanta:
-                self.next_state = quantise(self.next_state, self.quanta)
+        cumulative = 0
+        for src in self.inputs:
+            # fixme: src.state should be getOutput?
+            cumulative += src.state * self.weights[src]
+        for (src, value) in self.externalInputs.items():
+            cumulative += value * self.weights[src]
+        cumulative -= self.bias
+        self.next_state = 1/(1+math.e**(-cumulative))
+        if self.quanta:
+            self.next_state = quantise(self.next_state, self.quanta)
 
     def postUpdate(self):
-        if not self.external_input:
-            self.state = self.next_state
+        self.state = self.next_state
 
     def mutate(self, p):
         # mutate the node bias
@@ -137,8 +134,12 @@ class SigmoidNode(Node):
 
     def addInput(self, source):
         Node.addInput(self, source)
-        weight = randomFromDomain(self.weight_domain, self.quanta)
-        self.weights[source] = weight
+        self.weights[source] = randomFromDomain(self.weight_domain, self.quanta)
+
+    def addExternalInput(self, source):
+        'source = (srcBodypart, srcSignal)'
+        Node.addExternalInput(self, source)
+        self.weights[source] = randomFromDomain(self.weight_domain, self.quanta)
 
     def delInput(self, source):
         Node.delInput(self, source)

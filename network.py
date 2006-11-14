@@ -216,13 +216,9 @@ class Network(PersistentList):
         # write out all edges
         for target_index in range(len(self)):
             n = self[target_index]
-#            if n in self.inputs:
-#                continue
             for i in n.inputs:
                 if i not in self:
-                    # external_input
-                    (bp, src) = n.external_input
-                    assert i == src
+                    # fixme: why aren't we plotting anything here?!
                     continue
                 src_index = self.index(i)
                 if not toponly or not done.has_key((target_index,src_index)):

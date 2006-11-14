@@ -624,6 +624,37 @@ class BpgSim(Sim):
         self.geom_contact[geom2] = 1
         return 1
 
+    def getSensorValue(self, sbp, src):
+        if src == 'CONTACT':
+            # sbp in contact with anything?
+            value = self.geom_contact[sbp.geom]
+        elif type(src) is str and src[:6] == 'JOINT_':
+            # sbp joint angle
+            if not hasattr(sbp.geom, 'motor'):
+                # this is the root; no joint with parent.
+                value = 0
+            elif src == 'JOINT_0':
+                # angle of joint 0 with parent
+                value = sbp.motor.getAngle(0)
+            elif src == 'JOINT_1':
+                # angle of joint 1
+                value = sbp.motor.getAngle(1)
+            elif src == 'JOINT_2':
+                # angle of joint 2
+                value = sbp.motor.getAngle(2)
+            # scale value to [0,1]
+            value = (value/math.pi+1)/2
+        elif isinstance(src, node.Node):
+            # network output node, in domain [0,1]
+            value = src.output
+        assert 0 <= value <= 1
+        
+        # gaussian noise on sensors and motors
+        value = random.gauss(value, self.gaussNoise)
+        if value < 0: value = 0
+        if value > 1: value = 1
+        return value
+
     def step(self):
         """Sim loop needs to:
 
@@ -650,58 +681,26 @@ class BpgSim(Sim):
         # update sensor input values
         for bg in self.bpgs:
             for bp in bg.bodyparts:
-                # update network external_input nodes
+
+                # send new values to motors
                 if bp.joint == 'hinge':
-                    motors = ['MOTOR_2']
+                    motors = [2]
                 elif bp.joint == 'universal':
-                    motors = ['MOTOR_0', 'MOTOR_1' ]
+                    motors = [0, 1]
                 elif bp.joint == 'ball':
-                    motors = ['MOTOR_0', 'MOTOR_1', 'MOTOR_2']
-                for n in bp.network.inputs + motors:
-                    # find signal source: bp/node or sensor
-                    if isinstance(n, node.Node):
-                        (sbp, src) = n.external_input
-                    elif isinstance(n, str) and n[:5] == 'MOTOR' and hasattr(bp, 'motor') and bp.motor_input:
-                        mi = ord(n[6])-ord('0')
+                    motors = [0, 1, 2]
+                if hasattr(bp, 'motor') and bp.motor_input:
+                    for mi in motors:
                         (sbp, src) = bp.motor_input[mi]
-                    
-                    # get value (range 0..1) from signal source
-                    if src == 'CONTACT':
-                        # sbp in contact with anything?
-                        value = self.geom_contact[sbp.geom]
-                    elif type(src) is str and src[:6] == 'JOINT_':
-                        # sbp joint angle
-                        if not hasattr(sbp.geom, 'motor'):
-                            # this is the root; no joint with parent.
-                            value = 0
-                        elif src == 'JOINT_0':
-                            # angle of joint 0 with parent
-                            value = sbp.motor.getAngle(0)
-                        elif src == 'JOINT_1':
-                            # angle of joint 1
-                            value = sbp.motor.getAngle(1)
-                        elif src == 'JOINT_2':
-                            # angle of joint 2
-                            value = sbp.motor.getAngle(2)
-                        # scale value to [0,1]
-                        value = (value/math.pi+1)/2
-                    elif isinstance(src, node.Node):
-                        # network output node, in domain [0,1]
-                        value = src.output
-                    assert 0 <= value <= 1
-                    
-                    # gaussian noise on sensors and motors
-                    value = random.gauss(value, self.gaussNoise)
-                    if value < 0: value = 0
-                    if value > 1: value = 1
-                    # send the value to the right place
-                    if isinstance(n, node.Node):
-                        # put value on neuron output
-                        n.output = value
-                    elif isinstance(n, str) and n[:5] == 'MOTOR' and hasattr(bp, 'motor') and bp.motor_input:
-                        # send value to motor
-                        v = (value*2-1)*math.pi # map to -pi..pi
+                        v = self.getSensorValue(sbp, src)
+                        v = (v*2-1)*math.pi # map to -pi..pi
                         bp.motor.desired_axisangle[mi] = v
+
+                # now do inputs to network 
+                for n in bp.network.inputs:
+                    for (sbp, src) in n.externalInputs:
+                        v = self.getSensorValue(sbp, src)
+                        n.externalInputs[(sbp, src)] = v
 
             # step control networks and motors
             for bg in self.bpgs:
@@ -823,9 +822,7 @@ class PoleBalanceSim(Sim):
         # fake external_input connection so node knows its an input
         for n in self.network:
             if n in self.network.inputs:
-                n.external_input = 'ANGLE_0'
-            else:
-                n.external_input = None
+                n.externalInputs[(None,'ANGLE_0')] = 0
 
     def applyLqrForce(self):
         # construct state vector (x, xdot, theta, thetadot)
