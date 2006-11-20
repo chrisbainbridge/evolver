@@ -38,9 +38,9 @@ class GenerationTestCase(unittest.TestCase):
         g.update()
 
     def test_3_steadyState(self):
-        g = evolve.Generation(5, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args, 'steady-state')
-        g.final_gen_num = 10
-        g.runClientLoop()
+        g = evolve.Generation(3, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args, 'steady-state')
+        g.final_gen_num = 5
+        g.runClientLoop(1, 1)
         
     def test_4_quantised(self):
         new_node_args_sigmoid['quanta'] = 8

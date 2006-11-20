@@ -127,7 +127,7 @@ class Sim(object):
         while not self.finished:
             self.step()
 
-    def handleContact(g1, g2, c):
+    def handleContact(self, g1, g2, c):
         "By default return all contacts as valid and do nothing else"
         return 1
 

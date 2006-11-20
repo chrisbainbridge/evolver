@@ -27,4 +27,4 @@ def print_top(n):
         print '%10d %s' % (n, c.__name__)
 
 if __name__ == '__main__':
-    top_top(100)
+    print_top(100)

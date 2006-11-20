@@ -85,8 +85,8 @@ import cPickle
 import getopt
 import transaction
 import logging
-import re
 
+import ZODB
 from ZODB.FileStorage import FileStorage
 from ZEO.ClientStorage import ClientStorage
 from ZODB import DB
@@ -234,7 +234,7 @@ def main():
         elif o == '--dom_bias':
             # a is of form 'x,y'
             dom_bias = eval(a)
-        elif o == '--value_bias':
+        elif o == '--dom_value':
             # FIXME: THIS IS NOT BEING USED
             dom_value = eval(a)
             fixme
@@ -371,6 +371,7 @@ def main():
 
         root[g] = evolve.Generation(popsize, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args, ga, mutationRate)
 
+        root[g].setFinalGeneration(evolve_for_generations)
         log.debug('committing all subtransactions')
         transaction.commit()
         log.debug('commit done, end of create_initial_population')
@@ -435,8 +436,8 @@ def main():
                                                           root[g].final_gen_num)
             if root[g].updateInfo[2]:
                 print 'Generation is currently being updated on %s, update running for %d seconds'%(root[g].updateInfo[0], time.time() - root[g].updateInfo[1])
-    if change_generations or create_initial_population:
-        root[g].final_gen_num = root[g].gen_num + evolve_for_generations
+    if change_generations:
+        root[g].setFinalGeneration(evolve_for_generations)
         transaction.commit()
 
     if client or master:
@@ -475,7 +476,7 @@ def main():
             secs = max_simsecs
         else:
             secs = root[g].new_sim_args['max_simsecs']
-        if fitnessFunctionName is None:
+        if fitnessFunctionName == None:
             fitnessFunctionName = root[g].new_sim_args['fitnessName']
 
         s = root[g].new_sim_fn(secs, fitnessFunctionName)

@@ -4,7 +4,6 @@ from unittest import TestCase
 import logging
 import sys
 import testoob
-import new
 
 import ev
 from test_common import *

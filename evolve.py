@@ -13,11 +13,12 @@ import sys
 import os
 from numpy import matrix
 
-import db
+import cluster
 
 from persistent import Persistent
 from persistent.list import PersistentList
-from ZODB.POSException import ConflictError
+from persistent.mapping import PersistentMapping
+from ZODB.POSException import ConflictError, POSKeyError
 from ZEO.zrpc.error import DisconnectedError
 import transaction
 
@@ -30,6 +31,11 @@ log.debug('recursion limit is %d, setting to 4000', sys.getrecursionlimit())
 sys.setrecursionlimit(4000)
 
 statlog = None
+
+class HostData(Persistent):
+    def __init__(self):
+        Persistent.__init__(self)
+        self.newIndividual = None
 
 class Generation(PersistentList):
 
@@ -64,8 +70,14 @@ class Generation(PersistentList):
         self.setUpdateInfo()
         self.fitnessList = PersistentList()
         self.ga = ga
-        self.numberOfEvaluations = 0
         self.mutationRate = mutationRate
+        self.hostData = PersistentMapping()
+        for hostname in cluster.HOSTNAMES:
+            self.hostData[hostname] = HostData()
+
+    def setFinalGeneration(self, extraGenerations):
+        "Set final generation number, relative to current one"
+        self.final_gen_num = self.gen_num + extraGenerations
 
     def recordStats(self):
         "Record statistics"
@@ -126,11 +138,9 @@ class Generation(PersistentList):
         for j in range(num_elites, len(self.prev_gen)):
             p = self.prev_gen[j%num_elites]
             child = copy.deepcopy(p)
-            # FIXME: mutation prob. should be set on command line
-#            m = 0
-#            while m == 0:
-#                m = child.mutate(0.01) # 0.10
             m = child.mutate(self.mutationRate)
+            if m == 0:
+                log.info('warning: child is identical to parent, mutation rate is too low')
             mutations.append(m)
             self.append(child)
             transaction.savepoint()
@@ -157,10 +167,7 @@ class Generation(PersistentList):
         for i in range(len(self.prev_gen)):
            s += str(self.prev_gen[i].score) + ' '
         log.debug(s)
-        if self.ga == 'elite':
-            self.elitistUpdate()
-        elif self.ga == 'steady-state':
-            bad
+        self.elitistUpdate()
         # reset everything
         for x in self:
             x.score = None
@@ -171,7 +178,6 @@ class Generation(PersistentList):
         self.setUpdateInfo(0)
         transaction.commit()
         log.info('New generation created in %d seconds', time.time() - self.updateInfo[1])
-        transaction.commit()
 
     def evaluate(self, x):
         """Evaluate performance of individual(s) x in sim"""
@@ -192,6 +198,68 @@ class Generation(PersistentList):
         random.setstate(currentRandomState)
         x.score = sim.score
 
+    def steadyStateClientInnerLoop(self):
+        log.debug('steadyStateClientLoop')
+
+        mydata = self.hostData[cluster.getHostname()]
+        if mydata.newIndividual:
+            transaction.abort()
+            time.sleep(15)
+            return
+
+        x = random.choice(self)
+        y = copy.deepcopy(x)
+        m = 0
+        while m == 0:
+            m = y.mutate(self.mutationRate)
+        self.evaluate(y)
+        s0 = y.score
+        self.evaluate(y)
+        yscore = min(s0, y.score)
+        log.debug('steady state eval done, score %f', yscore)
+        mydata.newIndividual = (y, yscore)
+        transaction.commit()
+
+    def steadyStateMasterInnerLoop(self):
+        log.debug('steadyStateMasterLoop')
+        l = [ x for x in self.hostData.values() if x.newIndividual ]
+        if not l:
+            transaction.abort()
+        else:
+            for hd in l:
+                (y, yscore) = hd.newIndividual
+                empty = [z for z in self if z.score == None]
+                lower = [z for z in self if z.score != None and z.score <= yscore]
+                if empty or lower:
+                    if empty:
+                        i = random.choice(empty)
+                    else:
+                        # maybe we should just replace the lowest?
+                        i = random.choice(lower)
+                    log.debug('overwrite %s', i)
+                    self[self.index(i)] = y
+                hd.newIndividual = None
+                self.gen_num += 1
+            transaction.commit()
+            log.debug('commit ok')
+        time.sleep(5)
+
+    def eliteInnerLoop(self, master, client):
+        ready = [ x for x in self if x.score == None ]
+        if client and ready:
+            x = random.choice(ready)
+            self.evaluate(x)
+            transaction.commit()
+        elif master and not ready:
+            # finalise this generation
+            self.recordStats()
+            if self.gen_num < self.final_gen_num:
+                # make next generation
+                self.update()
+        else:
+            log.debug('nothing to do, sleeping...')
+            time.sleep(15)
+
     def runClientLoop(self, master=1, client=1):
         """Evolve client.
 
@@ -200,85 +268,32 @@ class Generation(PersistentList):
         self.generations which is persistent
         (root['runs']['run_name'].generations)."""
 
-        log.info('runClientLoop, generation %d of %d', self.gen_num, self.final_gen_num)
-
         while 1:
             try:
-                db.sync()
-                if self.ga == 'steady-state' and client:
-                    log.debug('steady state update')
-                    if self.numberOfEvaluations == self.final_gen_num:
-                        break
-                    # pick randomly, 
-                    x = random.choice(self)
-                    log.info('client evaluating %d', self.index(x))
-                    y = copy.deepcopy(x)
-                    m = 0
-                    while m == 0:
-                        # mutate changes x, but its ok cos we abort below
-                        m = y.mutate(self.mutationRate)
-                    self.evaluate(y)
-                    log.debug('steady state eval done')
-                    # did we beat anything?
-                    while 1:
-                        try:
-                            # loop syncing db and trying to overwrite an entry
-                            log.debug('db.sync')
-                            db.sync()
-                            self.numberOfEvaluations += 1
-                        
-                          
-                            none = [z for z in range(len(self)) if self[z].score == None]
-                            #z for z in self if z.score == None]
-                            lower = [z for z in range(len(self)) if self[z].score != None and self[z].score <= y.score]
-                            #z for z in self if z.score != None and z.score <= y.score]
-                            if none or lower:
-                                self.gen_num += 1
-                                if none:
-#                                    r = random.choice(none)
-                                    i = random.choice(none)
-                                else:
-                                    # maybe we should just replace the lowest?
-                                    #r = random.choice(lower)
-                                    i = random.choice(lower)
-                                #i = self.index(r)
-                                log.debug('overwrite %d', i)
-                                self[i] = y
-#                    self.recordStats()
-                                log.debug('trying commit')
-                                transaction.commit()
-                                log.debug('commit ok')
-                            break
-                        except ConflictError:
-                            pass
-
+                transaction.begin()
+                log.debug('runClientLoop: %d/%d', self.gen_num, self.final_gen_num)
+                if self.gen_num >= self.final_gen_num:
+                    log.info('all individuals done in final generation, exiting')
+                    transaction.abort()
+                    return
+                if self.ga == 'steady-state':
+                    if client:
+                        self.steadyStateClientInnerLoop()
+                    if master:
+                        self.steadyStateMasterInnerLoop()
                 elif self.ga == 'elite':
-                    ready = [ x for x in self if x.score == None ]
-                    if client and ready:
-                        x = random.choice(ready)
-                        log.info('client evaluating %d', self.index(x))
-                        score = self.evaluate(x)
-                        transaction.commit()
-                    elif master and not ready:
-                        # finalise this generation
-                        self.recordStats()
-                        if self.gen_num < self.final_gen_num:
-                            # make next generation
-                            self.update()
-                        else:
-                            log.info('final generation is done, so exit')
-                            break
-                    elif self.gen_num == self.final_gen_num:
-                        log.info('all individuals done in final generation, exiting')
-                        break
-                    else:
-                        log.debug('nothing to do, sleeping...')
-                        time.sleep(15)
+                    self.eliteInnerLoop(master, client)
+                else:
+                    log.info('nothing for us to do')
             except ConflictError:
-                # Someone beat us to a lock or update
-                pass
+                transaction.abort()
+                time.sleep(5)
+                log.debug('commit conflict')
+            except POSKeyError:
+                log.critical('poskeyerror - this should not happen')
+                raise
             except DisconnectedError:
                 log.debug('we lost connection to the server, sleeping..')
-                # do i need to reestablish connection here??
+                # FIXME: do i need to manually reestablish connection here??
                 time.sleep(60)
-        log.debug('leaving evolve()')
+        log.debug('/runClientLoop')

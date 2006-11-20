@@ -44,19 +44,19 @@ class Analyzer:
 
             for token in tokens[1:]:
                 try:
-                    type, count = token.split('=')
+                    type_, count = token.split('=')
                     count = int(count)
                 except:
                     continue
 
-                self.record(type, timestep, count)
+                self.record(type_, timestep, count)
 
-    def record(self, type, timestep, count):
-        if type in self.openFiles:
-            f = self.openFiles[type]
+    def record(self, type_, timestep, count):
+        if type_ in self.openFiles:
+            f = self.openFiles[type_]
         else:
-            f = open("types/%s" % type, "w")
-            self.openFiles[type] = f
+            f = open("types/%s" % type_, "w")
+            self.openFiles[type_] = f
         
         f.write("%s %s\n" % (timestep, count))
 

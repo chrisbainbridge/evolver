@@ -199,7 +199,7 @@ class BpgSimTestCase(unittest.TestCase):
         s.bpgs[0].bodyparts[0].motor_input = None
         s.bpgs[0].bodyparts[1].motor_input = None
         s.world.setGravity((0,0,0))
-        b0 = s.space.getGeom(0).getBody()
+        s.space.getGeom(0).getBody()
         b1 = s.space.getGeom(1).getBody()
         s.moveBps(0,0,5)
         # fix bp so it cant move
@@ -210,7 +210,6 @@ class BpgSimTestCase(unittest.TestCase):
         m = s.bpgs[0].bodyparts[1].motor
         m.desired_axisangle[0] = math.pi*3/2
         m.desired_axisangle[2] = 5*math.pi/4
-        #b0.addForce((0,0,10000))
 
         if not record:
             runSim(s)
