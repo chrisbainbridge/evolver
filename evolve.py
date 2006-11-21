@@ -30,8 +30,6 @@ log.setLevel(logging.ERROR)
 log.debug('recursion limit is %d, setting to 4000', sys.getrecursionlimit())
 sys.setrecursionlimit(4000)
 
-statlog = None
-
 class HostData(Persistent):
     def __init__(self):
         Persistent.__init__(self)
@@ -86,22 +84,6 @@ class Generation(PersistentList):
         if len(self.fitnessList) > self.gen_num:
             self.fitnessList = self.fitnessList[:self.gen_num]
         self.fitnessList.append((m.min(), m.mean(), m.max()))
-        transaction.commit()
-        if statlog:
-            if not os.path.exists(statlog):
-                f = open(statlog, 'w')
-                f.write('# GENERATION MIN AVG MAX\n\n')
-            else:
-                f = open(statlog, 'a')
-            total = 0.0
-            for ev in self:
-                total += ev.score
-            maximum = self[0].score
-            minimum = self[-1].score
-            average = total / len(self)
-            s = '%d %f %f %f\n'%(self.gen_num, minimum, average, maximum)
-            f.write(s)
-            f.close()
 
     def sanityCheck(self):
         log.debug('sanity check generation')
@@ -154,10 +136,13 @@ class Generation(PersistentList):
     def update(self):
         log.debug('update()')
         log.info('Making new generation %d (evals took %d seconds)', self.gen_num + 1, time.time() - self.updateInfo[1])
+
         self.setUpdateInfo(1)
         transaction.commit()
 
         transaction.begin()
+        self.recordStats()
+
         for bg in self.prev_gen:
             bg.destroy()
         self.prev_gen = self[:]
@@ -251,11 +236,7 @@ class Generation(PersistentList):
             self.evaluate(x)
             transaction.commit()
         elif master and not ready:
-            # finalise this generation
-            self.recordStats()
-            if self.gen_num < self.final_gen_num:
-                # make next generation
-                self.update()
+            self.update()
         else:
             log.debug('nothing to do, sleeping...')
             time.sleep(15)

@@ -422,25 +422,25 @@ class BodyPartGraph(Persistent):
     def dot(self, filename, s):
         "Write string s to a file and run dot"
         view = 0
-        if filename:
-            if filename == '-':
-                view = 1
-                filename = 'tmp.pdf'
-            (fbase, ext) = os.path.splitext(filename)
-            ext = ext[1:]
-            f = open(fbase+'.dot', 'w')
-            f.write(s)
-            f.close()
-            if ext != 'dot':
-                if ext == 'pdf':
-                    os.system('dot -Tps -o%s.eps %s.dot'%(fbase, fbase))
-                    os.system('epstopdf %s.eps'%fbase)
-                    os.remove(fbase+'.eps')
-                else:
-                    os.system('dot -T%s -o%s.%s %s.dot'%(ext, fbase, ext, fbase))
-                    os.remove(fbase+'.dot')
-            if view:
-                os.system('kpdf tmp.pdf')
+        assert filename
+        if filename == '-':
+            view = 1
+            filename = 'tmp.pdf'
+        (fbase, ext) = os.path.splitext(filename)
+        ext = ext[1:]
+        f = open(fbase+'.dot', 'w')
+        f.write(s)
+        f.close()
+        if ext != 'dot':
+            if ext == 'pdf':
+                os.system('dot -Tps -o%s.eps %s.dot'%(fbase, fbase))
+                os.system('epstopdf %s.eps'%fbase)
+                os.remove(fbase+'.eps')
+                if view:
+                    os.system('kpdf %s.pdf'%fbase)
+            else:
+                os.system('dot -T%s -o%s.%s %s.dot'%(ext, fbase, ext, fbase))
+                os.remove(fbase+'.dot')
 
     def getInputs(self, bp):
         """Return a list of all the external inputs to bodypart bp.
