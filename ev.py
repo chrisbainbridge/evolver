@@ -474,6 +474,8 @@ def main():
                 log.debug('run %s is done (%d/%d)', r, root[r].gen_num,
                           root[r].final_gen_num)
         log.info('client exiting')
+        if background:
+            os.unlink('/tmp/client.pid')
 
     elif runsim:
         # run a single simulation from current generation

@@ -1,0 +1,44 @@
+#!/usr/bin/python
+
+import cluster
+from cluster import *
+import sys
+import logging
+
+def main():
+    level = logging.INFO
+    if '-d' in sys.argv:
+        level = logging.DEBUG
+        sys.argv.remove('-d')
+    logging.getLogger().setLevel(level)
+
+    up = 1
+    server = 0
+    clients = 0
+    if '-k' in sys.argv:
+        up = 0
+        sys.argv.remove('-k')
+    if '-s' in sys.argv:
+        server = 1
+        sys.argv.remove('-s')
+    if '-c' in sys.argv:
+        clients = 1
+        sys.argv.remove('-c')
+
+    hosts = cluster.HOSTS
+    if len(sys.argv) > 1:
+        hosts = sys.argv[1:]
+
+    if up:
+        if server:
+            startZeoServer()
+        if clients:
+            startZeoClients(hosts)
+    else:
+        if clients:
+            stopZeoClients(hosts)
+        if server:
+            stopZeoServer()
+
+if __name__ == '__main__':
+    main()

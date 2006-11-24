@@ -229,9 +229,12 @@ class Generation(PersistentList):
             log.debug('commit ok')
         time.sleep(5)
 
-    def eliteInnerLoop(self, master, client):
-        ready = [ x for x in self if x.score == None ]
-        if client and ready:
+    def leftToEval(self):
+        return [ x for x in self if x.score == None ]
+
+    def eliteInnerLoop(self, master, slave):
+        ready = self.leftToEval()
+        if slave and ready:
             x = random.choice(ready)
             self.evaluate(x)
             transaction.commit()
@@ -241,7 +244,7 @@ class Generation(PersistentList):
             log.debug('nothing to do, sleeping...')
             time.sleep(15)
 
-    def runClientLoop(self, master=1, client=1):
+    def runClientLoop(self, master=1, slave=1):
         """Evolve client.
 
         Make sure everything in the current generation is evaluated,
@@ -253,17 +256,17 @@ class Generation(PersistentList):
             try:
                 transaction.begin()
                 log.debug('runClientLoop: %d/%d', self.gen_num, self.final_gen_num)
-                if self.gen_num >= self.final_gen_num:
+                if self.gen_num == self.final_gen_num and (self.ga == 'steady-state' or self.ga == 'elite' and ((master and not slave) or slave and not self.leftToEval())) :
                     log.info('all individuals done in final generation, exiting')
                     transaction.abort()
                     return
                 if self.ga == 'steady-state':
-                    if client:
+                    if slave:
                         self.steadyStateClientInnerLoop()
                     if master:
                         self.steadyStateMasterInnerLoop()
                 elif self.ga == 'elite':
-                    self.eliteInnerLoop(master, client)
+                    self.eliteInnerLoop(master, slave)
                 else:
                     log.info('nothing for us to do')
             except ConflictError:
