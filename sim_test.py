@@ -98,9 +98,10 @@ class BpgTestCase(unittest.TestCase):
         s.add(b)
         siglog = 'test/sim_test_siglog.trace'
         s.initSignalLog(siglog)
+        oldsize = os.path.getsize(siglog)
         s.run()
-        assert os.path.exists(siglog)
-        assert os.path.getsize(siglog)
+        newsize = os.path.getsize(siglog)
+        assert newsize > oldsize
         
     def test_6_siglog_quanta(self):
         args = copy.deepcopy(new_network_args)
@@ -110,9 +111,10 @@ class BpgTestCase(unittest.TestCase):
         s.add(b)
         siglog = 'test/sim_test_siglog_quanta.trace'
         s.initSignalLog(siglog)
+        oldsize = os.path.getsize(siglog)
         s.run()
-        assert os.path.exists(siglog)
-        assert os.path.getsize(siglog)
+        newsize = os.path.getsize(siglog)
+        assert newsize > oldsize
 
     def test_7_run_ca(self):
         args = copy.deepcopy(new_network_args)
