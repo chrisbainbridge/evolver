@@ -11,7 +11,6 @@ from numpy import matrix
 import bpg
 import node
 import network
-import pdb
 
 CYLINDER_RADIUS = 1.0
 CYLINDER_DENSITY = 3.0

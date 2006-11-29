@@ -225,6 +225,7 @@ class Generation(PersistentList):
                     self[self.index(i)] = y
                 hd.newIndividual = None
                 self.gen_num += 1
+                self.recordStats()
             transaction.commit()
             log.debug('commit ok')
         time.sleep(5)
