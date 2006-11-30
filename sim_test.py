@@ -18,6 +18,7 @@ from bpg import Edge, BodyPart, BodyPartGraph
 from node import SigmoidNode, LogicalNode
 from test_common import *
 from network import Network
+from plot import plotSignals
 
 TESTDIR = '/tmp/'
 SECONDS = 20
@@ -102,6 +103,7 @@ class BpgTestCase(unittest.TestCase):
         s.run()
         newsize = os.path.getsize(siglog)
         assert newsize > oldsize
+        plotSignals('test/sim_test_siglog.trace')
         
     def test_6_siglog_quanta(self):
         args = copy.deepcopy(new_network_args)
@@ -115,6 +117,7 @@ class BpgTestCase(unittest.TestCase):
         s.run()
         newsize = os.path.getsize(siglog)
         assert newsize > oldsize
+        plotSignals('test/sim_test_siglog_quanta.trace')
 
     def test_7_run_ca(self):
         args = copy.deepcopy(new_network_args)

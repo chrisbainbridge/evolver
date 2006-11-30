@@ -11,6 +11,7 @@ import testoob
 import bpg
 import node
 from test_common import *
+from plot import *
 
 rl = logging.getLogger()
 interactive = 0
@@ -40,7 +41,7 @@ class BodyPartGraphTestCase(unittest.TestCase):
     def test_2_plotBpg(self):
         self.test_1_init()
         fname = self.fprefix + '2_plotBpg'
-        self.bpg.plotBpg(fname+'.dot')
+        plotBpg(self.bpg, fname+'.dot')
         os.system('dot -Tps -o %s.ps %s.dot'%(fname, fname))
         self.gv(fname)
 
@@ -54,8 +55,8 @@ class BodyPartGraphTestCase(unittest.TestCase):
         assert self.bpg.bodyparts.index(self.bpg.root) >= 0
         # -> ps
         fname = self.fprefix + '3_unroll_before'
-        self.bpg.plotBpg(fname+'.dot')
-        self.bpg.plotBpg(fname+'.ps')
+        plotBpg(self.bpg, fname+'.dot')
+        plotBpg(self.bpg, fname+'.ps')
         self.gv(fname)
         ur_bpg = self.bpg.unroll()
         ur_bpg.sanityCheck()
@@ -64,8 +65,8 @@ class BodyPartGraphTestCase(unittest.TestCase):
         f.close()
         # -> ps
         fname = self.fprefix + '3_unroll_after'
-        ur_bpg.plotBpg(fname+'.dot')
-        ur_bpg.plotBpg(fname+'.ps')
+        plotBpg(ur_bpg, fname+'.dot')
+        plotBpg(ur_bpg, fname+'.ps')
         self.gv(fname)
 
     def test_4_mutate(self):

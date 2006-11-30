@@ -34,7 +34,7 @@ class TestClusterElite(TestCase):
     def test_3_run(self):
         run('test_clusterElite')
 
-class TestClusterElite(TestCase):
+class TestClusterSteadyState(TestCase):
     def test_0_startZeoServer(self):
         cluster.startZeoServer()
     def test_1_delete(self):

@@ -99,7 +99,7 @@ import node # ignore checker error about this import
 import sim
 import daemon
 import cluster
-import plot
+from plot import *
 
 log = logging.getLogger('ev')
 
@@ -385,38 +385,7 @@ def main():
         if not g:
             log.critical('which generation?')
             return 1
-        view = 0
-        filename = plotfitness
-        if filename == '-':
-            view = 1
-            filename = 'tmp.pdf'
-        (fbase, ext) = os.path.splitext(filename)
-        ext = ext[1:]
-        datname = fbase + '.dat'
-        fdat = open(datname, 'w')
-        gen = 0
-        for (mn, mean, mx) in root[g].fitnessList:
-            fdat.write('%d %f %f %f\n'%(gen, mn, mean, mx))
-            gen += 1
-        fdat.close()
-        f = open(fbase + '.gnuplot', 'w')
-        s = """#!/usr/bin/gnuplot
-        set style data line
-        set terminal pdf
-        set output "%s"
-        set xlabel "Generation"
-        set ylabel "Fitness"
-        set multiplot
-        plot "%s" using 1:2 title "min", "%s" using 1:3 title "mean", "%s" using 1:4 title "max"
-        """%(fbase+'.pdf', datname, datname, datname)
-        f.write(s)
-        f.close()
-        if ext != 'gnuplot':
-            assert ext == 'pdf'
-            os.system('gnuplot %s'%(fbase + '.gnuplot'))
-            os.remove(fbase + '.gnuplot')
-            if view:
-                os.system('kpdf tmp.pdf')
+        plotGenerationVsFitness(root[g], plotfitness)
     
     if plotbpg or plotnets:
         if not g:
@@ -428,12 +397,12 @@ def main():
                 b = b.unroll()
                 b.connectInputNodes()
             if plotbpg:
-                b.plotBpg(plotbpg, toponly)
+                plotBpg(b, plotbpg, toponly)
             if plotnets:
-                b.plotNetworks(plotnets, toponly)
+                plotNetworks(b, plotnets, toponly)
         elif isinstance(b, network.Network):
             if plotnets:
-                b.plot(plotnets, toponly)
+                plotNetworks(b, plotnets, toponly)
 
     if list_gen:
         if not g:
@@ -526,7 +495,7 @@ def main():
             log.info('Final score was %f', s.score)
         if plotTrace:
             assert traceExt == '.eps' or tracefile == '-'
-            epsFiles = plot.plotSignals(fname)
+            epsFiles = plotSignals(fname)
             if tracefile == '-':
                 os.system('kpdf %s'%epsFiles[0])
 
