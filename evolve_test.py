@@ -27,7 +27,7 @@ class GenerationTestCase(unittest.TestCase):
         g = evolve.Generation(5, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args)
         g.evaluate(0)
         score = g[0].score
-        self.assertTrue(type(score) is float or type(score) is int)
+        self.assertTrue(isinstance(score, float) or isinstance(score, int))
         rl.debug('score was %f', score)
 
     def test_2_elitistUpdate(self):

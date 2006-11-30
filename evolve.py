@@ -164,11 +164,9 @@ class Generation(PersistentList):
         transaction.commit()
         log.info('New generation created in %d seconds', time.time() - self.updateInfo[1])
 
-    def evaluate(self, x):
+    def runSim(self, x):
         """Evaluate performance of individual(s) x in sim"""
 
-        if type(x) is int:
-            x = self[x]
         # set random seed the same for each evaluation
         try:
             log.debug('evaluating individual %d', self.index(x))
@@ -181,7 +179,14 @@ class Generation(PersistentList):
         sim.add(x)
         sim.run()
         random.setstate(currentRandomState)
-        x.score = sim.score
+        return sim.score
+
+    def evaluate(self, x):
+        if type(x) is int:
+            x = self[x]
+        s0 = self.runSim(x)
+        s1 = self.runSim(x)
+        x.score = matrix([s0, s1]).mean()
 
     def steadyStateClientInnerLoop(self):
         log.debug('steadyStateClientLoop')
@@ -197,12 +202,9 @@ class Generation(PersistentList):
         m = 0
         while m == 0:
             m = y.mutate(self.mutationRate)
-        self.evaluate(y)
-        s0 = y.score
-        self.evaluate(y)
-        yscore = min(s0, y.score)
-        log.debug('steady state eval done, score %f', yscore)
-        mydata.newIndividual = (y, yscore)
+        score = self.evaluate(y)
+        log.debug('steady state eval done, score %f', score)
+        mydata.newIndividual = (y, score)
         transaction.commit()
 
     def steadyStateMasterInnerLoop(self):

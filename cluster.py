@@ -57,7 +57,7 @@ def isZeoServerRunning():
     s = p.fromchild.read().strip()
     stopAlarm()
     debug(s)
-    running = not re.match(r'.* not running.*', s)
+    running = re.match(r'.* running .*', s) and not re.match(r'.* not running.*', s)
     if running:
         info('zeo server is running')
     else:
