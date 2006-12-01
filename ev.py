@@ -62,6 +62,8 @@
      --toponly         Only draw topology - no weights or bi-connects
      --unroll          Unroll bpg before converting to dot file
  --plotfitness f.pdf  Plot min/mean/max fitness graph for specified generation
+ --plotchildpi        Plot mutations vs prob. of child.fitness > parent fitness
+ --plotchildfc        Plot mutations vs observed fitness change
 
 ===== Sim =====
 
@@ -124,7 +126,7 @@ def main():
     log.debug(' '.join(sys.argv))
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:lp:q:sz:t:uvm', ['qt=','topology=','update=','node_type=','nodes=','dom_bias=','dom_value=','dom_weight=','ga-elite', 'ga-steady-state','mutation-rate=','gauss-noise=','nodes_per_input=','network=','plotbpg=','plotfitness=','plotnets=','plotsignals=','unroll','nb_dist=','toponly','movie=','sim=','states=', 'fitness='])
+        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:lp:q:sz:t:uvm', ['qt=','topology=','update=','node_type=','nodes=','dom_bias=','dom_value=','dom_weight=','ga-elite', 'ga-steady-state','mutation-rate=','gauss-noise=','nodes_per_input=','network=','plotbpg=','plotfitness=','plotnets=','plotsignals=','unroll','nb_dist=','toponly','movie=','sim=','states=', 'fitness=', 'plotchildpi=', 'plotchildfc='])
         log.debug('opts %s', opts)
         log.debug('args %s', args)
         # print help for no args
@@ -153,6 +155,8 @@ def main():
     quanta = None
     server_addr = db.getDefaultServer()
     plotfitness = None
+    plotchildpi = None
+    plotchildfc = None
 
     client = 0
     master = 0
@@ -254,6 +258,10 @@ def main():
             plotnets = a
         elif o == '--plotfitness':
             plotfitness = a
+        elif o == '--plotchildpi':
+            plotchildpi = a
+        elif o == '--plotchildfc':
+            plotchildfc = a
         elif o == '--plotsignals':
             tracefile = a
         elif o == '--unroll':
@@ -381,11 +389,16 @@ def main():
         del(root[g])
         transaction.commit()
 
-    if plotfitness:
+    if plotfitness or plotchildpi or plotchildfc:
         if not g:
             log.critical('which generation?')
             return 1
-        plotGenerationVsFitness(root[g], plotfitness)
+        if plotfitness:
+            plotGenerationVsFitness(root[g], plotfitness)
+        elif plotchildpi:
+            plotMutationVsProbImprovement(root[g], plotchildpi)
+        elif plotchildfc:
+            plotMutationVsFitnessChange(root[g], plotchildfc)
     
     if plotbpg or plotnets:
         if not g:

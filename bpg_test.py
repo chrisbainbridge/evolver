@@ -16,11 +16,11 @@ from plot import *
 rl = logging.getLogger()
 interactive = 0
 
-class BodyPartTestCase(unittest.TestCase):
+class BodyPartTest(unittest.TestCase):
     def test_0_init(self):
         self.bp = bpg.BodyPart(new_network_args)
 
-class BodyPartGraphTestCase(unittest.TestCase):
+class BodyPartGraphTest(unittest.TestCase):
 
     def setUp(self):
         if not os.path.exists('test'):

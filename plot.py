@@ -59,38 +59,110 @@ def plotSignals(tracefile):
     log.info('generated %s', fnames)
     return fnames
 
-def plotGenerationVsFitness(g, filename):
+def gnuplotSetup(filename):
     view = 0
     if filename == '-':
         view = 1
         filename = 'tmp.pdf'
     (fbase, ext) = os.path.splitext(filename)
-    ext = ext[1:]
-    datname = fbase + '.dat'
-    fdat = open(datname, 'w')
+    gnuplotFile = fbase + '.gnuplot'
+    datFile = fbase + '.dat'
+    return (view, fbase, ext, gnuplotFile, datFile)
+
+def gnuplot(gnuplotFile, ext, view):
+    if ext != '.gnuplot':
+        assert ext == '.pdf'
+        os.system('gnuplot %s'%(gnuplotFile))
+        os.remove(gnuplotFile)
+        if view:
+            os.system('kpdf tmp.pdf')
+
+def plotGenerationVsFitness(g, outputFilename):
+    (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename)
+
+    fdat = open(datFile, 'w')
     gen = 0
     for (mn, mean, mx) in g.fitnessList:
         fdat.write('%d %f %f %f\n'%(gen, mn, mean, mx))
         gen += 1
     fdat.close()
-    f = open(fbase + '.gnuplot', 'w')
+
+    f = open(gnuplotFile, 'w')
     s = """#!/usr/bin/gnuplot
     set style data line
     set terminal pdf
-    set output "%s"
+    set output "%s.pdf"
     set xlabel "Generation"
     set ylabel "Fitness"
     set multiplot
     plot "%s" using 1:2 title "min", "%s" using 1:3 title "mean", "%s" using 1:4 title "max"
-    """%(fbase+'.pdf', datname, datname, datname)
+    """%(fbase, datFile, datFile, datFile)
     f.write(s)
     f.close()
-    if ext != 'gnuplot':
-        assert ext == 'pdf'
-        os.system('gnuplot %s'%(fbase + '.gnuplot'))
-        os.remove(fbase + '.gnuplot')
-        if view:
-            os.system('kpdf tmp.pdf')
+
+    gnuplot(gnuplotFile, ext, view)
+
+def plotMutationVsProbImprovement(g, outputFilename):
+    (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename)
+
+    improved = {}
+    total = {}
+    for (parentFitness, mutations, childFitness) in g.mutationStats:
+        improved[mutations] = 0
+        total[mutations] = 0
+    for (parentFitness, mutations, childFitness) in g.mutationStats:
+        if childFitness > parentFitness:
+            improved[mutations] += 1
+        total[mutations] += 1
+    
+    fdat = open(datFile, 'w')
+    for m in total:
+        pi = float(improved[m]) / total[m]
+        fdat.write('%d %f\n'%(m, pi))
+    fdat.close()
+
+    f = open(gnuplotFile, 'w')
+    s = """#!/usr/bin/gnuplot
+    set style data line
+    set terminal pdf
+    set output "%s.pdf"
+    set xlabel "Number of mutations"
+    set ylabel "Probability of improvement"
+    set multiplot
+    set xtics 1
+    set xrange [0:]
+    plot "%s" using 1:2:(0.5) notitle with boxes fs solid 0.5
+    """%(fbase, datFile)
+    f.write(s)
+    f.close()
+
+    gnuplot(gnuplotFile, ext, view)
+
+def plotMutationVsFitnessChange(g, outputFilename):
+    (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename)
+
+    fdat = open(datFile, 'w')
+    for (parentFitness, mutations, childFitness) in g.mutationStats:
+        fitnessChange = childFitness - parentFitness
+        fdat.write('%d %f\n'%(mutations, fitnessChange))
+    fdat.close()
+
+    f = open(gnuplotFile, 'w')
+    s = """#!/usr/bin/gnuplot
+    set style data points
+    set terminal pdf
+    set output "%s.pdf"
+    set xlabel "Number of mutations"
+    set ylabel "Change in fitness"
+    set xtics 1
+    set xrange [0:]
+    set multiplot
+    plot "%s" using 1:2
+    """%(fbase, datFile)
+    f.write(s)
+    f.close()
+
+    gnuplot(gnuplotFile, ext, view)
 
 def dot(filename, s):
     "Write string s to a file and run dot"
@@ -100,11 +172,10 @@ def dot(filename, s):
         view = 1
         filename = 'tmp.pdf'
     (fbase, ext) = os.path.splitext(filename)
-    ext = ext[1:]
     f = open(fbase+'.dot', 'w')
     f.write(s)
     f.close()
-    if ext != 'dot':
+    if ext != '.dot':
         if ext == 'pdf':
             os.system('dot -Tps -o%s.eps %s.dot'%(fbase, fbase))
             os.system('epstopdf %s.eps'%fbase)
@@ -112,7 +183,8 @@ def dot(filename, s):
             if view:
                 os.system('kpdf %s.pdf'%fbase)
         else:
-            os.system('dot -T%s -o%s.%s %s.dot'%(ext, fbase, ext, fbase))
+            cmd = 'dot -T%s -o%s%s %s.dot'%(ext[1:], fbase, ext, fbase)
+            os.system(cmd)
             os.remove(fbase+'.dot')
 
 def plotNetworks(bg, filename, toponly):

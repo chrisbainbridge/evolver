@@ -94,7 +94,7 @@ class GenerationTestCase(unittest.TestCase):
 ##             assert ne.gen_num == 3
 
 
-suite = unittest.makeSuite(GenerationTestCase, 'test')
+#suite = unittest.makeSuite(GenerationTestCase, 'test')
 
 if __name__ == "__main__":
     setup_logging(rl)

@@ -72,6 +72,7 @@ class Generation(PersistentList):
         self.hostData = PersistentMapping()
         for hostname in cluster.HOSTNAMES:
             self.hostData[hostname] = HostData()
+        self.mutationStats = PersistentList()
 
     def setFinalGeneration(self, extraGenerations):
         "Set final generation number, relative to current one"
@@ -84,12 +85,23 @@ class Generation(PersistentList):
         if len(self.fitnessList) > self.gen_num:
             self.fitnessList = self.fitnessList[:self.gen_num]
         self.fitnessList.append((m.min(), m.mean(), m.max()))
+        for bg in self:
+            if hasattr(bg, 'parentFitness') and bg.score != None:
+                ms = (bg.parentFitness, bg.numberOfMutations, bg.score)
+                self.mutationStats.append(ms)
+                del bg.parentFitness
 
     def sanityCheck(self):
         log.debug('sanity check generation')
         for x in self:
             if hasattr(x, 'sanityCheck'):
                 x.sanityCheck()
+
+    def mutateChild(self, child):
+        m = child.mutate(self.mutationRate)
+        if m == 0:
+            log.info('warning: child is identical to parent, mutation rate is too low')
+        return m
 
     def elitistUpdate(self):
         """Elitist GA.
@@ -109,6 +121,8 @@ class Generation(PersistentList):
         for x in self.prev_gen[:num_elites]:
             y = copy.deepcopy(x)
             #y.mutate(0.0) # aging damage (0.15)
+            y.parentFitness = x.score
+            y.numberOfMutations = 0
             self.append(y)
             transaction.savepoint()
             log.info('.' * count)
@@ -116,19 +130,17 @@ class Generation(PersistentList):
         log.debug('elites = %s'%self)
 
         # we now have some elites. copy them and mutate to generate children.
-        mutations = []
         for j in range(num_elites, len(self.prev_gen)):
             p = self.prev_gen[j%num_elites]
             child = copy.deepcopy(p)
-            m = child.mutate(self.mutationRate)
-            if m == 0:
-                log.info('warning: child is identical to parent, mutation rate is too low')
-            mutations.append(m)
+            m = self.mutateChild(child)
+            assert p.score != None
+            child.parentFitness = p.score
+            child.numberOfMutations = m
             self.append(child)
             transaction.savepoint()
             log.info('.' * count)
             count += 1
-        log.debug('child mutations = %s', str(mutations))
 
     def setUpdateInfo(self, updating=0):
         self.updateInfo = (socket.gethostname(), time.time(), updating)
@@ -185,6 +197,9 @@ class Generation(PersistentList):
         if type(x) is int:
             x = self[x]
         s0 = self.runSim(x)
+        if s0 == -1:
+            x.score = -1
+            return
         s1 = self.runSim(x)
         x.score = matrix([s0, s1]).mean()
 
@@ -197,14 +212,24 @@ class Generation(PersistentList):
             time.sleep(15)
             return
 
+        # make sure all initial instances are evaluated first
+        init = [z for z in self if z.score == None]
+        if init:
+            x = random.choice(init)
+            self.evaluate(x)
+            transaction.commit()
+            return
+
         x = random.choice(self)
         y = copy.deepcopy(x)
-        m = 0
-        while m == 0:
-            m = y.mutate(self.mutationRate)
-        score = self.evaluate(y)
-        log.debug('steady state eval done, score %f', score)
-        mydata.newIndividual = (y, score)
+        m = self.mutateChild(y)
+        self.evaluate(y)
+        log.debug('steady state eval done, score %f', y.score)
+        assert x.score != None
+        y.parentFitness = x.score
+        y.numberOfMutations = m
+        mydata.newIndividual = y
+        
         transaction.commit()
 
     def steadyStateMasterInnerLoop(self):
@@ -214,9 +239,8 @@ class Generation(PersistentList):
             transaction.abort()
         else:
             for hd in l:
-                (y, yscore) = hd.newIndividual
                 empty = [z for z in self if z.score == None]
-                lower = [z for z in self if z.score != None and z.score <= yscore]
+                lower = [z for z in self if z.score != None and z.score <= hd.newIndividual.score]
                 if empty or lower:
                     if empty:
                         i = random.choice(empty)
@@ -224,7 +248,7 @@ class Generation(PersistentList):
                         # maybe we should just replace the lowest?
                         i = random.choice(lower)
                     log.debug('overwrite %s', i)
-                    self[self.index(i)] = y
+                    self[self.index(i)] = hd.newIndividual
                 hd.newIndividual = None
                 self.gen_num += 1
                 self.recordStats()
