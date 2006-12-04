@@ -12,7 +12,7 @@ from test_common import *
 evolve.master = 1
 rl = logging.getLogger()
 
-class GenerationTestCase(unittest.TestCase):
+class GenerationTest(unittest.TestCase):
 
     def setUp(self):
         random.seed()

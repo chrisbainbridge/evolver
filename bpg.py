@@ -213,7 +213,10 @@ class BodyPartGraph(Persistent):
             self.root = None
         else:
             self.randomInit(network_args)
-                
+        self.parentFitness = None
+        self.numberOfMutations = None
+        self.mutationStatRecorded = 0
+
     def destroy(self):
         for bp in self.bodyparts:
             bp.destroy()

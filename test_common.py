@@ -27,7 +27,7 @@ new_network_args = { 'num_nodes' : 5,
                      'new_node_args' : new_node_args_sigmoid,
                      'topology' : '1d',
                      'update_style' : 'async',
-                     'nb_dist' : 1 }
+                     'radius' : 1 }
 new_individual_fn = bpg.BodyPartGraph
 new_individual_args = { 'network_args' : new_network_args }
 new_sim_fn = sim.BpgSim 

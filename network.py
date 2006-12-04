@@ -19,7 +19,7 @@ class Network(PersistentList):
     "Model of a control network; nodes, edges, weights."
 
     def __init__(self, num_nodes, num_inputs, num_outputs, new_node_class,
-            new_node_args, topology, update_style, nb_dist=1):
+            new_node_args, topology, update_style, radius=1):
         # what about k, quanta, nodes_per_input
         PersistentList.__init__(self)
         log.debug('Network.__init__()')
@@ -35,7 +35,7 @@ class Network(PersistentList):
         assert num_nodes >= num_inputs
         assert num_nodes >= num_outputs
         # create nodes
-        inputsPerNode = self.getNumberOfInputsPerNode(topology, nb_dist, num_nodes)
+        inputsPerNode = self.getNumberOfInputsPerNode(topology, radius, num_nodes)
         if new_node_class == LogicalNode:
             new_node_args['numberOfInputs'] = inputsPerNode
         for _ in range(num_nodes):
@@ -58,7 +58,7 @@ class Network(PersistentList):
                     self.outputs.append(n)
                     break
 
-        self.connect(topology, nb_dist)
+        self.connect(topology, radius)
         for n in self:
             assert len(n.inputs) == inputsPerNode
 

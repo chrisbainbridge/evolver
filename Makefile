@@ -22,7 +22,7 @@ popd:
 	ev.py -r x -e
 
 pop:
-	ev.py -r x -p 5 -t 30 -g 100 --topology full --update sync --node_type sigmoid --nodes 20 --sim bpg --fitness mean-distance
+	ev.py -r x -p 5 -t 30 -g 100 --topology full --update sync --nodetype sigmoid --nodes 20 --sim bpg --fitness mean-distance --steadystate
 
 run:
 	ev.py -r x -u

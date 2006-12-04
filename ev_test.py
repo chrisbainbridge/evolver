@@ -29,16 +29,19 @@ def run(g):
     main('ev.py -r %s -c -m'%g)
 
 def plot(g):
+    rl.debug('testing --plotfitness')
     main('ev.py -r %s --plotfitness test/%s-fitness.pdf'%(g, g))
-    main('ev.py -r %s --plotchildpi test/%s-childpi.pdf'%(g, g))
-    main('ev.py -r %s --plotchildfc test/%s-childfc.pdf'%(g, g))
+    rl.debug('testing --plotpi')
+    main('ev.py -r %s --plotpi test/%s-childpi.pdf'%(g, g))
+    rl.debug('testing --plotfc')
+    main('ev.py -r %s --plotfc test/%s-childfc.pdf'%(g, g))
 
 class TestLogical(TestCase):
     g = 'test_logical'
     def test_1_delete(self):
         delete(self.g)
     def test_2_create(self):
-        create(self.g, '--node_type logical --states 2')
+        create(self.g, '--nodetype logical --states 2')
     def test_3_run(self):
         run(self.g)
     def test_4_plot(self):
@@ -49,7 +52,7 @@ class TestSigmoid(TestCase):
     def test_1_delete(self):
         delete(self.g)
     def test_2_create(self):
-        create(self.g, '--node_type sigmoid')
+        create(self.g, '--nodetype sigmoid')
     def test_3_run(self):
         run(self.g)
     def test_4_plot(self):
@@ -60,7 +63,7 @@ class TestSigmoidQuantised(TestCase):
     def test_1_delete(self):
         delete(self.g)
     def test_2_create(self):
-        create(self.g, '--node_type sigmoid -q 32')
+        create(self.g, '--nodetype sigmoid -q 32')
     def test_3_run(self):
         run(self.g)
     def test_4_plot(self):
@@ -71,7 +74,7 @@ class TestSteadyState(TestCase):
     def test_1_delete(self):
         delete(self.g)
     def test_2_create(self):
-        create(self.g, '--node_type sigmoid --ga-steady-state')
+        create(self.g, '--nodetype sigmoid --steadystate')
     def test_3_run(self):
         run(self.g)
     def test_4_plot(self):

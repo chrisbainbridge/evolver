@@ -63,7 +63,6 @@ class Generation(PersistentList):
             x.score = None
             self.append(x)
             transaction.savepoint()
-        self.random_state = random.getstate()
         self.prev_gen = []
         self.setUpdateInfo()
         self.fitnessList = PersistentList()
@@ -85,11 +84,13 @@ class Generation(PersistentList):
         if len(self.fitnessList) > self.gen_num:
             self.fitnessList = self.fitnessList[:self.gen_num]
         self.fitnessList.append((m.min(), m.mean(), m.max()))
-        for bg in self:
-            if hasattr(bg, 'parentFitness') and bg.score != None:
-                ms = (bg.parentFitness, bg.numberOfMutations, bg.score)
-                self.mutationStats.append(ms)
-                del bg.parentFitness
+        for bg in [x for x in self if not x.mutationStatRecorded and x.score != None and x.parentFitness != None]:
+            assert isinstance(bg.parentFitness, float) or isinstance(bg.parentFitness, int)
+            assert isinstance(bg.numberOfMutations, int)
+            assert isinstance(bg.score, float) or isinstance(bg.score, int)
+            ms = (bg.parentFitness, bg.numberOfMutations, bg.score)
+            self.mutationStats.append(ms)
+            bg.mutationStatRecorded = 1
 
     def sanityCheck(self):
         log.debug('sanity check generation')
@@ -100,7 +101,10 @@ class Generation(PersistentList):
     def mutateChild(self, child):
         m = child.mutate(self.mutationRate)
         if m == 0:
-            log.info('warning: child is identical to parent, mutation rate is too low')
+            log.warn('child is identical to parent, mutation rate is too low')
+        child.numberOfMutations = m
+        child.mutationStatRecorded = 0
+        log.debug('mutateChild created %d mutations', m)
         return m
 
     def elitistUpdate(self):
@@ -123,6 +127,7 @@ class Generation(PersistentList):
             #y.mutate(0.0) # aging damage (0.15)
             y.parentFitness = x.score
             y.numberOfMutations = 0
+            y.mutationStatRecorded = 0
             self.append(y)
             transaction.savepoint()
             log.info('.' * count)
@@ -136,7 +141,6 @@ class Generation(PersistentList):
             m = self.mutateChild(child)
             assert p.score != None
             child.parentFitness = p.score
-            child.numberOfMutations = m
             self.append(child)
             transaction.savepoint()
             log.info('.' * count)
@@ -169,33 +173,27 @@ class Generation(PersistentList):
         for x in self:
             x.score = None
 
-        # set next random seed
-        self.random_state = random.getstate()
         self.gen_num += 1
         self.setUpdateInfo(0)
         transaction.commit()
         log.info('New generation created in %d seconds', time.time() - self.updateInfo[1])
 
     def runSim(self, x):
-        """Evaluate performance of individual(s) x in sim"""
+        "Evaluate performance of individual(s) x in sim"
 
-        # set random seed the same for each evaluation
-        try:
-            log.debug('evaluating individual %d', self.index(x))
-        except:
-            log.debug('evaluating individual %s', x)
-        currentRandomState = random.getstate()
-        random.setstate(self.random_state)
-        # do sim
         sim = self.new_sim_fn(**dict(self.new_sim_args))
         sim.add(x)
         sim.run()
-        random.setstate(currentRandomState)
         return sim.score
 
     def evaluate(self, x):
+        log.debug('evaluate')
         if type(x) is int:
             x = self[x]
+        if x.numberOfMutations == 0 and x.parentFitness != None:
+            log.debug('child same as parent, skip eval, fitness = %f', x.parentFitness)
+            x.score = x.parentFitness
+            return
         s0 = self.runSim(x)
         if s0 == -1:
             x.score = -1
@@ -215,6 +213,7 @@ class Generation(PersistentList):
         # make sure all initial instances are evaluated first
         init = [z for z in self if z.score == None]
         if init:
+            log.debug('doing post-create eval (no parent)')
             x = random.choice(init)
             self.evaluate(x)
             transaction.commit()
@@ -227,7 +226,7 @@ class Generation(PersistentList):
         log.debug('steady state eval done, score %f', y.score)
         assert x.score != None
         y.parentFitness = x.score
-        y.numberOfMutations = m
+        log.debug('parent score=%f child score=%f', y.parentFitness, y.score)
         mydata.newIndividual = y
         
         transaction.commit()
@@ -236,6 +235,7 @@ class Generation(PersistentList):
         log.debug('steadyStateMasterLoop')
         l = [ x for x in self.hostData.values() if x.newIndividual ]
         if not l:
+            log.debug('no newIndividuals')
             transaction.abort()
         else:
             for hd in l:
@@ -249,6 +249,8 @@ class Generation(PersistentList):
                         i = random.choice(lower)
                     log.debug('overwrite %s', i)
                     self[self.index(i)] = hd.newIndividual
+                else:
+                    log.debug('newIndividual is too low, throw it away')
                 hd.newIndividual = None
                 self.gen_num += 1
                 self.recordStats()

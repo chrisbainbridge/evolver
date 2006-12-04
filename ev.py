@@ -28,24 +28,24 @@
      --topology x     Specify topology of [full,1d,2d,3d,randomk]
        -k x           Specify k inputs for randomk topology
      --update x       Update style [sync,async]
-     --node_type x    Type of node [sigmoid,logical]
+     --nodetype x     Type of node [sigmoid,logical]
      --states x       Number of states per cell [logical only]
-     --nodes x    (1d, randomk, full) - Total number of nodes 
+     --nodes x       (1d, randomk, full) - Total number of nodes 
                       (2d, 3d) - length of a dimension
                       number x includes network inputs and outputs
                       (default 10)
-     --dom_bias x,y   Domain for bias is [x,y] (default [0,1])
-     --dom_value x,y  Domain for signal values (default [-5,5])
-     --dom_weight x,y Domain for weight values (default [-7,7])
-     --nb_dist x      Max distance of a nodes neighbour in any dimension (default 1)
-                      Note: neighbourhoods are squares not crosses
-     --fitness x      Specify fitness function [bpgsim only], can be:
-                        cumulative-z : average z value of all body parts summed over time
-                        mean-distance : average Euclidean distance of all body parts
- --ga-elite           Use an elitist GA
- --ga-steady-state    Use a steady state parallel GA
- --mutation-rate x    Specify mutation probability
- --gauss-noise x      Specify standard deviation of Gaussian noise applied to sensors and motors
+     --dombias x,y   Domain for bias is [x,y] (default [0,1])
+     --domvalue x,y  Domain for signal values (default [-5,5])
+     --domweight x,y Domain for weight values (default [-7,7])
+     --radius x      Max distance of a nodes neighbour in any dimension (default 1)
+                        Note: neighbourhoods are squares not crosses
+     --fitness x     Specify fitness function [bpgsim only], can be:
+                       cumulative-z : average z value of all body parts summed over time
+                       mean-distance : average Euclidean distance of all body parts
+ --elite             Use an elitist GA
+ --steadystate       Use a steady state parallel GA
+ --mutate x          Specify mutation probability
+ --noise x           Specify standard deviation of Gaussian noise applied to sensors and motors
 
 ===== Unlock =====
 
@@ -62,8 +62,8 @@
      --toponly         Only draw topology - no weights or bi-connects
      --unroll          Unroll bpg before converting to dot file
  --plotfitness f.pdf  Plot min/mean/max fitness graph for specified generation
- --plotchildpi        Plot mutations vs prob. of child.fitness > parent fitness
- --plotchildfc        Plot mutations vs observed fitness change
+ --plotpi        Plot mutations vs prob. of child.fitness > parent fitness
+ --plotfc        Plot mutations vs observed fitness change
 
 ===== Sim =====
 
@@ -126,7 +126,7 @@ def main():
     log.debug(' '.join(sys.argv))
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:lp:q:sz:t:uvm', ['qt=','topology=','update=','node_type=','nodes=','dom_bias=','dom_value=','dom_weight=','ga-elite', 'ga-steady-state','mutation-rate=','gauss-noise=','nodes_per_input=','network=','plotbpg=','plotfitness=','plotnets=','plotsignals=','unroll','nb_dist=','toponly','movie=','sim=','states=', 'fitness=', 'plotchildpi=', 'plotchildfc='])
+        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:lp:q:sz:t:uvm', ['qt=','topology=','update=','nodetype=','nodes=','dombias=','domvalue=','domweight=','elite', 'steadystate','mutate=','noise=','nodes_per_input=','network=','plotbpg=','plotfitness=','plotnets=','plotsignals=','unroll','radius=','toponly','movie=','sim=','states=', 'fitness=', 'plotpi=', 'plotfc='])
         log.debug('opts %s', opts)
         log.debug('args %s', args)
         # print help for no args
@@ -148,15 +148,15 @@ def main():
     tracefile = None
     topology = 'full'
     update_style = 'sync'
-    node_type = 'sigmoid'
+    nodetype = 'sigmoid'
     num_nodes = 10
     simulation = 'bpg'
     #discrete = 0
     quanta = None
     server_addr = db.getDefaultServer()
     plotfitness = None
-    plotchildpi = None
-    plotchildfc = None
+    plotpi = None
+    plotfc = None
 
     client = 0
     master = 0
@@ -167,10 +167,10 @@ def main():
     unlock = 0
     k = None
     # default domains
-    dom_bias = (-5,5)
-    dom_weight = (-7,7)
+    dombias = (-5,5)
+    domweight = (-7,7)
     #nodes_per_input = 1
-    nb_dist = 1
+    radius = 1
     plotbpg = None
     plotnets = None
     unroll = 0
@@ -180,10 +180,10 @@ def main():
     runsim = 0
     fitnessFunctionName = None 
     ga = 'elite'
-    mutationRate = 0.01
+    mutationRate = 0.2
     gaussNoise = 0.01
     for o, a in opts:
-        log.debug('parsing %s,%s',o,a)
+        log.debug('parsing %s %s',o,a)
         if o == '-c':
             client = 1
         elif o == '-e':
@@ -225,30 +225,30 @@ def main():
             k = int(a)
         elif o == '--update':
             update_style = a
-        elif o == '--node_type':
-            node_type = a
+        elif o == '--nodetype':
+            nodetype = a
         elif o == '--nodes':
             num_nodes = int(a)
-        elif o == '--dom_bias':
+        elif o == '--dombias':
             # a is of form 'x,y'
-            dom_bias = eval(a)
-        elif o == '--dom_value':
+            dombias = eval(a)
+        elif o == '--domvalue':
             # FIXME: THIS IS NOT BEING USED
-            dom_value = eval(a)
+            domvalue = eval(a)
             fixme
-        elif o == '--dom_weight':
-            dom_weight = eval(a)
+        elif o == '--domweight':
+            domweight = eval(a)
         elif o == '--nodes_per_input':
             # FIXME: THIS IS NOT BEING USED
             nodes_per_input = int(a)
             fixme
-        elif o == '--ga-elite':
+        elif o == '--elite':
             ga = 'elite'
-        elif o == '--ga-steady-state':
+        elif o == '--steadystate':
             ga = 'steady-state'
-        elif o == '--mutation-rate':
+        elif o == '--mutate':
             mutationRate = float(a)
-        elif o == '--gauss-noise':
+        elif o == '--noise':
             gaussNoise = float(a)
         elif o == '-i':
             g_index = int(a)
@@ -258,16 +258,16 @@ def main():
             plotnets = a
         elif o == '--plotfitness':
             plotfitness = a
-        elif o == '--plotchildpi':
-            plotchildpi = a
-        elif o == '--plotchildfc':
-            plotchildfc = a
+        elif o == '--plotpi':
+            plotpi = a
+        elif o == '--plotfc':
+            plotfc = a
         elif o == '--plotsignals':
             tracefile = a
         elif o == '--unroll':
             unroll = 1
-        elif o == '--nb_dist':
-            nb_dist = int(a)
+        elif o == '--radius':
+            radius = int(a)
         elif o == '--toponly':
             toponly = 1
         elif o == '-s':
@@ -304,7 +304,7 @@ def main():
         f.write('%d\n'%(os.getpid()))
         f.close()
 
-    log.debug('zodb server is %s', server_addr)
+    log.debug('zeo server is %s', server_addr)
     root = db.connect(server_addr)
 
     if unlock:
@@ -336,11 +336,11 @@ def main():
 
         new_node_arg_class_map = { 'sigmoid' : node.SigmoidNode,
                          'logical': node.LogicalNode}
-        new_node_class = new_node_arg_class_map[node_type]
+        new_node_class = new_node_arg_class_map[nodetype]
         if new_node_class == node.SigmoidNode:
             new_node_args = PersistentMapping(
-                    { 'bias_domain': dom_bias,
-                      'weight_domain' : dom_weight,
+                    { 'bias_domain': dombias,
+                      'weight_domain' : domweight,
                       'quanta': quanta })
         elif new_node_class == node.LogicalNode:
             new_node_args = PersistentMapping(
@@ -353,7 +353,7 @@ def main():
                   'new_node_args' : new_node_args,
                   'topology' : topology,
                   'update_style' : update_style,
-                  'nb_dist' : nb_dist })
+                  'radius' : radius })
         new_sim_args = PersistentMapping ({ 'max_simsecs' : max_simsecs ,
                                             'gaussNoise' : gaussNoise})
         if simulation == 'bpg':
@@ -389,16 +389,16 @@ def main():
         del(root[g])
         transaction.commit()
 
-    if plotfitness or plotchildpi or plotchildfc:
+    if plotfitness or plotpi or plotfc:
         if not g:
             log.critical('which generation?')
             return 1
         if plotfitness:
             plotGenerationVsFitness(root[g], plotfitness)
-        elif plotchildpi:
-            plotMutationVsProbImprovement(root[g], plotchildpi)
-        elif plotchildfc:
-            plotMutationVsFitnessChange(root[g], plotchildfc)
+        elif plotpi:
+            plotMutationVsProbImprovement(root[g], plotpi)
+        elif plotfc:
+            plotMutationVsFitnessChange(root[g], plotfc)
     
     if plotbpg or plotnets:
         if not g:
@@ -480,8 +480,6 @@ def main():
 
         s = root[g].new_sim_fn(secs, fitnessFunctionName)
         s.add(root[g][i])
-        # restore saved random state - ensures simulation reproducibility
-        #random.setstate(root[g].random_state)
         # set up tracing
         plotTrace = 0
         if tracefile:

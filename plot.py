@@ -69,11 +69,12 @@ def gnuplotSetup(filename):
     datFile = fbase + '.dat'
     return (view, fbase, ext, gnuplotFile, datFile)
 
-def gnuplot(gnuplotFile, ext, view):
+def gnuplot(gnuplotFile, ext, view, datFile):
     if ext != '.gnuplot':
         assert ext == '.pdf'
         os.system('gnuplot %s'%(gnuplotFile))
         os.remove(gnuplotFile)
+        os.remove(datFile)
         if view:
             os.system('kpdf tmp.pdf')
 
@@ -100,7 +101,7 @@ def plotGenerationVsFitness(g, outputFilename):
     f.write(s)
     f.close()
 
-    gnuplot(gnuplotFile, ext, view)
+    gnuplot(gnuplotFile, ext, view, datFile)
 
 def plotMutationVsProbImprovement(g, outputFilename):
     (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename)
@@ -130,21 +131,26 @@ def plotMutationVsProbImprovement(g, outputFilename):
     set ylabel "Probability of improvement"
     set multiplot
     set xtics 1
-    set xrange [0:]
+    set xrange [1:]
+    set yrange [0:1]
     plot "%s" using 1:2:(0.5) notitle with boxes fs solid 0.5
     """%(fbase, datFile)
     f.write(s)
     f.close()
 
-    gnuplot(gnuplotFile, ext, view)
+    gnuplot(gnuplotFile, ext, view, datFile)
 
 def plotMutationVsFitnessChange(g, outputFilename):
     (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename)
 
     fdat = open(datFile, 'w')
+    mn = 0
+    mx = 0
     for (parentFitness, mutations, childFitness) in g.mutationStats:
         fitnessChange = childFitness - parentFitness
         fdat.write('%d %f\n'%(mutations, fitnessChange))
+        mn = min(mn, fitnessChange)
+        mx = max(mx, fitnessChange)
     fdat.close()
 
     f = open(gnuplotFile, 'w')
@@ -155,14 +161,15 @@ def plotMutationVsFitnessChange(g, outputFilename):
     set xlabel "Number of mutations"
     set ylabel "Change in fitness"
     set xtics 1
-    set xrange [0:]
+    set xrange [1:]
+    set yrange [%f:%f]
     set multiplot
     plot "%s" using 1:2 notitle
-    """%(fbase, datFile)
+    """%(fbase, mn, mx, datFile)
     f.write(s)
     f.close()
 
-    gnuplot(gnuplotFile, ext, view)
+    gnuplot(gnuplotFile, ext, view, datFile)
 
 def dot(filename, s):
     "Write string s to a file and run dot"
