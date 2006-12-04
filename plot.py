@@ -157,7 +157,7 @@ def plotMutationVsFitnessChange(g, outputFilename):
     set xtics 1
     set xrange [0:]
     set multiplot
-    plot "%s" using 1:2
+    plot "%s" using 1:2 notitle
     """%(fbase, datFile)
     f.write(s)
     f.close()
