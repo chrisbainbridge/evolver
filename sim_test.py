@@ -2,6 +2,7 @@
 
 import unittest
 import logging
+from logging import debug
 import random
 import os
 import sys
@@ -16,19 +17,18 @@ from cgkit.cgtypes import vec3
 import sim
 from bpg import Edge, BodyPart, BodyPartGraph
 from node import SigmoidNode, LogicalNode
+import test_common
 from test_common import *
 from network import Network
 from plot import plotSignals
 
 TESTDIR = '/tmp/'
 SECONDS = 20
-rl = logging.getLogger()
-interactive = 0
 
 class TestBodyPart(BodyPart):
     """Create a random test BodyPart aligned along z axis"""
     def __init__(self, network_args, jtype='hinge'):
-        rl.debug('TestBp.__init__')
+        debug('TestBp.__init__')
         BodyPart.__init__(self, network_args)
         # override some values
         self.scale = 2.0
@@ -38,10 +38,10 @@ class TestBodyPart(BodyPart):
 class TestBodyPartGraph(BodyPartGraph):
     "Create a BPG containing num_bodyparts BodyParts"
     def __init__(self, network_args, num_bodyparts, jtype='hinge'):
-        rl.debug('TestBpg.__init__')
+        debug('TestBpg.__init__')
         self.bodyparts = PersistentList()
         self.unrolled = 0
-        rl.debug('Creating %d random BodyParts'%(num_bodyparts))
+        debug('Creating %d random BodyParts'%(num_bodyparts))
         p = TestBodyPart(network_args, jtype)
         self.bodyparts.append(p)
         self.root = p
@@ -144,7 +144,7 @@ def runNonVisualSim(sim):
     sim.run()
 
 def runSim(sim, record=0, avifile=None, qtargs=[]):
-    if interactive:
+    if test_common.interactive:
         runVisualSim(sim, record, avifile, qtargs)
     else:
         runNonVisualSim(sim)
@@ -232,9 +232,9 @@ class BpgSimTestCase(unittest.TestCase):
     
     def test_8_record_movie(self):
         self.do_joint_motor(jointtype='ball', record=1)
-        if interactive:
+        if test_common.interactive:
             cmd = 'mplayer %s/record_test.avi'%TESTDIR
-            if rl.level != logging.DEBUG:
+            if logging.getLogger().level != logging.DEBUG:
                 cmd += ' &> /dev/null'
             os.system(cmd)
             os.system('rm %s/record_test.avi'%TESTDIR)
@@ -262,8 +262,4 @@ class PoleBalanceSimTestCase(unittest.TestCase):
         runSim(s)
 
 if __name__ == "__main__":
-    if '-i' in sys.argv:
-        interactive = 1
-        sys.argv.remove('-i')
-    setup_logging(rl)
-    testoob.main()
+    test_main()

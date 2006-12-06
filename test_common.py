@@ -1,10 +1,12 @@
 import sys
 import logging
+import testoob
 import node
 import bpg
 import sim
 
-def setup_logging(rootlogger):
+def setup_logging():
+    rootlogger = logging.getLogger()
     level = logging.ERROR
     if '-d' in sys.argv:
         level = logging.DEBUG
@@ -33,3 +35,14 @@ new_individual_args = { 'network_args' : new_network_args }
 new_sim_fn = sim.BpgSim 
 new_sim_args = { 'max_simsecs' : 10,
                  'gaussNoise' : 0.01 }
+
+interactive = 0
+
+def test_main():
+    if '-i' in sys.argv:
+        global interactive
+        interactive = 1
+        sys.argv.remove('-i')
+    setup_logging()
+    logging.getLogger('ZEO').setLevel(logging.WARNING)
+    testoob.main()

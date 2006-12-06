@@ -62,6 +62,9 @@ class Network(PersistentList):
         for n in self:
             assert len(n.inputs) == inputsPerNode
 
+    def __repr__(self):
+        return 'Network[%d]'%len(self)
+
     def destroy(self):
         for n in self:
             n.destroy()

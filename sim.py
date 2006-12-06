@@ -819,9 +819,11 @@ class PoleBalanceSim(Sim):
         self.network.randomiseState()
         self.finished = 0
         # fake external_input connection so node knows its an input
-        for n in self.network:
-            if n in self.network.inputs:
-                n.externalInputs[(None,'ANGLE_0')] = 0
+        src = (None,'ANGLE_0')
+        n = self.network.inputs[0]
+        if n.externalInputs.has_key(src):
+            n.removeExternalInput(src) # hack cleanup
+        n.addExternalInput(src)
 
     def applyLqrForce(self):
         # construct state vector (x, xdot, theta, thetadot)

@@ -61,6 +61,9 @@ class Generation(PersistentList):
             # Generate new individual
             x = new_individual_fn(**dict(new_individual_args))
             x.score = None
+            x.parentFitness = None
+            x.numberOfMutations = None
+            x.mutationStatRecorded = 0
             self.append(x)
             transaction.savepoint()
         self.prev_gen = []

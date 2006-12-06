@@ -7,33 +7,35 @@ import testoob
 
 import ev
 from test_common import *
+from logging import debug
 
-rl = logging.getLogger()
-
-DEFAULT_CREATE_ARGS = '-p 3 -t 3 -g 3' \
-                    ' --topology 1d --update async' \
-                    ' --nodes 10' \
-                    ' --sim bpg --fitness mean-distance '
+ARG_T = '-p 3 -t 3 -g 3 --topology 1d --update async --nodes 10  %s '
+DEFAULT_CREATE_ARGS = ARG_T%('--sim bpg --fitness mean-distance')
+suffix = ''
 
 def main(s):
     sys.argv = s.split()
     ev.main()
 
 def delete(g):
+    g += suffix
     main('ev.py -r %s -e'%g)
 
 def create(g, args):
+    g += suffix
     main('ev.py -r %s %s %s'%(g, DEFAULT_CREATE_ARGS, args))
 
 def run(g):
+    g += suffix
     main('ev.py -r %s -c -m'%g)
 
 def plot(g):
-    rl.debug('testing --plotfitness')
+    g += suffix
+    debug('testing --plotfitness')
     main('ev.py -r %s --plotfitness test/%s-fitness.pdf'%(g, g))
-    rl.debug('testing --plotpi')
+    debug('testing --plotpi')
     main('ev.py -r %s --plotpi test/%s-childpi.pdf'%(g, g))
-    rl.debug('testing --plotfc')
+    debug('testing --plotfc')
     main('ev.py -r %s --plotfc test/%s-childfc.pdf'%(g, g))
 
 class TestLogical(TestCase):
@@ -81,6 +83,8 @@ class TestSteadyState(TestCase):
         plot(self.g)
 
 if __name__ == "__main__":
-    setup_logging(rl)
-    logging.getLogger('ZEO').setLevel(logging.WARNING)
-    testoob.main()
+    if '--pb' in sys.argv:
+        DEFAULT_CREATE_ARGS = ARG_T%('--sim pb')
+        sys.argv.remove('--pb')
+        suffix = '-pb'
+    test_main()

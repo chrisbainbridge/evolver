@@ -1,16 +1,13 @@
 #!/usr/bin/python
 
 import unittest
-import logging
+from logging import debug
 import random
 import sys
 
 import node
 import evolve
 from test_common import *
-
-evolve.master = 1
-rl = logging.getLogger()
 
 class GenerationTest(unittest.TestCase):
 
@@ -28,7 +25,7 @@ class GenerationTest(unittest.TestCase):
         g.evaluate(0)
         score = g[0].score
         self.assertTrue(isinstance(score, float) or isinstance(score, int))
-        rl.debug('score was %f', score)
+        debug('score was %f', score)
 
     def test_2_elitistUpdate(self):
         g = evolve.Generation(10, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args)
@@ -97,6 +94,4 @@ class GenerationTest(unittest.TestCase):
 #suite = unittest.makeSuite(GenerationTestCase, 'test')
 
 if __name__ == "__main__":
-    setup_logging(rl)
-    import testoob
-    testoob.main()
+    test_main()

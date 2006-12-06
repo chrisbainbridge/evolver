@@ -12,8 +12,6 @@ from test_common import *
 import cluster
 import db
 
-rl = logging.getLogger()
-
 def run(gen):
     hosts = ('bw64node01','bw64node02','bw64node03','bw64node04')
     cluster.startZeoClients(hosts, gen)
@@ -48,6 +46,4 @@ if __name__ == "__main__":
     if not cluster.isZeoServerRunning():
         print 'Can\'t contact ZEO server, skipping tests...'
         sys.exit(0)
-    setup_logging(rl)
-    logging.getLogger('ZEO').setLevel(logging.WARNING)
-    testoob.main()
+    test_main()

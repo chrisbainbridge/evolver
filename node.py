@@ -51,6 +51,10 @@ class Node(Persistent):
         assert source not in self.externalInputs
         self.externalInputs[source] = 0 # default initial value
 
+    def removeExternalInput(self, source):
+        log.debug('removeExternalInput(source=%s, externalInputs=%s)', source, self.externalInputs)
+        del self.externalInputs[source]
+
     def delInput(self, source):
         # make sure we have one and only one connection from this source
         assert source in self.inputs
@@ -140,6 +144,11 @@ class SigmoidNode(Node):
         'source = (srcBodypart, srcSignal)'
         Node.addExternalInput(self, source)
         self.weights[source] = randomFromDomain(self.weight_domain, self.quanta)
+
+    def removeExternalInput(self, source):
+        'source = (srcBodypart, srcSignal)'
+        Node.removeExternalInput(self, source)
+        del self.weights[source]
 
     def delInput(self, source):
         Node.delInput(self, source)

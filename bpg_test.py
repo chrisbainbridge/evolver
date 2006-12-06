@@ -2,7 +2,6 @@
 
 import os
 import unittest
-import logging
 import random
 import pickle
 import sys
@@ -10,11 +9,9 @@ import testoob
 
 import bpg
 import node
+import test_common
 from test_common import *
 from plot import *
-
-rl = logging.getLogger()
-interactive = 0
 
 class BodyPartTest(unittest.TestCase):
     def test_0_init(self):
@@ -31,7 +28,7 @@ class BodyPartGraphTest(unittest.TestCase):
         pass
 
     def gv(self, f):
-        if interactive:
+        if test_common.interactive:
             os.system('kghostview %s.ps'%f)
 
     def test_1_init(self):
@@ -73,6 +70,7 @@ class BodyPartGraphTest(unittest.TestCase):
         self.test_1_init()
         for _ in range(3):
             self.bpg.mutate(1)
+
 #     def test_BodyPartGraph_createOdeStuff(self):
 #         "BodyPartGraph.createOdeStuff"
 #         for _ in range(RANDOM_REPEAT):
@@ -129,8 +127,4 @@ class BodyPartGraphTest(unittest.TestCase):
 ##             log.debug('got fitness high %f', me.generation[0].score)
 
 if __name__ == "__main__":
-    if '-i' in sys.argv:
-        interactive = 1
-        sys.argv.remove('-i')
-    setup_logging(rl)
-    testoob.main()
+    test_main()

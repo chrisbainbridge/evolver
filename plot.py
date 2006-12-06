@@ -96,6 +96,7 @@ def plotGenerationVsFitness(g, outputFilename):
     set xlabel "Generation"
     set ylabel "Fitness"
     set multiplot
+    set xtics 1
     plot "%s" using 1:2 title "min", "%s" using 1:3 title "mean", "%s" using 1:4 title "max"
     """%(fbase, datFile, datFile, datFile)
     f.write(s)

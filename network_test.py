@@ -9,24 +9,10 @@ import testoob
 
 from persistent.list import PersistentList
 from cgkit.cgtypes import vec3
-
+import test_common
+from test_common import *
 from network import Network, TOPOLOGIES
 import node
-
-rl = logging.getLogger()
-interactive = 0
-
-def setup_logging():
-    level = logging.INFO
-    if '-d' in sys.argv:
-        level = logging.DEBUG
-        sys.argv.remove('-d')
-
-    rl.setLevel(level)
-    for m in 'neural', 'node':
-        l = logging.getLogger(m)
-        l.setLevel(level)
-    logging.basicConfig()
 
 class NetworkTestCase(unittest.TestCase):
 
@@ -38,7 +24,7 @@ class NetworkTestCase(unittest.TestCase):
         name = self.fprefix + name
         n.plot(name+'.dot')
         os.popen('dot -Tps -o %s.ps %s.dot'%(name,name))
-        if interactive:
+        if test_common.interactive:
             os.popen('kghostview %s.ps'%name)
 
     def test_01_sigmoid_1d(self):
@@ -84,8 +70,4 @@ class NetworkTestCase(unittest.TestCase):
                 n.postUpdate()
 
 if __name__ == "__main__":
-    if '-i' in sys.argv:
-        interactive = 1
-        sys.argv.remove('-i')
-    setup_logging()
-    testoob.main()
+    test_main()

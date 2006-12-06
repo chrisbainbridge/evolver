@@ -10,6 +10,7 @@ qtgui.py: qtgui.ui
 
 test: $(SRC) $(TEST)
 	-for t in $(TEST); do echo $$t; $$t -v; done
+	-ev_test.py --pb
 
 checker:
 	pychecker *.py

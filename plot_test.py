@@ -2,14 +2,11 @@
 
 import testoob
 from unittest import TestCase
-import logging
 from random import random, randint
 import sys
 
 from test_common import *
 from plot import *
-
-rl = logging.getLogger()
 
 class G:
     def __init__(self):
@@ -33,5 +30,4 @@ class PlotTest(TestCase):
         plotMutationVsFitnessChange(g, 'test/test_plotMutationVsFitnessChange.pdf')
 
 if __name__ == "__main__":
-    setup_logging(rl)
-    testoob.main()
+    test_main()
