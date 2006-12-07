@@ -475,10 +475,12 @@ def main():
             secs = max_simsecs
         else:
             secs = root[g].new_sim_args['max_simsecs']
-        if fitnessFunctionName == None:
-            fitnessFunctionName = root[g].new_sim_args['fitnessName']
-
-        s = root[g].new_sim_fn(secs, fitnessFunctionName)
+        if root[g].new_sim_fn == sim.BpgSim:
+            if fitnessFunctionName == None:
+                fitnessFunctionName = root[g].new_sim_args['fitnessName']
+            s = root[g].new_sim_fn(secs, fitnessFunctionName)
+        elif root[g].new_sim_fn == sim.PoleBalanceSim:
+            s = root[g].new_sim_fn(secs)
         s.add(root[g][i])
         # set up tracing
         plotTrace = 0
@@ -507,8 +509,14 @@ def main():
         if plotTrace:
             assert traceExt == '.eps' or tracefile == '-'
             epsFiles = plotSignals(fname)
+            if not epsFiles:
+                log.critical('failed to generate trace - bad sim?')
+                return 1
             if tracefile == '-':
-                os.system('kpdf %s'%epsFiles[0])
+                for f in epsFiles:
+                    cmd = 'kghostview %s'%f
+                    log.info(cmd)
+                    os.system(cmd)
 
     return 0
 

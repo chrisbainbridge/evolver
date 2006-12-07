@@ -569,15 +569,14 @@ class BpgSim(Sim):
 
     def logSignals(self):
         if self.siglog:
-            s = ''
-            first = 1
+            s = '%f '%self.total_time
             for bg in self.bpgs:
                 for bp in bg.bodyparts:
                     for n in bp.network:
-                        if not first:
-                            s += ' '
-                            first = 0
                         s += '%f'%n.output
+                        if bg.bodyparts.index(bp) != len(bg.bodyparts)-1 and bp.network.index(n) != len(bp.network)-1:
+                            s += ' '
+            self.siglog.write(s+'\n')
             self.siglog.flush()
 
     def handleContact(self, geom1, geom2, c):
@@ -875,6 +874,8 @@ class PoleBalanceSim(Sim):
         neural network, take the neural network outputs and apply them to
         the simulation, and then step the simulation."""
 
+        self.logSignals()
+                
         if self.lqr:
             self.applyLqrForce()
         elif self.network:
@@ -891,3 +892,26 @@ class PoleBalanceSim(Sim):
                 self.finished = 1
 
         Sim.step(self)
+
+    def initSignalLog(self, fname):
+        self.siglog = open(fname, 'w')
+        s = '# time '
+        for n in self.network:
+            s += 'n%d'%(self.network.index(n))
+            if n in self.network.inputs:
+                s += 'i'
+            if n in self.network.outputs:
+                s += 'o'
+            s += ' '
+        s += '\n'
+        self.siglog.write(s)
+
+    def logSignals(self):
+        if self.siglog:
+            s = '%f '%self.total_time
+            for n in self.network:
+                s += '%f'%n.output
+                if self.network.index(n) != len(self.network)-1:
+                    s += ' '
+            self.siglog.write(s+'\n')
+            self.siglog.flush()
