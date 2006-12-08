@@ -9,8 +9,8 @@ qtgui.py: qtgui.ui
 	pyuic -p0 qtgui.ui -o qtgui.py
 
 test: $(SRC) $(TEST)
+	rm test/*
 	-for t in $(TEST); do echo $$t; $$t -v; done
-	-ev_test.py --pb
 
 checker:
 	pychecker *.py

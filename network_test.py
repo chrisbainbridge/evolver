@@ -13,41 +13,42 @@ import test_common
 from test_common import *
 from network import Network, TOPOLOGIES
 import node
+from plot import plotNetwork
 
 class NetworkTestCase(unittest.TestCase):
 
     def setUp(self):
         random.seed()
-        self.fprefix = 'test/Network_'
+        self.fprefix = 'test/network_'
     
     def dot(self, n, name):
         name = self.fprefix + name
-        n.plot(name+'.dot')
+        plotNetwork(n, name+'.dot')
         os.popen('dot -Tps -o %s.ps %s.dot'%(name,name))
         if test_common.interactive:
             os.popen('kghostview %s.ps'%name)
 
     def test_01_sigmoid_1d(self):
         n = Network(4,1,1, node.SigmoidNode, {}, '1d', 'async')
-        self.dot(n, '01_sigmoid_1d')
+        self.dot(n, 'sigmoid_1d')
 
     def test_02_sigmoid_2d(self):
         net = Network(9,0,0, node.SigmoidNode, {}, '2d', 'async')
-        self.dot(net, '02_sigmoid_2d')
+        self.dot(net, 'sigmoid_2d')
 
     def test_03_sigmoid_full(self):
         net = Network(4,0,0, node.SigmoidNode, {}, 'full', 'async')
-        self.dot(net, '03_sigmoid_full')
+        self.dot(net, 'sigmoid_full')
 
     def test_04_sigmoid_2d_with_3i2o(self):
         n = Network(9,3,2, node.SigmoidNode, {}, '2d', 'async')
-        self.dot(n, '04_sigmoid_2d_with_3i2o')
+        self.dot(n, 'sigmoid_2d_with_3i2o')
         assert len(n.inputs) == 3
         assert len(n.outputs) == 2
 
     def test_05_init_logical_net(self):
         n = Network(9,3,2, node.LogicalNode, {'numberOfStates':2}, '2d', 'sync')
-        self.dot(n, '05_logical_2d_with_3i2o')
+        self.dot(n, 'logical_2d_with_3i2o')
         assert len(n.inputs) == 3
         assert len(n.outputs) == 2
 

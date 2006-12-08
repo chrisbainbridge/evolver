@@ -88,6 +88,7 @@ class Network(PersistentList):
         # The topology never changes (except for ARBNS) so we just randomly
         # select two nodes and swap them
         mutations = 0
+        self.check()
         for a_index in range(len(self)):
             # Since a change mutates two nodes, we halve p
             if random() < p/2:
@@ -112,8 +113,12 @@ class Network(PersistentList):
                     tmp_weights = self[a_index].weights
                     self[a_index].weights = self[b_index].weights
                     self[b_index].weights = tmp_weights
-                    for i in a_index, b_index:
-                        self[i].check()
+                # swap externalInputs
+                t = self[a_index].externalInputs
+                self[a_index].externalInputs = self[b_index].externalInputs
+                self[b_index].externalInputs = t
+                for i in a_index, b_index:
+                    self[i].check()
                 else:
                     for i in a_index, b_index:
                         self[i].fixup()
@@ -195,71 +200,6 @@ class Network(PersistentList):
         b = name.rfind("'")
         name = name[a:b]
         return name
-
-    def plotNodes(self, toponly=0, prefix='n'):
-        s = ''
-        # write out all nodes
-        for i in range(len(self)):
-            if toponly:
-                s += '  %s%d [shape=point]\n'%(prefix, i)
-            else:
-                name = self.getNodeName(i)
-                label = '%d'%i
-                if self[i] in self.inputs:
-                    label += 'i'
-                if self[i] in self.outputs:
-                    label += 'o'
-                label += '-'+name
-                s += '  %s%d [label="%s"]\n'%(prefix, i, label)
-        return s
-
-    def plotEdges(self, toponly=0, prefix='n'):
-        s = ''
-        done = {}
-        # write out all edges
-        for target_index in range(len(self)):
-            n = self[target_index]
-            for i in n.inputs:
-                if i not in self:
-                    # fixme: why aren't we plotting anything here?!
-                    continue
-                src_index = self.index(i)
-                if not toponly or not done.has_key((target_index,src_index)):
-                    edge_label = ''
-                    if not toponly and hasattr(self[target_index],'weights'):
-                        try:
-                            w = self[target_index].weights[self[src_index]]
-                            sl = str(w)
-                            sl = sl[:sl.find('.')+2]
-                            edge_label = sl
-                        except KeyError:
-                            pass
-                    if edge_label:
-                        s += '  %s%d -> %s%d [label="%s"]\n'%(prefix, src_index, prefix, target_index, edge_label)
-                    elif toponly:
-                        s += '  %s%d -> %s%d [dir=none]\n'%(prefix, src_index, prefix, target_index) # or dir=both
-                    else:
-                        s += '  %s%d -> %s%d\n'%(prefix, src_index, prefix, target_index)
-                    done[(src_index, target_index)] = 1
-        return s
-        
-    def plot(self, filename=None, toponly=0):
-        """Dump this network as a (graphviz) dot file."""
-        log.debug('dumping network to %s in dot graph format', filename)
-        s = 'digraph G {\n'
-        s += self.plotNodes(toponly)
-        s += self.plotEdges(toponly)
-        s += '}\n'
-        if filename:
-            (fbase, ext) = os.path.splitext(filename)
-            ext = ext[1:]
-            f = open(fbase+'.dot', 'w')
-            f.write(s)
-            f.close()
-            if ext != 'dot':
-                os.system('dot -T%s -o%s.%s %s.dot'%(ext, fbase, ext, fbase))
-                os.remove(fbase+'.dot')
-        return s
 
     def connect(self, topology, neighbourhood_dist=1):
         log.debug('connect(%s)', topology)

@@ -2,6 +2,7 @@
 
 import os, sys
 import logging
+import node
 
 log = logging.getLogger('plot')
 
@@ -184,7 +185,7 @@ def dot(filename, s):
     f.write(s)
     f.close()
     if ext != '.dot':
-        if ext == 'pdf':
+        if ext == '.pdf':
             os.system('dot -Tps -o%s.eps %s.dot'%(fbase, fbase))
             os.system('epstopdf %s.eps'%fbase)
             os.remove(fbase+'.eps')
@@ -206,8 +207,8 @@ def plotNetworks(bg, filename, toponly):
         s += '  label = "bp%d"\n'%i
         bp = bg.bodyparts[i]
         prefix = 'bp%d_'%i
-        s += bp.network.plotNodes(toponly, prefix)
-        s += bp.network.plotEdges(toponly, prefix)
+        s += plotNodes(bp.network, toponly, prefix)
+        s += plotEdges(bp.network, toponly, prefix)
         if bp.joint == 'hinge':
             motors = ['MOTOR_2']
         elif bp.joint == 'universal':
@@ -300,4 +301,61 @@ def plotBpg(bg, filename=None, toponly=0):
 
     dot(filename, s)
     # return graph as a string
+    return s
+
+def plotNodes(net, toponly=0, prefix='n'):
+    s = ''
+    # write out all nodes
+    for i in range(len(net)):
+        if toponly:
+            s += '  %s%d [shape=point]\n'%(prefix, i)
+        else:
+            name = net.getNodeName(i)
+            label = '%d'%i
+            if net[i] in net.inputs:
+                label += 'i'
+            if net[i] in net.outputs:
+                label += 'o'
+            label += '-'+name
+            s += '  %s%d [label="%s"]\n'%(prefix, i, label)
+    return s
+
+def plotEdges(net, toponly=0, prefix='n'):
+    s = ''
+    done = {}
+    # write out all edges
+    for target_index in range(len(net)):
+        n = net[target_index]
+        for i in n.inputs:
+            if i not in net:
+                # fixme: why aren't we plotting anything here?!
+                continue
+            src_index = net.index(i)
+            if not toponly or not done.has_key((target_index,src_index)):
+                edge_label = ''
+                if not toponly and hasattr(net[target_index],'weights'):
+                    try:
+                        w = net[target_index].weights[net[src_index]]
+                        sl = str(w)
+                        sl = sl[:sl.find('.')+2]
+                        edge_label = sl
+                    except KeyError:
+                        pass
+                if edge_label:
+                    s += '  %s%d -> %s%d [label="%s"]\n'%(prefix, src_index, prefix, target_index, edge_label)
+                elif toponly:
+                    s += '  %s%d -> %s%d [dir=none]\n'%(prefix, src_index, prefix, target_index) # or dir=both
+                else:
+                    s += '  %s%d -> %s%d\n'%(prefix, src_index, prefix, target_index)
+                done[(src_index, target_index)] = 1
+    return s
+    
+def plotNetwork(net, filename=None, toponly=0):
+    """Dump this network as a (graphviz) dot file."""
+    log.debug('dumping network to %s in dot graph format', filename)
+    s = 'digraph G {\n'
+    s += plotNodes(net, toponly)
+    s += plotEdges(net, toponly)
+    s += '}\n'
+    dot(filename, s)
     return s

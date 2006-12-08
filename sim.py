@@ -174,14 +174,16 @@ class Sim(object):
 class BpgSim(Sim):
     "Simulate articulated bodies built from BodyPartGraphs"
 
-    def __init__(self, max_simsecs=30.0, fitnessName='mean-distance', gaussNoise=0.01):
+    def __init__(self, max_simsecs=30.0, fitnessName='meandistance', gaussNoise=0.01):
         Sim.__init__(self, max_simsecs, gaussNoise)
         log.debug('BPGSim.__init__')
         self.geom_contact = {}
         self.startpos = vec3(0, 0, 0) 
         self.relaxed = 0
         self.prev_v = []
-        fitnessMap = { 'mean-distance' : self.fitnessMeanDistance, 'cumulative-z' : self.fitnessCumulativeZ }
+        fitnessMap = { 'meandistance' : self.fitnessMeanDistance, 'cumulativez' : self.fitnessCumulativeZ }
+        if not fitnessName:
+            fitnessName = 'meandistance'
         self.fitnessMethod = fitnessMap[fitnessName]
         self.relax_time = RELAX_TIME
     
@@ -819,9 +821,9 @@ class PoleBalanceSim(Sim):
         self.finished = 0
         # fake external_input connection so node knows its an input
         src = (None,'ANGLE_0')
+        for n in self.network:
+            assert not n.externalInputs
         n = self.network.inputs[0]
-        if n.externalInputs.has_key(src):
-            n.removeExternalInput(src) # hack cleanup
         n.addExternalInput(src)
 
     def applyLqrForce(self):
@@ -892,6 +894,14 @@ class PoleBalanceSim(Sim):
                 self.finished = 1
 
         Sim.step(self)
+
+    def run(self):
+        Sim.run(self)
+        if self.network:
+            # hack, setNetwork adds an external input, so we remove it here
+            n = self.network.inputs[0]
+            src = (None,'ANGLE_0')
+            n.removeExternalInput(src)
 
     def initSignalLog(self, fname):
         self.siglog = open(fname, 'w')

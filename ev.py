@@ -40,8 +40,8 @@
      --radius x      Max distance of a nodes neighbour in any dimension (default 1)
                         Note: neighbourhoods are squares not crosses
      --fitness x     Specify fitness function [bpgsim only], can be:
-                       cumulative-z : average z value of all body parts summed over time
-                       mean-distance : average Euclidean distance of all body parts
+                       cumulativez : average z value of all body parts summed over time
+                       meandistance : average Euclidean distance of all body parts
  --elite             Use an elitist GA
  --steadystate       Use a steady state parallel GA
  --mutate x          Specify mutation probability
@@ -72,9 +72,6 @@
      --qt 'qt options'  Pass string onto QT options (eg. -geometry 640x480)
      --movie file.avi   Record movie to file.avi
  --plotsignals fname  Record signal traces. f can be *.[txt/trace/eps]
-
-===== Select simulation and fitness function =====
-
  --sim x              Select simulator [pb, bpg]"""
 
 import os
@@ -178,7 +175,7 @@ def main():
     toponly = 0
     g_index = None
     runsim = 0
-    fitnessFunctionName = None 
+    fitnessFunctionName = None
     ga = 'elite'
     mutationRate = 0.2
     gaussNoise = 0.01
@@ -361,10 +358,6 @@ def main():
             new_individual_args = PersistentMapping(
                     { 'network_args' : new_network_args })
             new_sim_fn = sim.BpgSim
-            if not fitnessFunctionName:
-                log.critical('must specify --fitness for new population')
-                return 1
-
             new_sim_args['fitnessName'] = fitnessFunctionName
         elif simulation == 'pb':
             new_individual_fn = network.Network
@@ -415,7 +408,7 @@ def main():
                 plotNetworks(b, plotnets, toponly)
         elif isinstance(b, network.Network):
             if plotnets:
-                plotNetworks(b, plotnets, toponly)
+                plotNetwork(b, plotnets, toponly)
 
     if list_gen:
         if not g:
@@ -476,7 +469,7 @@ def main():
         else:
             secs = root[g].new_sim_args['max_simsecs']
         if root[g].new_sim_fn == sim.BpgSim:
-            if fitnessFunctionName == None:
+            if not fitnessFunctionName:
                 fitnessFunctionName = root[g].new_sim_args['fitnessName']
             s = root[g].new_sim_fn(secs, fitnessFunctionName)
         elif root[g].new_sim_fn == sim.PoleBalanceSim:

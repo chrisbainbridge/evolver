@@ -97,13 +97,13 @@ class BpgTestCase(unittest.TestCase):
         b = TestBodyPartGraph(new_network_args, 5, 'universal')
         s = sim.BpgSim(SECONDS)
         s.add(b)
-        siglog = 'test/sim_test_siglog.trace'
+        siglog = 'test/sim_siglog.trace'
         s.initSignalLog(siglog)
         oldsize = os.path.getsize(siglog)
         s.run()
         newsize = os.path.getsize(siglog)
         assert newsize > oldsize
-        plotSignals('test/sim_test_siglog.trace')
+        plotSignals('test/sim_siglog.trace')
         
     def test_6_siglog_quanta(self):
         args = copy.deepcopy(new_network_args)
@@ -111,13 +111,13 @@ class BpgTestCase(unittest.TestCase):
         b = TestBodyPartGraph(args, 5, 'universal')
         s = sim.BpgSim(SECONDS)
         s.add(b)
-        siglog = 'test/sim_test_siglog_quanta.trace'
+        siglog = 'test/sim_siglog_quanta.trace'
         s.initSignalLog(siglog)
         oldsize = os.path.getsize(siglog)
         s.run()
         newsize = os.path.getsize(siglog)
         assert newsize > oldsize
-        plotSignals('test/sim_test_siglog_quanta.trace')
+        plotSignals('test/sim_siglog_quanta.trace')
 
     def test_7_run_ca(self):
         args = copy.deepcopy(new_network_args)
@@ -246,14 +246,16 @@ class PoleBalanceSimTestCase(unittest.TestCase):
 
     def test_1_random_network_control(self):
         s = sim.PoleBalanceSim(SECONDS)
-        s.network = Network(10, 2, 1, SigmoidNode, {}, 'full', 'async')
+        n = Network(10, 2, 1, SigmoidNode, {}, 'full', 'async')
+        s.setNetwork(n)
         runSim(s)
         
     def test_2_random_network_control_impulse_response(self):
         s = sim.PoleBalanceSim(SECONDS)
         # apply unit impulse
         s.pole_geom.getBody().addForce((1,0,0))
-        s.network = Network(10, 2, 1, SigmoidNode, {}, 'full', 'async')
+        n = Network(10, 2, 1, SigmoidNode, {}, 'full', 'async')
+        s.setNetwork(n)
         runSim(s)
         
     def test_3_lqr_control_impulse_response(self):
