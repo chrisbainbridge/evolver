@@ -6,7 +6,6 @@ import node
 from numpy import matrix, multiply, sqrt
 
 log = logging.getLogger('plot')
-log.setLevel(logging.DEBUG)
 
 def stripTraceFile(tracefile):
     fi = open(tracefile, 'r')
@@ -270,8 +269,9 @@ def plotNetworks(bg, filename, toponly):
     s = 'digraph G {\n compound=true\n'
     for i in range(len(bg.bodyparts)):
         s += ' subgraph cluster%d {\n'%i
-        s += '  label = "bp%d"\n'%i
         bp = bg.bodyparts[i]
+        nodet = bp.network.getNodeName(0)
+        s += '  label = "bp%d (%s, %s)"\n'%(i, bp.joint, nodet)
         prefix = 'bp%d_'%i
         s += plotNodes(bp.network, toponly, prefix)
         s += plotEdges(bp.network, toponly, prefix)
@@ -287,8 +287,10 @@ def plotNetworks(bg, filename, toponly):
             if toponly:
                 s += '  %s%s [shape=point]\n'%(prefix, signal)
             else:
-                style = ''
-                s += '  %s%s [label="%s"%s]\n'%(prefix, signal, signal, style)
+                l = signal[0]
+                if '0' <= signal[-1] <= '9':
+                    l += signal[-1]
+                s += '  %s%s [label="%s"]\n'%(prefix, signal, l)
         s += ' }\n'
 
     # plot inter-bodypart (node.external_input) edges here
@@ -376,13 +378,11 @@ def plotNodes(net, toponly=0, prefix='n'):
         if toponly:
             s += '  %s%d [shape=point]\n'%(prefix, i)
         else:
-            name = net.getNodeName(i)
             label = '%d'%i
             if net[i] in net.inputs:
                 label += 'i'
             if net[i] in net.outputs:
                 label += 'o'
-            label += '-'+name
             s += '  %s%d [label="%s"]\n'%(prefix, i, label)
     return s
 

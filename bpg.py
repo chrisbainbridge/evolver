@@ -428,13 +428,20 @@ class BodyPartGraph(Persistent):
             sources = [ (neuron, externalInput) for neuron in bp.network.inputs for externalInput in neuron.externalInputs ]
             if bp.joint == 'hinge':
                 sources += [ ('MOTOR_2', bp.motor_input[2]) ]
-            if bp.joint in [ 'universal', 'ball' ]:
-                sources += [ ('MOTOR_0', bp.motor_input[0]) ]
-                sources += [ ('MOTOR_1', bp.motor_input[1]) ]
-            if bp.joint == 'ball':
-                sources += [ ('MOTOR_2', bp.motor_input[2]) ]
+            elif bp.joint == 'universal':
+                sources += [ ('MOTOR_0', bp.motor_input[0]), ('MOTOR_1', bp.motor_input[1]) ]
+            elif bp.joint == 'ball':
+                sources += [ ('MOTOR_0', bp.motor_input[0]), ('MOTOR_1',bp.motor_input[1]), ('MOTOR_2', bp.motor_input[2])]
         else:
             sources = [ (neuron, src) for neuron in bp.input_map for src in bp.input_map[neuron] ]
+            # remove invalid motor connections
+            if bp.joint == 'hinge':
+                invalid = ['MOTOR_0', 'MOTOR_1']
+            elif bp.joint == 'universal':
+                invalid = ['MOTOR_2']
+            elif bp.joint == 'ball':
+                invalid = []
+            sources = [(n,s) for (n,s) in sources if n not in invalid]
 
         return sources
 
