@@ -72,6 +72,7 @@
      --qt 'qt options'  Pass string onto QT options (eg. -geometry 640x480)
      --movie file.avi   Record movie to file.avi
  --plotsignals fname  Record signal traces. f can be *.[txt/trace/eps]
+   --nostrip          Don't strip flat signals from the trace
  --sim x              Select simulator [pb, bpg]"""
 
 import os
@@ -123,7 +124,7 @@ def main():
     log.debug(' '.join(sys.argv))
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:lp:q:sz:t:uvm', ['qt=','topology=','update=','nodetype=','nodes=','dombias=','domvalue=','domweight=','elite', 'steadystate','mutate=','noise=','nodes_per_input=','network=','plotbpg=','plotfitness=','plotnets=','plotsignals=','unroll','radius=','toponly','movie=','sim=','states=', 'fitness=', 'plotpi=', 'plotfc='])
+        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:lp:q:sz:t:uvm', ['qt=','topology=','update=','nodetype=','nodes=','dombias=','domvalue=','domweight=','elite', 'steadystate','mutate=','noise=','nodes_per_input=','network=','nostrip','plotbpg=','plotfitness=','plotnets=','plotsignals=','unroll','radius=','toponly','movie=','sim=','states=', 'fitness=', 'plotpi=', 'plotfc='])
         log.debug('opts %s', opts)
         log.debug('args %s', args)
         # print help for no args
@@ -179,6 +180,7 @@ def main():
     ga = 'elite'
     mutationRate = 0.2
     gaussNoise = 0.01
+    strip = 1
     for o, a in opts:
         log.debug('parsing %s %s',o,a)
         if o == '-c':
@@ -247,6 +249,8 @@ def main():
             mutationRate = float(a)
         elif o == '--noise':
             gaussNoise = float(a)
+        elif o == '--nostrip':
+            strip = 0
         elif o == '-i':
             g_index = int(a)
         elif o == '--plotbpg':
@@ -479,8 +483,11 @@ def main():
         plotTrace = 0
         if tracefile:
             (traceBase, traceExt) = os.path.splitext(tracefile)
-            if traceExt == '.trace' or traceExt == '.txt':
+            if traceExt in ['.trace', '.txt']:
                 fname = tracefile
+            elif traceExt == '.eps':
+                fname = '%s.trace'%traceBase
+                plotTrace = 1
             else:
                 fname = 'tmp.trace'
                 plotTrace = 1
@@ -493,7 +500,7 @@ def main():
             myapp.setRecord(record, avifile)
             err = myapp.exec_loop()
             log.info('Final score was %f', s.score)
-            return err 
+            return err
         else:
             log.info('Running simulation')
             # run sim without gui
@@ -501,6 +508,8 @@ def main():
             log.info('Final score was %f', s.score)
         if plotTrace:
             assert traceExt == '.eps' or tracefile == '-'
+            if strip:
+                stripTraceFile(fname)
             epsFiles = plotSignals(fname)
             if not epsFiles:
                 log.critical('failed to generate trace - bad sim?')

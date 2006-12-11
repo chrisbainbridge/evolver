@@ -575,9 +575,7 @@ class BpgSim(Sim):
             for bg in self.bpgs:
                 for bp in bg.bodyparts:
                     for n in bp.network:
-                        s += '%f'%n.output
-                        if bg.bodyparts.index(bp) != len(bg.bodyparts)-1 and bp.network.index(n) != len(bp.network)-1:
-                            s += ' '
+                        s += '%f '%n.output
             self.siglog.write(s+'\n')
             self.siglog.flush()
 

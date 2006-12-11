@@ -3,11 +3,77 @@
 import os, sys
 import logging
 import node
+from numpy import matrix, multiply, sqrt
 
 log = logging.getLogger('plot')
+log.setLevel(logging.DEBUG)
+
+def stripTraceFile(tracefile):
+    fi = open(tracefile, 'r')
+    labelCommentLine = fi.readline()
+    labels = (labelCommentLine[2:]).split()
+    log.debug('labels = %s', labels)
+    cols = len(labels)
+    total = matrix([0.0]*cols)
+
+    rows = 0
+#   allow some short time for signals to settle
+    for i in range(10):
+        fi.readline()
+        rows += 1
+
+    while 1:
+        s = fi.readline()
+        if s == '':
+            break
+        vals = s.split()
+        total += matrix([float(x) for x in vals])
+        rows += 1
+
+    mean = total/rows
+    vms = mean.tolist()[0][1:]
+    log.debug('means = %s', vms)
+
+    fi.seek(0)
+    fi.readline()
+    sigma = matrix([0.0]*cols)
+    while 1:
+        s = fi.readline()
+        if s == '':
+            break
+        vals = matrix([float(x) for x in s.split()])
+        t = vals-mean
+        sigma += multiply(t, t)
+    s = sqrt(sigma / (rows-1))
+    log.debug('standard deviation = %s',s)
+
+    l = s.tolist()[0]
+    b = [x > 0.025 for x in l]
+    log.info('stripping flat signals %s', [x for x in labels if not b[labels.index(x)]])
+
+    fi.seek(0)
+    fo = open('strip.trace', 'w')
+    fi.read(2)
+    fo.write('# ')
+    while 1:
+        s = fi.readline()
+        if s == '':
+            break
+        vals = s.split()
+        t = ''
+        for x in range(len(b)):
+            if b[x]:
+                t += '%s '%vals[x]
+        fo.write(t+'\n')
+    
+    fi.close()
+    fo.close()
+    os.rename(tracefile, tracefile+'.bak')
+    os.rename('strip.trace', tracefile)
 
 def plotSignals(tracefile):
     log.debug('plotting tracefile %s', tracefile)
+
     f = open(tracefile, 'r')
     labelCommentLine = f.readline()
     f.close()
