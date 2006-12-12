@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import os, sys
+import os
 import logging
 import node
 from numpy import matrix, multiply, sqrt
@@ -8,6 +8,8 @@ from numpy import matrix, multiply, sqrt
 log = logging.getLogger('plot')
 
 def stripTraceFile(tracefile):
+    'Remove flat signals from the tracefile'
+
     fi = open(tracefile, 'r')
     labelCommentLine = fi.readline()
     labels = (labelCommentLine[2:]).split()
@@ -16,8 +18,8 @@ def stripTraceFile(tracefile):
     total = matrix([0.0]*cols)
 
     rows = 0
-#   allow some short time for signals to settle
-    for i in range(10):
+    # allow some short time for signals to settle
+    for _ in range(10):
         fi.readline()
         rows += 1
 
@@ -79,24 +81,19 @@ def plotSignals(tracefile):
     labels = labelCommentLine.split()[1:]
     num_plots = len(labels)-1
     log.debug('%d signals to plot', num_plots)
-    PLOTS_PER_PAGE = 20
-    y_size = 1.0/PLOTS_PER_PAGE
+    PLOTS_PER_PAGE = 10
     (basename, ext) = os.path.splitext(tracefile)
     log.debug('basename = %s', basename)
     header = """#!/usr/bin/gnuplot
-    set terminal postscript portrait
+    set terminal postscript portrait "Helvetica" 8
     set out "%%s"
-    set multiplot
-    set yrange [0:1]
-    set size 1,%f
-    set bmargin 0.05
-    set tmargin 0.05
-    set border 2
+    set multiplot layout %d,1
+    set border 3
     set key top outside
-    set ytics nomirror 0, 1, 1
-    set noxtics
     set style line 1 linetype 1 linewidth 1
-    """%(y_size-0.015)
+    set lmargin 10
+    set xtics nomirror
+    """%(PLOTS_PER_PAGE)
 
     page = 0
     fnames = []
@@ -110,12 +107,18 @@ def plotSignals(tracefile):
         s = header%(epsFile)
         for i in range(x, x+min(PLOTS_PER_PAGE, num_plots-x+1)):
             log.debug('plotting row %d', i)
+            yrange = '[-0.25:1]'
+            ytics = '0,1,1'
+            if 'M' in labels[i]:
+                yrange = '[-5:3.14]'
+                ytics = '-3.14,6.28,3.14'
             s += """
-            set origin 0.05, %f
-            set label "%s" at graph -0.145, graph 0.5
+            set yrange %s
+            set ytics nomirror %s
+            set label "%s" at graph -0.08, graph 0.5 # font "courier,10" 
             plot "%s" using 1:%d notitle with lines linestyle 1
             unset label
-            """%(y_size*(i-x)+0.015/2, labels[i], tracefile, i+1)
+            """%(yrange, ytics, labels[i], tracefile, i+1)
         fo.write(s)
         fo.close()
         os.chmod(fname, 0755)
@@ -279,15 +282,9 @@ def plotNetworks(bg, filename, toponly):
         prefix = 'bp%d_'%i
         s += plotNodes(bp.network, toponly, prefix)
         s += plotEdges(bp.network, toponly, prefix)
-        if bp.joint == 'hinge':
-            motors = ['MOTOR_2']
-        elif bp.joint == 'universal':
-            motors = ['MOTOR_0', 'MOTOR_1']
-        elif bp.joint == 'ball':
-            motors = ['MOTOR_0', 'MOTOR_1', 'MOTOR_2']
         signals = ['CONTACT', 'JOINT_0', 'JOINT_1', 'JOINT_2']
 
-        for signal in signals + motors:
+        for signal in signals + bp.motors:
             if toponly:
                 s += '  %s%s [shape=point]\n'%(prefix, signal)
             else:

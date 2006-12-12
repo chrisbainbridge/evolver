@@ -199,6 +199,16 @@ class BodyPart(Persistent):
             self.mutations += self.network.mutate(p)
         return mutations
 
+    def getMotors(self):
+        if self.joint == 'hinge':
+            return ['MOTOR_2']
+        elif self.joint == 'universal':
+            return ['MOTOR_0', 'MOTOR_1']
+        elif self.joint == 'ball':
+            return ['MOTOR_0', 'MOTOR_1', 'MOTOR_2']
+        
+    motors = property(getMotors)
+
 class BodyPartGraph(Persistent):
     """A collection of BodyParts joined by edges."""
     def __init__(self, network_args=None):

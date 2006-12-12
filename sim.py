@@ -205,15 +205,23 @@ class BpgSim(Sim):
         assert self.bpgs
         s = '# time '
         # FIXME: will need to change this when we have more than 1 bpg
+        self.signals = []
         for bg in self.bpgs:
             for bp in bg.bodyparts:
                 for n in bp.network:
-                    s += 'bp%d-%d'%(bg.bodyparts.index(bp), bp.network.index(n))
+                    p = ''
                     if n in bp.network.inputs:
-                        s += 'i'
+                        p = 'i'
                     if n in bp.network.outputs:
-                        s += 'o'
-                    s += ' '
+                        p = 'o'
+                    l = 'bp%d-%d%s'%(bg.bodyparts.index(bp), bp.network.index(n), p)
+                    s += '%s '%l
+                    self.signals.append((bp,n))
+                if bp != bg.root:
+                    for m in bp.motors:
+                        s += 'bp%d-%c%c '%(bg.bodyparts.index(bp), m[0], m[-1])
+                        n = ord(m[-1]) - ord('0')
+                        self.signals.append((bp,n))
         s += '\n'
         self.siglog.write(s)
 
@@ -572,10 +580,11 @@ class BpgSim(Sim):
     def logSignals(self):
         if self.siglog:
             s = '%f '%self.total_time
-            for bg in self.bpgs:
-                for bp in bg.bodyparts:
-                    for n in bp.network:
-                        s += '%f '%n.output
+            for (bp,n) in self.signals:
+                if isinstance(n, node.Node):
+                    s += '%f '%n.output
+                elif isinstance(n, int):
+                    s += '%f '%bp.motor.desired_axisangle[n]
             self.siglog.write(s+'\n')
             self.siglog.flush()
 
@@ -703,16 +712,6 @@ class BpgSim(Sim):
             # step control networks and motors
             for bg in self.bpgs:
                 bg.step()
-
-            # log signal values
-            s = '%f '%(self.total_time)
-            if self.siglog:
-                for bg in self.bpgs:
-                    for bp in bg.bodyparts:
-                        for n in bp.network:
-                            s += '%f '%(n.output)
-                s += '\n'
-                self.siglog.write(s)
 
         Sim.step(self)
         log.debug('/step')
