@@ -271,7 +271,11 @@ def plotNetworks(bg, filename, toponly):
         s += ' subgraph cluster%d {\n'%i
         bp = bg.bodyparts[i]
         nodet = bp.network.getNodeName(0)
-        s += '  label = "bp%d (%s, %s)"\n'%(i, bp.joint, nodet)
+        if bp == bg.root:
+            j = 'root'
+        else:
+            j = bp.joint
+        s += '  label = "bp%d (%s, %s)"\n'%(i, j, nodet)
         prefix = 'bp%d_'%i
         s += plotNodes(bp.network, toponly, prefix)
         s += plotEdges(bp.network, toponly, prefix)
