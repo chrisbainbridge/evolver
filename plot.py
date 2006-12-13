@@ -72,7 +72,7 @@ def stripTraceFile(tracefile):
     os.rename(tracefile, tracefile+'.bak')
     os.rename('strip.trace', tracefile)
 
-def plotSignals(tracefile):
+def plotSignals(tracefile, quanta=0):
     log.debug('plotting tracefile %s', tracefile)
 
     f = open(tracefile, 'r')
@@ -112,13 +112,16 @@ def plotSignals(tracefile):
             if 'M' in labels[i]:
                 yrange = '[-5:3.14]'
                 ytics = '-3.14,6.28,3.14'
+            style = 'lines'
+            if quanta:
+                style = 'steps'
             s += """
             set yrange %s
             set ytics nomirror %s
             set label "%s" at graph -0.08, graph 0.5 # font "courier,10" 
-            plot "%s" using 1:%d notitle with lines linestyle 1
+            plot "%s" using 1:%d notitle with %s linestyle 1
             unset label
-            """%(yrange, ytics, labels[i], tracefile, i+1)
+            """%(yrange, ytics, labels[i], tracefile, i+1, style)
         fo.write(s)
         fo.close()
         os.chmod(fname, 0755)

@@ -458,15 +458,7 @@ def main():
             os.unlink('/tmp/client.pid')
 
     elif runsim:
-        # run a single simulation from current generation
-        try:
-            i = g_index
-        except:
-            # let user select individual
-            for i in range(len(root[g])):
-                print i, root[g][i].score
-            print 'select i:'
-            i = int(sys.stdin.readline().strip())
+        i = g_index
         # create and set up simulator
         if type(max_simsecs) in [int, float]:
             secs = max_simsecs
@@ -510,7 +502,7 @@ def main():
             assert traceExt == '.eps' or tracefile == '-'
             if strip:
                 stripTraceFile(fname)
-            epsFiles = plotSignals(fname)
+            epsFiles = plotSignals(fname, root[g].new_individual_args['network_args']['new_node_args']['quanta'])
             if not epsFiles:
                 log.critical('failed to generate trace - bad sim?')
                 return 1
