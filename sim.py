@@ -23,6 +23,8 @@ RELAX_TIME = 5.0 # seconds to relax bpg for
 log = logging.getLogger('sim')
 log.setLevel(logging.INFO)
 
+jointAxes = { 'hinge' : [2], 'universal' : [0,1], 'ball' : [0,1,2] }
+
 class MyMotor(ode.AMotor):
     def __init__(self, world, jointgroup=None):
         ode.AMotor.__init__(self, world, jointgroup)
@@ -208,20 +210,26 @@ class BpgSim(Sim):
         self.signals = []
         for bg in self.bpgs:
             for bp in bg.bodyparts:
+                bpi = bg.bodyparts.index(bp)
                 for n in bp.network:
                     p = ''
                     if n in bp.network.inputs:
                         p = 'i'
                     if n in bp.network.outputs:
                         p = 'o'
-                    l = 'bp%d-%d%s'%(bg.bodyparts.index(bp), bp.network.index(n), p)
+                    l = 'bp%d-%d%s'%(bpi, bp.network.index(n), p)
                     s += '%s '%l
                     self.signals.append((bp,n))
                 if bp != bg.root:
                     for m in bp.motors:
-                        s += 'bp%d-%c%c '%(bg.bodyparts.index(bp), m[0], m[-1])
-                        n = ord(m[-1]) - ord('0')
-                        self.signals.append((bp,n))
+                        s += 'bp%d-M%c '%(bpi, m[-1])
+                        self.signals.append((bp,m))
+                    axes = [ 'JOINT_%d'%j for j in jointAxes[bp.joint] ]
+                    for a in axes:
+                        s += 'bp%d-J%c '%(bpi, a[-1])
+                        self.signals.append((bp,a))
+                s += 'bp%d-C '%(bpi)
+                self.signals.append((bp, 'CONTACT'))
         s += '\n'
         self.siglog.write(s)
 
@@ -583,8 +591,12 @@ class BpgSim(Sim):
             for (bp,n) in self.signals:
                 if isinstance(n, node.Node):
                     s += '%f '%n.output
-                elif isinstance(n, int):
-                    s += '%f '%bp.motor.desired_axisangle[n]
+                elif n[0] == 'M':
+                    mi = ord(n[-1]) - ord('0')
+                    s += '%f '%bp.motor.desired_axisangle[mi]
+                elif n[0] == 'J' or n[0] == 'C':
+                    v = self.getSensorValue(bp, n)
+                    s += '%f '%v
             self.siglog.write(s+'\n')
             self.siglog.flush()
 
