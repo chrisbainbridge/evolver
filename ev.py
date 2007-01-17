@@ -18,6 +18,7 @@
 ===== Erase =====
 
  -e                   Delete this run
+ --blank              Set all scores to None to force re-eval
 
 ===== Create initial population =====
 
@@ -28,7 +29,7 @@
      --topology x     Specify topology of [full,1d,2d,3d,randomk]
        -k x           Specify k inputs for randomk topology
      --update x       Update style [sync,async]
-     --nodetype x     Type of node [sigmoid,logical]
+     --nodetype x     Type of node [sigmoid,logical,beer]
      --states x       Number of states per cell [logical only]
      --nodes x       (1d, randomk, full) - Total number of nodes 
                       (2d, 3d) - length of a dimension
@@ -73,7 +74,9 @@
      --movie file.avi   Record movie to file.avi
  --plotsignals fname  Record signal traces. f can be *.[txt/trace/eps]
    --nostrip          Don't strip flat signals from the trace
- --sim x              Select simulator [pb, bpg]"""
+ --sim x              Select simulator [pb, bpg]
+ --lqr                Use LQR controller for pb sim
+ """
 
 import os
 import sys
@@ -98,7 +101,6 @@ import network
 import node # ignore checker error about this import
 import sim
 import daemon
-import cluster
 from plot import *
 
 log = logging.getLogger('ev')
@@ -124,7 +126,7 @@ def main():
     log.debug(' '.join(sys.argv))
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:lp:q:sz:t:uvm', ['qt=','topology=','update=','nodetype=','nodes=','dombias=','domvalue=','domweight=','elite', 'steadystate','mutate=','noise=','nodes_per_input=','network=','nostrip','plotbpg=','plotfitness=','plotnets=','plotsignals=','unroll','radius=','toponly','movie=','sim=','states=', 'fitness=', 'plotpi=', 'plotfc='])
+        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:lp:q:sz:t:uvm', ['blank','qt=','topology=','update=','nodetype=','nodes=','dombias=','domvalue=','domweight=','elite', 'lqr', 'steadystate','mutate=','noise=','nodes_per_input=','network=','nostrip','plotbpg=','plotfitness=','plotnets=','plotsignals=','unroll','radius=','toponly','movie=','sim=','states=', 'fitness=', 'plotpi=', 'plotfc='])
         log.debug('opts %s', opts)
         log.debug('args %s', args)
         # print help for no args
@@ -137,11 +139,8 @@ def main():
     # defaults
     gui = 0
     record = 0
-    max_simsecs = 30
     avifile = ''
     qtopts = ''
-    change_generations = 0
-    evolve_for_generations = 100
     popsize = 0
     tracefile = None
     topology = 'full'
@@ -178,9 +177,13 @@ def main():
     runsim = 0
     fitnessFunctionName = None
     ga = 'elite'
-    mutationRate = 0.2
-    gaussNoise = 0.01
+    max_simsecs = 0
+    mutationRate = 0
+    numberOfGenerations = 0
+    gaussNoise = 0.005
     strip = 1
+    lqr = 0
+    blank = 0
     for o, a in opts:
         log.debug('parsing %s %s',o,a)
         if o == '-c':
@@ -192,8 +195,7 @@ def main():
         elif o == '-b':
             background = 1
         elif o == '-g':
-            change_generations = 1
-            evolve_for_generations = int(a)
+            numberOfGenerations = int(a)
         elif o in ('-h'):
             print __doc__
             return
@@ -243,6 +245,8 @@ def main():
             fixme
         elif o == '--elite':
             ga = 'elite'
+        elif o == '--lqr':
+            lqr = 1
         elif o == '--steadystate':
             ga = 'steady-state'
         elif o == '--mutate':
@@ -282,6 +286,8 @@ def main():
             numberOfStates = int(a)
         elif o == '--fitness':
             fitnessFunctionName = a
+        elif o == '--blank':
+            blank = 1
         else:
             log.critical('unhandled option %s',o)
             return 1
@@ -335,15 +341,16 @@ def main():
         elif topology == '3d':
             num_nodes = num_nodes**3
 
-        new_node_arg_class_map = { 'sigmoid' : node.SigmoidNode,
-                         'logical': node.LogicalNode}
+        new_node_arg_class_map = { 'sigmoid' : node.SigmoidNode, 'logical':
+                node.LogicalNode,'beer' : node.BeerNode}
         new_node_class = new_node_arg_class_map[nodetype]
-        if new_node_class == node.SigmoidNode:
+        if new_node_class is node.SigmoidNode or new_node_class is node.BeerNode:
             new_node_args = PersistentMapping(
-                    { 'bias_domain': dombias,
-                      'weight_domain' : domweight,
+                    { 'weightDomain' : domweight,
                       'quanta': quanta })
-        elif new_node_class == node.LogicalNode:
+            if new_node_class is node.BeerNode:
+                new_node_args['biasDomain'] = dombias
+        elif new_node_class is node.LogicalNode:
             new_node_args = PersistentMapping(
                     { 'numberOfStates': numberOfStates })
         new_network_args = PersistentMapping(
@@ -355,6 +362,12 @@ def main():
                   'topology' : topology,
                   'update_style' : update_style,
                   'radius' : radius })
+
+        # create defaults
+        if not max_simsecs : max_simsecs = 30
+        if not mutationRate: mutationRate = 0.05
+        if not numberOfGenerations: numberOfGenerations = 100
+
         new_sim_args = PersistentMapping ({ 'max_simsecs' : max_simsecs ,
                                             'gaussNoise' : gaussNoise})
         if simulation == 'bpg':
@@ -370,10 +383,19 @@ def main():
 
         root[g] = evolve.Generation(popsize, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args, ga, mutationRate)
 
-        root[g].setFinalGeneration(evolve_for_generations)
+        root[g].setFinalGeneration(numberOfGenerations)
         log.debug('committing all subtransactions')
         transaction.commit()
         log.debug('commit done, end of create_initial_population')
+
+    elif not create_initial_population and not runsim and (numberOfGenerations or mutationRate or max_simsecs):
+        if numberOfGenerations:
+            root[g].setFinalGeneration(numberOfGenerations)
+        if mutationRate:
+            root[g].mutationRate = mutationRate
+        if max_simsecs:
+            root[g].new_sim_args['max_simsecs'] = max_simsecs
+        transaction.commit()
 
     elif g and g not in root:
         log.debug('Generation %s not in db %s', g, root.keys())
@@ -384,6 +406,14 @@ def main():
             log.critical('which generation?')
             return 1
         del(root[g])
+        transaction.commit()
+
+    if blank:
+        if not g:
+            log.critical('which generation?')
+            return 1
+        for x in root[g]:
+            x.score = None
         transaction.commit()
 
     if plotfitness or plotpi or plotfc:
@@ -417,9 +447,11 @@ def main():
     if list_gen:
         if not g:
             # print list of generations
-            for (k,i) in root.iteritems():
+            l = root.items()
+            l.sort()
+            for (k,i) in l:
                 if isinstance(i, evolve.Generation):
-                    print 'Generation: %s [ga=%s gen=%d/%d max=%s]'%(k, i.ga, i.gen_num, i.final_gen_num, i[0].score) #,i
+                    print 'Generation: %s [ga=%s gen=%d/%d max=%s]'%(k, i.ga, i.gen_num, i.final_gen_num, i.getMaxIndividual()) #,i
         else:
             # print list of individuals in a generation
             print 'Num\t| Score'
@@ -430,9 +462,6 @@ def main():
                                                           root[g].final_gen_num)
             if root[g].updateInfo[2]:
                 print 'Generation is currently being updated on %s, update running for %d seconds'%(root[g].updateInfo[0], time.time() - root[g].updateInfo[1])
-    if change_generations:
-        root[g].setFinalGeneration(evolve_for_generations)
-        transaction.commit()
 
     if client or master:
         log.debug('master/client mode')
@@ -460,17 +489,22 @@ def main():
     elif runsim:
         i = g_index
         # create and set up simulator
-        if type(max_simsecs) in [int, float]:
+        if max_simsecs:
             secs = max_simsecs
         else:
             secs = root[g].new_sim_args['max_simsecs']
+        # FIXME: cant override gaussNoise on cmdline
+        gaussNoise = root[g].new_sim_args['gaussNoise']
         if root[g].new_sim_fn == sim.BpgSim:
             if not fitnessFunctionName:
                 fitnessFunctionName = root[g].new_sim_args['fitnessName']
-            s = root[g].new_sim_fn(secs, fitnessFunctionName)
+            s = root[g].new_sim_fn(secs, fitnessFunctionName, gaussNoise)
         elif root[g].new_sim_fn == sim.PoleBalanceSim:
-            s = root[g].new_sim_fn(secs)
-        s.add(root[g][i])
+            s = root[g].new_sim_fn(secs, gaussNoise=gaussNoise)
+        if lqr:
+            s.setUseLqr()
+        else:
+            s.add(root[g][i])
         # set up tracing
         plotTrace = 0
         if tracefile:
@@ -490,9 +524,8 @@ def main():
             from qtapp import MyApp
             myapp = MyApp([sys.argv[0]]+qtopts.split(), s)
             myapp.setRecord(record, avifile)
-            err = myapp.exec_loop()
+            myapp.exec_loop()
             log.info('Final score was %f', s.score)
-            return err
         else:
             log.info('Running simulation')
             # run sim without gui
@@ -502,7 +535,11 @@ def main():
             assert traceExt == '.eps' or tracefile == '-'
             if strip:
                 stripTraceFile(fname)
-            epsFiles = plotSignals(fname, root[g].new_individual_args['network_args']['new_node_args']['quanta'])
+            if root[g].new_individual_args.has_key('new_node_args'):
+                q = root[g].new_individual_args['new_node_args']['quanta']
+            else:
+                q = root[g].new_individual_args['network_args']['new_node_args']['quanta']
+            epsFiles = plotSignals(fname, q)
             if not epsFiles:
                 log.critical('failed to generate trace - bad sim?')
                 return 1

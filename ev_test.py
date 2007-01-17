@@ -15,7 +15,8 @@ TESTS = ['-r ev_logical --nodetype logical --states 2',
         '-r ev_sigmoid --nodetype sigmoid',
         '-r ev_sigmoid_q --nodetype sigmoid -q 32',
         '-r ev_steadystate --nodetype sigmoid --steadystate',
-        '-r ev_pb --sim pb']
+        '-r ev_pb --sim pb',
+        '-r ev_beer --nodetype beer --steadystate']
 
 def main(s):
     sys.argv = s.split()
@@ -51,7 +52,7 @@ class EvTest(TestCase):
 if __name__ == "__main__":
     if '--args' not in sys.argv:
         for args in TESTS:
-            cmd = 'ev_test.py --args "%s %s" %s'%(args, STDARGS, ' '.join(sys.argv[1:]))
+            cmd = '%s --args "%s %s" %s'%(sys.argv[0], args, STDARGS, ' '.join(sys.argv[1:]))
             print cmd
             os.system(cmd)
     else:

@@ -133,7 +133,7 @@ class Network(PersistentList):
                     x = randint(0,len(self.function)-1)
                     self.function[x] = choice([0,1])
  
-        # MUTATE INDIVIDUAL NOD AND PARAMS, OTHERWISE
+        # MUTATE INDIVIDUAL NODE AND PARAMS, OTHERWISE
         else:
             for node in self:
                 m = node.mutate(p)
@@ -149,9 +149,9 @@ class Network(PersistentList):
                     puts[i] = new
         return mutations
 
-    def randomiseState(self):
+    def setState(self):
         for n in self:
-            n.randomiseState()
+            n.setState()
 
     def step(self):
         """Step every node in the network.

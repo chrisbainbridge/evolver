@@ -18,8 +18,7 @@ def setup_logging():
         l.setLevel(level)
     logging.basicConfig()
 
-new_node_args_sigmoid = { 'bias_domain' : (-5,5),
-                          'weight_domain' : (-7,7),
+new_node_args_sigmoid = { 'weightDomain' : (-7,7),
                           'quanta': None }
 new_node_args_logical = {'numberOfStates':2}
 new_network_args = { 'num_nodes' : 5,

@@ -163,7 +163,7 @@ class BodyPart(Persistent):
 
     def mutate(self, p):
         "Mutate BodyPart parameters with probability p"
-        attrs = { 
+        attrs = {
             'scale' : 'random.uniform(0.2, 5.0)',
             'recursive_limit' : 'random.randint(0, BP_MAX_RECURSIVE_LIMIT)',
             'joint' : "random.choice(['hinge','universal','ball'])",
@@ -171,15 +171,14 @@ class BodyPart(Persistent):
             'axis2' : 'tuple(vec3((0,0,1)).cross(vec3(self.axis1)))',
             'ball_rot' : 'randomQuat()',
             'rotation' : 'randomQuat()',
-            'lostop' : 'random.choice([-Infinity, random.uniform(0, -math.pi)])',
+            'lostop' : 'random.uniform(0, -math.pi)',
             # axis1 angle must be in -pi/2..pi/2 to avoid a singularity in ode
             'lostop2' : 'random.uniform(0, -math.pi/2)',
-            'lostop3' : 'random.choice([-Infinity, random.uniform(0, -math.pi)])',
-            'histop' : 'random.choice([Infinity, random.uniform(0, math.pi)])',
+            'lostop3' : 'random.uniform(0, -math.pi)',
+            'histop' : 'random.uniform(0, math.pi)',
             'histop2' : 'random.uniform(0, math.pi/2)',
-            'histop3' : 'random.choice([Infinity, random.uniform(0, math.pi)])',
-            'friction_left' : 'random.uniform(0, 1000)',
-            'friction_right' : 'random.uniform(0, 1000)'
+            'histop3' : 'random.uniform(0, math.pi)',
+            'friction_mu' : 'random.uniform(50, 600)',
             }
         
         mutations = 0
@@ -200,12 +199,10 @@ class BodyPart(Persistent):
         return mutations
 
     def getMotors(self):
-        if self.joint == 'hinge':
-            return ['MOTOR_2']
-        elif self.joint == 'universal':
-            return ['MOTOR_0', 'MOTOR_1']
-        elif self.joint == 'ball':
-            return ['MOTOR_0', 'MOTOR_1', 'MOTOR_2']
+        motors = { 'hinge' :     ['MOTOR_2'],
+                   'universal' : ['MOTOR_0', 'MOTOR_1'],
+                   'ball' :      ['MOTOR_0', 'MOTOR_1', 'MOTOR_2'] }
+        return motors[self.joint]
         
     motors = property(getMotors)
 
@@ -375,8 +372,11 @@ class BodyPartGraph(Persistent):
                 assert backannotate
                 # pick a random (bp, signal) from p_bp and backannotate into g_bp.input_map
                 p_src_bp = random.choice(p_neighbours)
+                # no direct connects between sensors and motors
+                posSrcs = []
+                if not isinstance(p_dst_signal, str):
+                    posSrcs = ['CONTACT', 'JOINT_0', 'JOINT_1', 'JOINT_2']
                 # disallow connects from outnode to innode of same network
-                posSrcs = ['CONTACT', 'JOINT_0', 'JOINT_1', 'JOINT_2']
                 if type(p_dst_signal) == str or p_src_bp != p_dst_bp:
                     posSrcs += p_src_bp.network.outputs
                 if isinstance(p_dst_signal, node.Node):
@@ -582,21 +582,22 @@ class BodyPartGraph(Persistent):
 
         # check whether input_map entries are still valid
         for bp in self.bodyparts:
-            krm = []
-            for k in bp.input_map.keys():
-                if k not in self.bodyparts:
-                    krm.append(k)
-                else:
-                    # key is valid
-                    toremove = []
-                    for (sbp, sig) in bp.input_map[k]:
-                        # check sbp is ok and src is a string or output node
-                        if sbp not in self.bodyparts or (isinstance(sig, node.Node) and sig not in sbp.network.outputs):
-                            toremove.append((sbp, sig))
-                    for x in toremove:
-                        bp.input_map[k].remove(x)
-            for k in krm:
-                del bp.input_map[k]
+            if bp.input_map:
+                krm = []
+                for k in bp.input_map.keys():
+                    if k not in self.bodyparts:
+                        krm.append(k)
+                    else:
+                        # key is valid
+                        toremove = []
+                        for (sbp, sig) in bp.input_map[k]:
+                            # check sbp is ok and src is a string or output node
+                            if sbp not in self.bodyparts or (isinstance(sig, node.Node) and sig not in sbp.network.outputs):
+                                toremove.append((sbp, sig))
+                        for x in toremove:
+                            bp.input_map[k].remove(x)
+                for k in krm:
+                    del bp.input_map[k]
 
         # fix input_map so all input nodes are connected
         self.connectInputNodes()

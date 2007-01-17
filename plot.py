@@ -109,9 +109,12 @@ def plotSignals(tracefile, quanta=0):
             log.debug('plotting row %d', i)
             yrange = '[-0.25:1]'
             ytics = '0,1,1'
-            if 'M' in labels[i]:
+            if 'M' in labels[i] or 'angle' == labels[i]:
                 yrange = '[-5:3.14]'
                 ytics = '-3.14,6.28,3.14'
+            if 'ctrlf' == labels[i]:
+                yrange = '[-1000:1000]'
+                ytics = '-1000,1000,500'
             style = 'lines'
             if quanta:
                 style = 'steps'
@@ -168,7 +171,6 @@ def plotGenerationVsFitness(g, outputFilename):
     set xlabel "Generation"
     set ylabel "Fitness"
     set multiplot
-    set xtics 1
     plot "%s" using 1:2 title "min", "%s" using 1:3 title "mean", "%s" using 1:4 title "max"
     """%(fbase, datFile, datFile, datFile)
     f.write(s)
@@ -205,7 +207,6 @@ def plotMutationVsProbImprovement(g, outputFilename):
     set multiplot
     set xtics 1
     set xrange [1:]
-    set yrange [0:1]
     plot "%s" using 1:2:(0.5) notitle with boxes fs solid 0.5
     """%(fbase, datFile)
     f.write(s)
@@ -237,7 +238,7 @@ def plotMutationVsFitnessChange(g, outputFilename):
     set xrange [1:]
     set yrange [%f:%f]
     set multiplot
-    plot "%s" using 1:2 notitle
+    plot "%s" using 1:2 notitle with points pt 2
     """%(fbase, mn, mx, datFile)
     f.write(s)
     f.close()
@@ -423,9 +424,10 @@ def plotEdges(net, toponly=0, prefix='n'):
 def plotNetwork(net, filename=None, toponly=0):
     """Dump this network as a (graphviz) dot file."""
     log.debug('dumping network to %s in dot graph format', filename)
-    s = 'digraph G {\n'
-    s += plotNodes(net, toponly)
-    s += plotEdges(net, toponly)
-    s += '}\n'
+    s = """digraph G {
+        %s
+        %s
+    }
+    """%(plotNodes(net, toponly), plotEdges(net, toponly))
     dot(filename, s)
     return s

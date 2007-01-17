@@ -9,7 +9,7 @@ qtgui.py: qtgui.ui
 	pyuic -p0 qtgui.ui -o qtgui.py
 
 test: $(SRC) $(TEST)
-	rm test/*
+	rm -f test/*
 	-for t in $(TEST); do echo $$t; $$t -v; done
 
 checker:
@@ -24,6 +24,12 @@ popd:
 
 pop:
 	ev.py -r x -p 5 -t 30 -g 100 --topology full --update sync --nodetype sigmoid --nodes 10 --sim bpg --fitness meandistance --steadystate
+
+pbpop:
+	ev.py -r p -p 5 -t 30 -g 200 --topology full --update sync --nodetype sigmoid --nodes 5 --sim pb --steadystate --mutate 0.05
+
+popz:
+	ev.py -r z -p 10 -t 30 -g 100 --topology full --update sync --nodetype beer --nodes 5 --sim bpg --fitness movement --steadystate
 
 run:
 	ev.py -r x -u

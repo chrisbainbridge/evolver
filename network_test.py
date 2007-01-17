@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import unittest
+from unittest import TestCase
 import logging
 import random
 import sys
@@ -12,10 +12,10 @@ from cgkit.cgtypes import vec3
 import test_common
 from test_common import *
 from network import Network, TOPOLOGIES
-import node
+from node import SigmoidNode, BeerNode, LogicalNode
 from plot import plotNetwork
 
-class NetworkTestCase(unittest.TestCase):
+class NetworkTest(TestCase):
 
     def setUp(self):
         random.seed()
@@ -28,47 +28,49 @@ class NetworkTestCase(unittest.TestCase):
         if test_common.interactive:
             os.popen('kghostview %s.ps'%name)
 
-    def test_01_sigmoid_1d(self):
-        n = Network(4,1,1, node.SigmoidNode, {}, '1d', 'async')
-        self.dot(n, 'sigmoid_1d')
+    def do(self, n, i, o, top, update):
+        net = Network(n, i, o, nodet, nodea, top, update)
+        ns = str(nodet)
+        nc = ns[ns.find('.')+1:ns.rfind('\'')]
+        s = '%s_%s'%(nc, top)
+        self.dot(net, s)
+        
+    def test_01_1d(self):
+        self.do(4,1,1, '1d', 'async')
 
-    def test_02_sigmoid_2d(self):
-        net = Network(9,0,0, node.SigmoidNode, {}, '2d', 'async')
-        self.dot(net, 'sigmoid_2d')
+    def test_02_2d(self):
+        self.do(9,0,0, '2d', 'async')
 
-    def test_03_sigmoid_full(self):
-        net = Network(4,0,0, node.SigmoidNode, {}, 'full', 'async')
-        self.dot(net, 'sigmoid_full')
+    def test_03_full(self):
+        self.do(4,0,0, 'full', 'async')
 
-    def test_04_sigmoid_2d_with_3i2o(self):
-        n = Network(9,3,2, node.SigmoidNode, {}, '2d', 'async')
-        self.dot(n, 'sigmoid_2d_with_3i2o')
-        assert len(n.inputs) == 3
-        assert len(n.outputs) == 2
+    def test_04_2d_with_3i2o(self):
+        self.do(9,3,2, '2d', 'async')
 
-    def test_05_init_logical_net(self):
-        n = Network(9,3,2, node.LogicalNode, {'numberOfStates':2}, '2d', 'sync')
-        self.dot(n, 'logical_2d_with_3i2o')
-        assert len(n.inputs) == 3
-        assert len(n.outputs) == 2
-
-    def test_06_run_sigmoid_net_with_all_topologies(self):
+    def test_06_run_net_with_all_topologies(self):
         for topology in TOPOLOGIES:
-            net = Network(9,3,2, node.SigmoidNode, {}, topology, 'sync')
+            net = Network(9,3,2, nodet, nodea, topology, 'sync')
             for n in net:
-                n.preUpdate()
-            for n in net:
-                n.postUpdate()
-
-    def test_07_run_logical_net_with_all_topologies(self):
-        for topology in TOPOLOGIES:
-            net = Network(9,3,2, node.LogicalNode, {'numberOfStates':2}, topology, 'sync')
-            for n in net:
-                n.randomiseState()
+                n.setState()
             for n in net:
                 n.preUpdate()
             for n in net:
                 n.postUpdate()
 
 if __name__ == "__main__":
-    test_main()
+    opts = {'--sigmoid' : (SigmoidNode, {}),
+            '--beer' :    (BeerNode, {}),
+            '--logical' : (LogicalNode, {'numberOfStates':2})}
+    nodet = None
+    for a in opts:
+        if a in sys.argv:
+            sys.argv.remove(a)
+            nodet = opts[a][0]
+            nodea = opts[a][1]
+    if nodet:
+        test_main()
+    else:
+        for nodet in opts:
+            cmd = '%s %s %s'%(sys.argv[0], nodet, ' '.join(sys.argv[1:]))
+            print cmd
+            os.system(cmd)

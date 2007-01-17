@@ -40,7 +40,7 @@ class GLWidget(QGLWidget):
         self.grabKeyboard()
         # camera x,y,z
         self.view_xyz = [0,-30,5]
-        # camera heading,pitch,roll
+        # camera heading, pitch], roll
         self.view_hpr = [90,20,0]
         self.pause = 1
         self.drag_left = 0
@@ -61,6 +61,7 @@ class GLWidget(QGLWidget):
         self.render_axes = 0
         self.wireframe = 0
         self.fullscreen = 0
+        self.render_contacts = 0
 
     def initializeGL(self):
         log.debug('initialiseGL')
@@ -284,113 +285,18 @@ class GLWidget(QGLWidget):
         else:
             glDisable(GL_LIGHTING)
 
-    def renderJoints(self):
-        # Render Joints 
-        for joint in self.sim.joints:
-            log.debug('drawing joint %s',str(joint)) #name)
-            glPushMatrix()
-
-            if type(joint) is ode.HingeJoint:
-
-                (x0,y0,z0) = joint.getBody(0).getPosition()
-                (x1,y1,z1) = joint.getBody(1).getPosition()
-                (x,y,z) = joint.getAnchor()
-                # draw green lines between the joint and bodies
-                glColor(0,1,0)
+    def renderPoints(self):
+        if self.render_contacts:
+            for (p,c,r) in self.sim.points:
+                glPushMatrix()
                 glDisable(GL_LIGHTING)
-                glBegin(GL_LINES)
-                glVertex(x0,y0,z0)
-                glVertex(x,y,z)
-                glVertex(x,y,z)
-                glVertex(x1,y1,z1)
-                glEnd()
+                glColor(c[0], c[1], c[2])
+                glTranslate(p[0],p[1],p[2])
+                gluSphere(self.quadratic, r, 10, 10)
                 glEnable(GL_LIGHTING)
-                # draw extended sphere for joint
-                glColor(1,1,1)
-                glTranslate(x,y,z)
-                x,y,z = joint.getAxis()
-                log.debug('HINGE axis %f,%f,%f',x,y,z)
-                glColor(1,1,1)
-                glDisable(GL_LIGHTING)
-                glBegin(GL_LINES)
-                glVertex(0,0,0)
-                glVertex(x*5,y*5,z*5)
-                glEnd()
-                glEnable(GL_LIGHTING)
-                
-            elif type(joint) is ode.UniversalJoint:
-
-                (x0,y0,z0) = joint.getAxis1()
-                (x1,y1,z1) = joint.getAxis2()
-                (x,y,z) = joint.getAnchor()
-                # draw green lines between the joint and bodies
-                glColor(0.0,0.0,0.0)
-                glDisable(GL_LIGHTING)
-                glBegin(GL_LINES)
-                glVertex(x,y,z)
-                glVertex(x+x0,y+y0,z+z0)
-                glVertex(x,y,z)
-                glVertex(x+x1,y+y1,z+z1)
-                glEnd()
-                glEnable(GL_LIGHTING)
-                # draw extended sphere for joint
-                log.debug('HINGE axis %f,%f,%f',x,y,z)
-
-            elif type(joint) is ode.SliderJoint:
-                log.debug('slider: draw sliderjoint')
-                # draw a line between the limits
-                point = joint.getPosition()
-                axis = vec3(joint.getAxis())
-                log.debug('slider: point %f, axis %f',point,axis)
-                b = joint.getBody(0)
-                p = vec3(b.getPosition())
-                log.debug('slider: x,y,z=%f,%f,%f',x,y,z)
-                # xyz is positition, axis is gradient...
-                lowstop = joint.getParam(ode.ParamLoStop)
-                highstop = joint.getParam(ode.ParamHiStop)
-                log.debug('slider: lowstop=%f,highstop=%f',lowstop, highstop)
-                a = p-axis*100
-                b = p+axis*100
-                glColor(0,0,0)
-                glDisable(GL_LIGHTING)
-                glBegin(GL_LINES)
-                glVertex(a[0],a[1],a[2])
-                glVertex(b[0],b[1],b[2])
-                glEnd()
-                glEnable(GL_LIGHTING)
-
-            elif type(joint) is ode.BallJoint:
-                log.debug('render ode.BallJoint')
-                # render the axes
-                m = joint.motor
-                a0 = vec3(m.getAxis(0))
-                p = vec3(joint.getBody(0).getPosition())
-                glColor(1,0,0)
-                glDisable(GL_LIGHTING)
-                glBegin(GL_LINES)
-                glVertex(p[0],p[1],p[2])
-                q = p+a0
-                glVertex(q[0],q[1],q[2])
-                glEnd()
-                glColor(0,1,0)
-                glBegin(GL_LINES)
-                glVertex(0,0,0)
-                glVertex(0,5,0)
-                glEnd()
-                glColor(0,0,1)
-                glBegin(GL_LINES)
-                glVertex(0,0,0)
-                glVertex(0,0,5)
-                glEnd()
-                glEnable(GL_LIGHTING)
-
-            else:
-                log.debug('dont know how to render joint %s', str(joint))
-            # restore matrix
-            glPopMatrix()
+                glPopMatrix()
 
     def renderGeoms(self):
-        # Render Geoms
         log.debug('rendering %d geoms', self.sim.space.getNumGeoms())
 
         if self.wireframe:
@@ -451,10 +357,10 @@ class GLWidget(QGLWidget):
                 self.plotAxes()
                 if self.render_bps:
                     glTranslate(0, 0, -length/2)
-                    if hasattr(geom, 'root'):
-                        glColor(0.0, 0.5, 0.5)
-                    else:
-                        glColor(0, 0, 0.8)
+                    b = 0.8
+                    if not geom.parent:
+                        b = 0.0
+                    glColor(0, 0, b)
                     gluCylinder(self.quadratic, radius, radius, length, 16, 16)
                     if geom.left == 'internal':
                         glColor(0, 1, 0)
@@ -482,8 +388,8 @@ class GLWidget(QGLWidget):
         self.drawGround()
         self.shadeAndLight()
         self.plotAxes() # at origin
-#        self.renderJoints()
         self.renderGeoms()
+        self.renderPoints()
         glFlush()
         # take a screenshot
         if self.record_this_frame:
@@ -491,46 +397,51 @@ class GLWidget(QGLWidget):
             self.screenshot()
 
     def keyPressEvent(self,e):
-        if e.text() == 'r':
-            log.debug('key r')
+        k = e.text()
+        if not k:
+            k = e.key()
+        v = 0.8
+        if k == 'r':
             self.reset()
-        elif e.text() == 'c':
+        elif k == 'j':
             self.screenshot(single=1)
-        elif e.text() == 'f':
+        elif k == 'f':
             self.fullscreen ^= 1
             if self.fullscreen:
                 self.qtapp.window.showFullScreen()
             else:
                 self.qtapp.window.showNormal()
-        elif e.key() == Qt.Key_Up:
-            self.view_xyz[1] += 0.1
-        elif e.key() == Qt.Key_Down:
-            self.view_xyz[1]-=0.1
-        elif e.key() == Qt.Key_Left:
-            self.view_xyz[0]-=0.1
-        elif e.key() == Qt.Key_Right:
-            self.view_xyz[0] += 0.1
-        elif e.text() == 's':
+        elif k == Qt.Key_Up:
+            self.view_xyz[1] += v
+        elif k == Qt.Key_Down:
+            self.view_xyz[1] -= v
+        elif k == Qt.Key_Left:
+            self.view_xyz[0] -= v
+        elif k == Qt.Key_Right:
+            self.view_xyz[0] += v
+        elif k == 's':
             self.qtapp.sim.step()
             self.updateGL()
-        elif e.text() == 'l':
+        elif k == 'l':
             self.lighting ^= 1
-        elif e.text() == 't':
+        elif k == 't':
             self.use_textures ^= 1
-        elif e.text() == 'p':
+        elif k == 'p':
             self.pause ^= 1
-        elif e.text() == 'x':
+        elif k == 'x':
             self.render_bps ^= 1
-        elif e.text() == 'a':
+        elif k == 'a':
             self.render_axes ^= 1
-        elif e.text() == 'w':
+        elif k == 'w':
             self.wireframe ^= 1
+        elif k == 'c':
+            self.render_contacts ^= 1
         else:
             e.ignore()
 
     def mousePressEvent(self,e):
-        log.debug('mouse press event: button %s',str(e.button()))
-        self.old_xy_point = (e.pos().x(),e.pos().y())
+        log.debug('mouse press event: button %s', str(e.button()))
+        self.old_xy_point = (e.pos().x(), e.pos().y())
         if e.button() == Qt.LeftButton:
             self.drag_left = 1
         elif e.button() == Qt.RightButton:

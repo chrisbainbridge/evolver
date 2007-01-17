@@ -63,7 +63,7 @@ class Generation(PersistentList):
             x.score = None
             x.parentFitness = None
             x.numberOfMutations = None
-            x.mutationStatRecorded = 0
+            x.createdInGeneration = 0
             self.append(x)
             transaction.savepoint()
         self.prev_gen = []
@@ -74,7 +74,8 @@ class Generation(PersistentList):
         self.hostData = PersistentMapping()
         for hostname in cluster.HOSTNAMES:
             self.hostData[hostname] = HostData()
-        self.mutationStats = PersistentList()
+        self.mutationStats = PersistentList() # (parentFitness, mutations, childFitness)
+        self.statList = PersistentList()
 
     def setFinalGeneration(self, extraGenerations):
         "Set final generation number, relative to current one"
@@ -87,13 +88,13 @@ class Generation(PersistentList):
         if len(self.fitnessList) > self.gen_num:
             self.fitnessList = self.fitnessList[:self.gen_num]
         self.fitnessList.append((m.min(), m.mean(), m.max()))
-        for bg in [x for x in self if not x.mutationStatRecorded and x.score != None and x.parentFitness != None]:
+        for bg in self.statList:
             assert isinstance(bg.parentFitness, float) or isinstance(bg.parentFitness, int)
             assert isinstance(bg.numberOfMutations, int)
             assert isinstance(bg.score, float) or isinstance(bg.score, int)
             ms = (bg.parentFitness, bg.numberOfMutations, bg.score)
             self.mutationStats.append(ms)
-            bg.mutationStatRecorded = 1
+        del self.statList[:]
 
     def sanityCheck(self):
         log.debug('sanity check generation')
@@ -102,11 +103,16 @@ class Generation(PersistentList):
                 x.sanityCheck()
 
     def mutateChild(self, child):
-        m = child.mutate(self.mutationRate)
-        if m == 0:
-            log.warn('child is identical to parent, mutation rate is too low')
+        "Always generates a mutated child (m>0)"
+        # don't save identical children. shortcut by forcing m>0.
+        while 1:
+            m = child.mutate(self.mutationRate)
+            if not m:
+                log.warn('child is identical to parent, mutation rate is too low')
+            else:
+                break
         child.numberOfMutations = m
-        child.mutationStatRecorded = 0
+        self.statList.append(child)
         log.debug('mutateChild created %d mutations', m)
         return m
 
@@ -119,7 +125,6 @@ class Generation(PersistentList):
         log.debug('elitistUpdate()')
         # 10% seems to be good for bpgs
         num_elites = max(int(round(len(self.prev_gen)/100.0*50)), 1)
-        #num_elites = 0 # FORCE NON-ELITIST GA
         log.debug('%d elites',num_elites)
 
         # copy the elites into next generation
@@ -127,10 +132,8 @@ class Generation(PersistentList):
         count = 1
         for x in self.prev_gen[:num_elites]:
             y = copy.deepcopy(x)
-            #y.mutate(0.0) # aging damage (0.15)
             y.parentFitness = x.score
             y.numberOfMutations = 0
-            y.mutationStatRecorded = 0
             self.append(y)
             transaction.savepoint()
             log.info('.' * count)
@@ -231,7 +234,6 @@ class Generation(PersistentList):
         y.parentFitness = x.score
         log.debug('parent score=%f child score=%f', y.parentFitness, y.score)
         mydata.newIndividual = y
-        
         transaction.commit()
 
     def steadyStateMasterInnerLoop(self):
@@ -248,15 +250,23 @@ class Generation(PersistentList):
                     if empty:
                         i = random.choice(empty)
                     else:
-                        # maybe we should just replace the lowest?
-                        i = random.choice(lower)
-                    log.debug('overwrite %s', i)
+                        i = lower[0]
+                        for l in lower[1:]:
+                            if l.score < i.score:
+                                i = l
+                    log.debug('overwrite lowest %s', i)
+                    hd.newIndividual.createdInGeneration = self.gen_num + 1
                     self[self.index(i)] = hd.newIndividual
                 else:
                     log.debug('newIndividual is too low, throw it away')
                 hd.newIndividual = None
                 self.gen_num += 1
                 self.recordStats()
+            # force re-eval if older than threshold (stops freak evals being immortal)
+            for x in self:
+                if x.createdInGeneration < self.gen_num - 3*len(self):
+                    x.score = None
+                    x.createdInGeneration = self.gen_num
             transaction.commit()
             log.debug('commit ok')
         time.sleep(5)
@@ -276,6 +286,12 @@ class Generation(PersistentList):
             log.debug('nothing to do, sleeping...')
             time.sleep(15)
 
+    def getMaxIndividual(self):
+        l = [(x.score, x) for x in self]
+        l.sort()
+        l.reverse()
+        return l[0][0]
+
     def runClientLoop(self, master=1, slave=1):
         """Evolve client.
 
@@ -288,7 +304,9 @@ class Generation(PersistentList):
             try:
                 transaction.begin()
                 log.debug('runClientLoop: %d/%d', self.gen_num, self.final_gen_num)
-                if self.gen_num == self.final_gen_num and (self.ga == 'steady-state' or self.ga == 'elite' and ((master and not slave) or slave and not self.leftToEval())) :
+                if self.gen_num == self.final_gen_num \
+                        and (self.ga == 'steady-state' or self.ga == 'elite' and ((master and not slave) or slave)) \
+                        and not self.leftToEval() :
                     log.info('all individuals done in final generation, exiting')
                     transaction.abort()
                     return
