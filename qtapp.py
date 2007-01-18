@@ -21,7 +21,12 @@ from qtgl import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
-import qtgui
+try:
+    import qtgui
+except ImportError:
+    import os
+    os.system('make qtgui.py')
+    import qtgui
 
 import logging
 log = logging.getLogger('qtapp')
