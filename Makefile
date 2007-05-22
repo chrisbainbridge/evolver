@@ -55,3 +55,6 @@ memprof:
 uml:
 	happydoc --dia $(EV_SRC)
 	dia doc/dia.dia
+
+ulimit:
+	ulimit -s 16384

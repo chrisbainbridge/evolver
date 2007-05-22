@@ -44,9 +44,11 @@ class TestBodyPartGraph(BodyPartGraph):
         debug('Creating %d random BodyParts'%(num_bodyparts))
         p = TestBodyPart(network_args, jtype)
         self.bodyparts.append(p)
+        p.isRoot = 1
         self.root = p
         for _ in range(1, num_bodyparts):
             bp = TestBodyPart(network_args, jtype)
+            bp.isRoot = 0
             self.bodyparts.append(bp)
             e = Edge(bp, 1, 0)
             p.edges.append(e)
@@ -97,6 +99,7 @@ class BpgTestCase(unittest.TestCase):
         b = TestBodyPartGraph(new_network_args, 5, 'universal')
         s = sim.BpgSim(SECONDS)
         s.add(b)
+        s.relaxed = 1
         siglog = 'test/sim_siglog.trace'
         s.initSignalLog(siglog)
         oldsize = os.path.getsize(siglog)
@@ -104,13 +107,14 @@ class BpgTestCase(unittest.TestCase):
         newsize = os.path.getsize(siglog)
         assert newsize > oldsize
         plotSignals('test/sim_siglog.trace')
-        
+
     def test_6_siglog_quanta(self):
         args = copy.deepcopy(new_network_args)
         args['new_node_args']['quanta'] = 4
         b = TestBodyPartGraph(args, 5, 'universal')
         s = sim.BpgSim(SECONDS)
         s.add(b)
+        s.relaxed = 1
         siglog = 'test/sim_siglog_quanta.trace'
         s.initSignalLog(siglog)
         oldsize = os.path.getsize(siglog)
@@ -168,10 +172,10 @@ class BpgSimTestCase(unittest.TestCase):
 
     def setUp(self):
         random.seed()
-        
+
     def tearDown(self):
         pass
-        
+
     def test_1_single_bodypart(self):
         b = TestBodyPartGraph(new_network_args, 1)
         s = sim.BpgSim(SECONDS)
@@ -213,9 +217,10 @@ class BpgSimTestCase(unittest.TestCase):
         j.setFixed()
         # start motor
         m = s.bpgs[0].bodyparts[1].motor
-        m.desired_axisangle[0] = math.pi*3/2
-        m.desired_axisangle[2] = 5*math.pi/4
+        m.desired_axisangle[0] = -math.pi/2 #math.pi*3/2
+        m.desired_axisangle[2] = -3*math.pi/4 #5*math.pi/4
 
+        s.initSignalLog('test/signal.log')
         if not record:
             runSim(s)
         else:
@@ -229,7 +234,7 @@ class BpgSimTestCase(unittest.TestCase):
 
     def test_7_ball_motor(self):
         self.do_joint_motor('ball')
-    
+
     def test_8_record_movie(self):
         self.do_joint_motor(jointtype='ball', record=1)
         if test_common.interactive:
@@ -249,7 +254,7 @@ class PoleBalanceSimTestCase(unittest.TestCase):
         n = Network(10, 2, 1, SigmoidNode, {}, 'full', 'async')
         s.setNetwork(n)
         runSim(s)
-        
+
     def test_2_random_network_control_impulse_response(self):
         s = sim.PoleBalanceSim(SECONDS)
         # apply unit impulse
@@ -257,7 +262,7 @@ class PoleBalanceSimTestCase(unittest.TestCase):
         n = Network(10, 2, 1, SigmoidNode, {}, 'full', 'async')
         s.setNetwork(n)
         runSim(s)
-        
+
     def test_3_lqr_control_impulse_response(self):
         s = sim.PoleBalanceSim(SECONDS)
         s.setUseLqr()

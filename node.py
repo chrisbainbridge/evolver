@@ -1,6 +1,7 @@
 import logging
 import random
 import math
+from rand import rnd
 
 from persistent import Persistent
 from persistent.list import PersistentList
@@ -12,11 +13,13 @@ log.setLevel(logging.WARN)
 # bin2int([1,1,1,0]) = 14
 bin2int = lambda x: x and x[0]*2**(len(x)-1)+bin2int(x[1:]) or 0
 
-def randomFromDomain((low,high), quanta=None):
-    if quanta:
-        return round(random.random()*quanta)/quanta*(high-low)+low
+def randomFromDomain((low,high), v, quanta=None):
+    if quanta and v != None:
+        x = round(rnd(0,quanta-1,(v-low)/(high-low)*(quanta-1.0)))
+        return x/(quanta-1.0)*(high-low)+low
+#        return random.randint(0,quanta-1)/(quanta-1.0)*(high-low)+low
     else:
-        return random.uniform(low, high)
+        return rnd(low, high, v)
 
 def quantise(value, quanta):
     # quantise a value in domain [0,1]
@@ -71,15 +74,12 @@ class Node(Persistent):
         assert source not in self.externalInputs
         self.externalInputs[source] = 0 # default initial value
 
-    def removeExternalInput(self, source):
-        log.debug('removeExternalInput(source=%s, externalInputs=%s)', source, self.externalInputs)
-        del self.externalInputs[source]
+    def removeExternalInput(self, bp, sig):
+        log.debug('removeExternalInput(source=%s, externalInputs=%s)', (bp,sig), self.externalInputs)
+        del self.externalInputs[(bp,sig)]
 
     def preUpdate(self):
         pass
-        
-    def postUpdate(self):
-        self.state = self.nextState
 
 class WeightNode(Node):
     'A traditional model neuron: state in [0,1], weighted inputs'
@@ -89,13 +89,16 @@ class WeightNode(Node):
         self.weights = PersistentMapping()
         self.weightDomain = weightDomain
         self.quanta = quanta
+        self.output = random.uniform(0,1)
 
     def destroy(self):
         Node.destroy(self)
         del self.weights
 
-    def setState(self):
-        self.output = random.random()
+#    def setState(self):
+#         this is not really state, it's just the initial output
+#         but it is the only bit of state the simulator can randomise
+#        self.output = random.uniform(0,1)
 
     def randomWeight(self):
         return randomFromDomain(self.weightDomain, self.quanta)
@@ -112,15 +115,16 @@ class WeightNode(Node):
         Node.addInput(self, source)
         self.weights[source] = self.randomWeight()
 
-    def addExternalInput(self, source):
-        'source = (srcBodypart, srcSignal)'
+    def addExternalInput(self, s_bp, s_sig, weight):
+        'source = (srcBodypart, srcSignal, weight)'
+        source = (s_bp, s_sig)
         Node.addExternalInput(self, source)
-        self.weights[source] = self.randomWeight()
+        self.weights[source] = weight
 
-    def removeExternalInput(self, source):
+    def removeExternalInput(self, bp, sig):
         'source = (srcBodypart, srcSignal)'
-        Node.removeExternalInput(self, source)
-        del self.weights[source]
+        Node.removeExternalInput(self, bp, sig)
+        del self.weights[(bp,sig)]
 
     def delInput(self, source):
         Node.delInput(self, source)
@@ -161,26 +165,77 @@ class WeightNode(Node):
         for (src, value) in self.externalInputs.items():
             cumulative += value * self.weights[src]
         return cumulative
-    
-    def getOutput(self):
-        return self._output
 
-    def setOutput(self, v):
-        self._output = v
-        if self.quanta:
-            self._output = quantise(self._output, self.quanta)
-    output = property(getOutput, setOutput)
+#    def getOutput(self):
+#        return self._output
+
+#    def setOutput(self, v):
+#        self._output = v
+#        if self.quanta:
+#            self._output = quantise(self._output, self.quanta)
+#    output = property(getOutput, setOutput)
 
 class SigmoidNode(WeightNode):
     'Sigmoid model (no internal state)'
 
     def __init__(self, weightDomain=(-7,7), quanta=None):
         WeightNode.__init__(self, weightDomain, quanta)
-        self.nextState = None
+        self.setState()
 
     def postUpdate(self):
         'return output in [0,1]'
         self.output = 1/(1 + math.e**-self.sumOfWeightedInputs())
+
+    def setState(self):
+#         this is not really state, it's just the initial output
+#         but it is the only bit of state the simulator can randomise
+        self.output = rnd(0,1,self.output)
+
+class SineNode(WeightNode):
+    'Sine wave model'
+
+    def __init__(self, weightDomain=(-7,7), quanta=None):
+        WeightNode.__init__(self, weightDomain, quanta)
+        self.phaseOffset = None
+        self.stepSize = None
+        self.amplitude = None
+        self.setPhaseOffset()
+        self.setStepSize()
+        self.setState()
+        self.setAmplitude()
+        self.postUpdate()
+
+    def setPhaseOffset(self):
+        self.phaseOffset = rnd(0, 2*math.pi, self.phaseOffset)
+
+    def setStepSize(self):
+        # oscillate between [twice per second, once every 2 seconds)
+        persec = math.pi*2/50
+        self.stepSize = rnd(persec/2, persec*2, self.stepSize)
+
+    def setState(self):
+        self.state = self.phaseOffset
+
+    def setAmplitude(self):
+        self.amplitude = rnd(0.25, 1, self.amplitude)
+
+    def postUpdate(self):
+        'return output in [0,1]'
+        self.output = (math.sin(self.state)*self.amplitude + 1) / 2
+        self.state = (self.state + self.stepSize) % (2*math.pi)
+
+    def mutate(self, p):
+        mutations = 0
+        if random.random() < p:
+            self.setStepSize()
+            mutations += 1
+        if random.random() < p:
+            self.setPhaseOffset()
+            mutations += 1
+        if random.random() < p:
+            self.setAmplitude()
+            mutations += 1
+        return mutations
 
 class BeerNode(WeightNode):
     'Beer 1st order model'
@@ -194,7 +249,7 @@ class BeerNode(WeightNode):
 
     def preUpdate(self):
         self.nextState = self.state + 0.1 * ((self.sumOfWeightedInputs() - self.state) / self.adaptRate)
-        
+
     def postUpdate(self):
         self.state = self.nextState
         self.output = 1/(1 + math.e**-(self.state + self.bias))
@@ -211,18 +266,18 @@ class BeerNode(WeightNode):
         return mutations
 
     def setAdaptRate(self):
-        self.adaptRate = random.uniform(0.5, 10)
+        self.adaptRate = rnd(0.5, 10, self.adaptRate)
 
     def setBias(self):
         self.bias = randomFromDomain(self.biasDomain, self.quanta)
 
     def setState(self):
-        self.state = random.uniform(-0.1, 0.1) # should internal state be quantised?
-        WeightNode.setState(self)
+        self.state = rnd(-0.1, 0.1, self.state) # should internal state be quantised?
+        self.output = rnd(0, 1, self.output)
 
 class MultiValueLogicFunction(PersistentList):
     """logical function of k inputs. outputs in the domain [low,high]
-    
+
     Used by Logical node."""
 
     def __init__(self, numberOfInputs, numberOfStates):
@@ -241,7 +296,7 @@ class MultiValueLogicFunction(PersistentList):
     def getValue(self, x):
         "Returns a stored value from the table"
         return self[x]
-    
+
     def mutate(self, p):
         "Change a value in the table"
         # find a random row in the table, replace output with new randint

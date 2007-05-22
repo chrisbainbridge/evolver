@@ -32,8 +32,8 @@ def run():
     main('ev.py -r %s -c -m'%g)
 
 def plot():
-    debug('testing --plotfitness')
-    main('ev.py -r %s --plotfitness test/%s-fitness.pdf'%(g, g))
+    debug('testing --pf')
+    main('ev.py -r %s --pf test/%s-fitness.pdf'%(g, g))
     debug('testing --plotpi')
     main('ev.py -r %s --plotpi test/%s-childpi.pdf'%(g, g))
     debug('testing --plotfc')

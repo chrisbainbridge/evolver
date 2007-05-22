@@ -29,9 +29,9 @@
      --topology x     Specify topology of [full,1d,2d,3d,randomk]
        -k x           Specify k inputs for randomk topology
      --update x       Update style [sync,async]
-     --nodetype x     Type of node [sigmoid,logical,beer]
+     --nodetype x     Type of node [sigmoid,logical,beer,sine]
      --states x       Number of states per cell [logical only]
-     --nodes x       (1d, randomk, full) - Total number of nodes 
+     --nodes x       (1d, randomk, full) - Total number of nodes
                       (2d, 3d) - length of a dimension
                       number x includes network inputs and outputs
                       (default 10)
@@ -47,6 +47,7 @@
  --steadystate       Use a steady state parallel GA
  --mutate x          Specify mutation probability
  --noise x           Specify standard deviation of Gaussian noise applied to sensors and motors
+ --mutgauss          Use gaussian mutations instead of uniform
 
 ===== Unlock =====
 
@@ -58,11 +59,11 @@
 
 ===== Plot graphs =====
 
- --plotnets f.type    Plot all of the control networks in bpg 
+ --plotnets f.type    Plot all of the control networks in bpg
  --plotbpg f.type     Plot to file. Type can be dot, ps, png, etc.
      --toponly         Only draw topology - no weights or bi-connects
      --unroll          Unroll bpg before converting to dot file
- --plotfitness f.pdf  Plot min/mean/max fitness graph for specified generation
+ --pf f.pdf  Plot min/mean/max fitness graph for specified generation
  --plotpi        Plot mutations vs prob. of child.fitness > parent fitness
  --plotfc        Plot mutations vs observed fitness change
 
@@ -92,7 +93,6 @@ import ZODB
 from ZODB.FileStorage import FileStorage
 from ZEO.ClientStorage import ClientStorage
 from ZODB import DB
-from persistent.mapping import PersistentMapping
 
 import bpg
 import db
@@ -126,7 +126,7 @@ def main():
     log.debug(' '.join(sys.argv))
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:lp:q:sz:t:uvm', ['blank','qt=','topology=','update=','nodetype=','nodes=','dombias=','domvalue=','domweight=','elite', 'lqr', 'steadystate','mutate=','noise=','nodes_per_input=','network=','nostrip','plotbpg=','plotfitness=','plotnets=','plotsignals=','unroll','radius=','toponly','movie=','sim=','states=', 'fitness=', 'plotpi=', 'plotfc='])
+        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:lp:q:sz:t:uvm', ['blank','qt=','topology=','update=','nodetype=','nodes=','dombias=','domvalue=','domweight=','elite', 'lqr', 'steadystate','mutate=','mutgauss','noise=','nodes_per_input=','network=','nostrip','plotbpg=','pf=','plotnets=','plotsignals=','unroll','radius=','toponly','movie=','sim=','states=', 'fitness=', 'plotpi=', 'plotfc='])
         log.debug('opts %s', opts)
         log.debug('args %s', args)
         # print help for no args
@@ -180,10 +180,11 @@ def main():
     max_simsecs = 0
     mutationRate = 0
     numberOfGenerations = 0
-    gaussNoise = 0.005
+    gaussNoise = None
     strip = 1
     lqr = 0
     blank = 0
+    mutgauss = 0
     for o, a in opts:
         log.debug('parsing %s %s',o,a)
         if o == '-c':
@@ -251,6 +252,8 @@ def main():
             ga = 'steady-state'
         elif o == '--mutate':
             mutationRate = float(a)
+        elif o == '--mutgauss':
+            mutgauss = 1
         elif o == '--noise':
             gaussNoise = float(a)
         elif o == '--nostrip':
@@ -261,7 +264,7 @@ def main():
             plotbpg = a
         elif o == '--plotnets':
             plotnets = a
-        elif o == '--plotfitness':
+        elif o == '--pf':
             plotfitness = a
         elif o == '--plotpi':
             plotpi = a
@@ -302,7 +305,7 @@ def main():
     if g_index != None and not runsim and not plotbpg and not plotnets:
         log.critical('What do you want me to do with that individual?')
         return 1
-        
+
     # before we do anything, fork if necessary
     if (master or client) and background:
         daemon.createDaemon()
@@ -341,39 +344,44 @@ def main():
         elif topology == '3d':
             num_nodes = num_nodes**3
 
-        new_node_arg_class_map = { 'sigmoid' : node.SigmoidNode, 'logical':
-                node.LogicalNode,'beer' : node.BeerNode}
+        new_node_arg_class_map = {
+                'sigmoid' : node.SigmoidNode,
+                'logical': node.LogicalNode,
+                'beer' : node.BeerNode,
+                'sine' : node.SineNode }
         new_node_class = new_node_arg_class_map[nodetype]
-        if new_node_class is node.SigmoidNode or new_node_class is node.BeerNode:
-            new_node_args = PersistentMapping(
-                    { 'weightDomain' : domweight,
-                      'quanta': quanta })
+
+        new_node_args = {}
+        if new_node_class in [node.SigmoidNode, node.BeerNode, node.SineNode]:
+            new_node_args = {
+                    'weightDomain' : domweight,
+                    'quanta': quanta }
             if new_node_class is node.BeerNode:
                 new_node_args['biasDomain'] = dombias
         elif new_node_class is node.LogicalNode:
-            new_node_args = PersistentMapping(
-                    { 'numberOfStates': numberOfStates })
-        new_network_args = PersistentMapping(
-                { 'num_nodes' : num_nodes,
-                  'num_inputs' : num_inputs,
-                  'num_outputs' : num_outputs,
-                  'new_node_class': new_node_class,
-                  'new_node_args' : new_node_args,
-                  'topology' : topology,
-                  'update_style' : update_style,
-                  'radius' : radius })
+            new_node_args = { 'numberOfStates': numberOfStates }
+
+        new_network_args = {
+                'num_nodes' : num_nodes,
+                'num_inputs' : num_inputs,
+                'num_outputs' : num_outputs,
+                'new_node_class': new_node_class,
+                'new_node_args' : new_node_args,
+                'topology' : topology,
+                'update_style' : update_style,
+                'radius' : radius }
 
         # create defaults
         if not max_simsecs : max_simsecs = 30
         if not mutationRate: mutationRate = 0.05
         if not numberOfGenerations: numberOfGenerations = 100
+        if gaussNoise == None: gaussNoise = 0.005
 
-        new_sim_args = PersistentMapping ({ 'max_simsecs' : max_simsecs ,
-                                            'gaussNoise' : gaussNoise})
+        new_sim_args = { 'max_simsecs' : max_simsecs,
+                         'gaussNoise' : gaussNoise}
         if simulation == 'bpg':
             new_individual_fn = bpg.BodyPartGraph
-            new_individual_args = PersistentMapping(
-                    { 'network_args' : new_network_args })
+            new_individual_args = { 'network_args' : new_network_args }
             new_sim_fn = sim.BpgSim
             new_sim_args['fitnessName'] = fitnessFunctionName
         elif simulation == 'pb':
@@ -384,6 +392,7 @@ def main():
         root[g] = evolve.Generation(popsize, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args, ga, mutationRate)
 
         root[g].setFinalGeneration(numberOfGenerations)
+        root[g].mutgauss = mutgauss
         log.debug('committing all subtransactions')
         transaction.commit()
         log.debug('commit done, end of create_initial_population')
@@ -421,12 +430,12 @@ def main():
             log.critical('which generation?')
             return 1
         if plotfitness:
-            plotGenerationVsFitness(root[g], plotfitness)
+            plotGenerationVsFitness(root[g], plotfitness, g)
         elif plotpi:
-            plotMutationVsProbImprovement(root[g], plotpi)
+            plotMutationVsProbImprovement(root[g], plotpi, g)
         elif plotfc:
-            plotMutationVsFitnessChange(root[g], plotfc)
-    
+            plotMutationVsFitnessChange(root[g], plotfc, g)
+
     if plotbpg or plotnets:
         if not g:
             log.critical('which generation?')
@@ -451,17 +460,34 @@ def main():
             l.sort()
             for (k,i) in l:
                 if isinstance(i, evolve.Generation):
-                    print 'Generation: %s [ga=%s gen=%d/%d max=%s]'%(k, i.ga, i.gen_num, i.final_gen_num, i.getMaxIndividual()) #,i
+                    print 'Generation: %s [ga=%s gen=%d/%d max=%s]'%(k, i.ga,
+                            i.gen_num, i.final_gen_num, i.getMaxIndividual())
         else:
             # print list of individuals in a generation
-            print 'Num\t| Score'
+            print 'Num\tScore\tP.score\tMutations'
             for i in range(len(root[g])):
-                print '%d\t| %s'%(i, str(root[g][i].score))
-            print 'Generation: name=%s ga=%s gen=%d final_gen_num=%d'%(g, root[g].ga,
+                b = root[g][i]
+                f = b.score
+                pf = b.parentFitness
+                if pf == None:
+                    s_pf = 'X'
+                else:
+                    s_pf = ' %.2f'%pf
+                if f == None:
+                    s_f = 'X'
+                else:
+                    s_f = '%.2f'%f
+                s_m = 'X'
+                if b.mutations != None:
+                    s_m = '%d'%b.mutations
+                print '%d\t%s\t%s\t%s'%(i, s_f, s_pf, s_m)
+            print 'Generation: name=%s ga=%s gen=%d/%d'%(g, root[g].ga,
                                                           root[g].gen_num,
                                                           root[g].final_gen_num)
             if root[g].updateInfo[2]:
-                print 'Generation is currently being updated on %s, update running for %d seconds'%(root[g].updateInfo[0], time.time() - root[g].updateInfo[1])
+                print 'Generation is currently being updated on %s, update '\
+                        'running for %d seconds'%(root[g].updateInfo[0],
+                                time.time() - root[g].updateInfo[1])
 
     if client or master:
         log.debug('master/client mode')
@@ -493,8 +519,8 @@ def main():
             secs = max_simsecs
         else:
             secs = root[g].new_sim_args['max_simsecs']
-        # FIXME: cant override gaussNoise on cmdline
-        gaussNoise = root[g].new_sim_args['gaussNoise']
+        if gaussNoise == None:
+            gaussNoise = root[g].new_sim_args['gaussNoise']
         if root[g].new_sim_fn == sim.BpgSim:
             if not fitnessFunctionName:
                 fitnessFunctionName = root[g].new_sim_args['fitnessName']

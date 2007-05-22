@@ -107,7 +107,7 @@ class MyApp(QApplication):
             self.sim.step()
             self.steps += 1
         # we tell it explicitly when to record a frame, otherwise spurious
-        # repaints with cause the movie to go out of sync with the physics
+        # repaints will cause the movie to go out of sync with the physics
         if self.glwidget.record and (self.frameno==0):
             self.glwidget.record_this_frame = 1
         self.frameno = (self.frameno + 1)%5
@@ -117,6 +117,6 @@ class MyApp(QApplication):
         if self.steps % 25 == 0:
             if self.sim.max_simsecs:
                 self.window.progressBar1.setProgress(round(self.sim.total_time))
-            self.window.score_label.setText('%.3f'%self.sim.score)
+            self.window.score_label.setText('%.1f : %.3f'%(self.sim.total_time, self.sim.score))
         if self.sim.finished:
             self.quit()

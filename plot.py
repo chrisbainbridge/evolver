@@ -51,6 +51,7 @@ def stripTraceFile(tracefile):
     l = s.tolist()[0]
     b = [x > 0.025 for x in l]
     log.info('stripping flat signals %s', [x for x in labels if not b[labels.index(x)]])
+    log.info('leaving %s', [x for x in labels if b[labels.index(x)]])
 
     fi.seek(0)
     fo = open('strip.trace', 'w')
@@ -66,7 +67,7 @@ def stripTraceFile(tracefile):
             if b[x]:
                 t += '%s '%vals[x]
         fo.write(t+'\n')
-    
+
     fi.close()
     fo.close()
     os.rename(tracefile, tracefile+'.bak')
@@ -121,7 +122,7 @@ def plotSignals(tracefile, quanta=0):
             s += """
             set yrange %s
             set ytics nomirror %s
-            set label "%s" at graph -0.08, graph 0.5 # font "courier,10" 
+            set label "%s" at graph -0.08, graph 0.5 # font "courier,10"
             plot "%s" using 1:%d notitle with %s linestyle 1
             unset label
             """%(yrange, ytics, labels[i], tracefile, i+1, style)
@@ -134,27 +135,27 @@ def plotSignals(tracefile, quanta=0):
     log.info('generated %s', fnames)
     return fnames
 
-def gnuplotSetup(filename):
+def gnuplotSetup(filename, genName):
     view = 0
     if filename == '-':
         view = 1
-        filename = 'tmp.pdf'
+        filename = 'tmp-%s.pdf'%genName
     (fbase, ext) = os.path.splitext(filename)
     gnuplotFile = fbase + '.gnuplot'
     datFile = fbase + '.dat'
     return (view, fbase, ext, gnuplotFile, datFile)
 
-def gnuplot(gnuplotFile, ext, view, datFile):
+def gnuplot(gnuplotFile, ext, view, datFile, fbase):
     if ext != '.gnuplot':
         assert ext == '.pdf'
         os.system('gnuplot %s'%(gnuplotFile))
         os.remove(gnuplotFile)
         os.remove(datFile)
         if view:
-            os.system('kpdf tmp.pdf')
+            os.system('kpdf %s.pdf'%fbase)
 
-def plotGenerationVsFitness(g, outputFilename):
-    (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename)
+def plotGenerationVsFitness(g, outputFilename, genName):
+    (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename, genName)
 
     fdat = open(datFile, 'w')
     gen = 0
@@ -176,10 +177,10 @@ def plotGenerationVsFitness(g, outputFilename):
     f.write(s)
     f.close()
 
-    gnuplot(gnuplotFile, ext, view, datFile)
+    gnuplot(gnuplotFile, ext, view, datFile, fbase)
 
-def plotMutationVsProbImprovement(g, outputFilename):
-    (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename)
+def plotMutationVsProbImprovement(g, outputFilename, genName):
+    (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename, genName)
 
     improved = {}
     total = {}
@@ -190,7 +191,7 @@ def plotMutationVsProbImprovement(g, outputFilename):
         if childFitness > parentFitness:
             improved[mutations] += 1
         total[mutations] += 1
-    
+
     fdat = open(datFile, 'w')
     for m in total:
         pi = float(improved[m]) / total[m]
@@ -212,10 +213,10 @@ def plotMutationVsProbImprovement(g, outputFilename):
     f.write(s)
     f.close()
 
-    gnuplot(gnuplotFile, ext, view, datFile)
+    gnuplot(gnuplotFile, ext, view, datFile, fbase)
 
-def plotMutationVsFitnessChange(g, outputFilename):
-    (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename)
+def plotMutationVsFitnessChange(g, outputFilename, genName):
+    (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename, genName)
 
     fdat = open(datFile, 'w')
     mn = 0
@@ -243,7 +244,7 @@ def plotMutationVsFitnessChange(g, outputFilename):
     f.write(s)
     f.close()
 
-    gnuplot(gnuplotFile, ext, view, datFile)
+    gnuplot(gnuplotFile, ext, view, datFile, fbase)
 
 def dot(filename, s):
     "Write string s to a file and run dot"
@@ -301,7 +302,7 @@ def plotNetworks(bg, filename, toponly):
     # plot inter-bodypart (node.external_input) edges here
     for bp in bg.bodyparts:
         sources = bg.getInputs(bp)
-        for (tsignal, (sbp, signal)) in sources:
+        for (tsignal, (sbp, signal, w)) in sources:
             sbp_i = bg.bodyparts.index(sbp)
             tbp_i = bg.bodyparts.index(bp)
             if isinstance(tsignal, node.Node):
@@ -310,16 +311,20 @@ def plotNetworks(bg, filename, toponly):
             else:
                 ts = str(tsignal)
             if type(signal) is str:
-                s += ' bp%d_%s -> bp%d_%s\n'%(sbp_i, signal, tbp_i, ts)
+                s += ' bp%d_%s -> bp%d_%s'%(sbp_i, signal, tbp_i, ts)
             else: # node
-                s += ' bp%d_%d -> bp%d_%s\n'%(sbp_i, sbp.network.index(signal), tbp_i, ts)
+                s += ' bp%d_%d -> bp%d_%s'%(sbp_i, sbp.network.index(signal), tbp_i, ts)
+            color = weightToColor(w)
+            s += '[%s]\n'%color
+#            import pdb
+#            pdb.set_trace()
 
     # plot bpg topology
     for i in range(len(bg.bodyparts)):
         targets = [ e.child for e in bg.bodyparts[i].edges ]
         for t in targets:
             ti = bg.bodyparts.index(t)
-            s += ' bp%d_0 -> bp%d_0 [ltail=cluster%d, lhead=cluster%d, color=red]\n'%(i, ti, i, ti)
+            s += ' bp%d_0 -> bp%d_0 [ltail=cluster%d, lhead=cluster%d, style=dashed]\n'%(i, ti, i, ti)
 
     s += '}\n'
 
@@ -355,13 +360,16 @@ def plotBpg(bg, filename=None, toponly=0):
             s += ' '*4 + 'n%d -> n%d [label="%s"]\n' % (i, child_index, label)
         # plot all incoming sensory edges
         sources = bg.getInputs(bp)
-        for (tsignal, (sbp, ssignal)) in sources:
+        for (tsignal, (sbp, ssignal, w)) in sources:
             if toponly:
                 label = ''
             else:
                 if isinstance(ssignal, str):
                     slabel = ssignal
                 else:
+                    if not ssignal in sbp.network:
+                        # not everything in input_map is valid, so skip it
+                        continue
                     slabel = 'bp%d-%d'%(bg.bodyparts.index(sbp), sbp.network.index(ssignal))
                 if isinstance(tsignal, str):
                     tlabel = tsignal
@@ -391,6 +399,17 @@ def plotNodes(net, toponly=0, prefix='n'):
             s += '  %s%d [label="%s"]\n'%(prefix, i, label)
     return s
 
+def weightToColor(x):
+    x = x/7
+    if x<0:
+        r = abs(x)
+        g = 0
+    else:
+        r = 0
+        g = x
+    def tohex(x): return hex(int(round(abs(x)*255)))[2:].zfill(2)
+    return 'color="#%s%s00"'%(tohex(r), tohex(g))
+
 def plotEdges(net, toponly=0, prefix='n'):
     s = ''
     done = {}
@@ -413,14 +432,17 @@ def plotEdges(net, toponly=0, prefix='n'):
                     except KeyError:
                         pass
                 if edge_label:
-                    s += '  %s%d -> %s%d [label="%s"]\n'%(prefix, src_index, prefix, target_index, edge_label)
+#                    s += '  %s%d -> %s%d [label="%s"]\n'%(prefix, src_index, prefix, target_index, edge_label)
+                    x = float(edge_label)
+                    color = weightToColor(x)
+                    s += '  %s%d -> %s%d [%s]\n'%(prefix, src_index, prefix, target_index, color)
                 elif toponly:
                     s += '  %s%d -> %s%d [dir=none]\n'%(prefix, src_index, prefix, target_index) # or dir=both
                 else:
                     s += '  %s%d -> %s%d\n'%(prefix, src_index, prefix, target_index)
                 done[(src_index, target_index)] = 1
     return s
-    
+
 def plotNetwork(net, filename=None, toponly=0):
     """Dump this network as a (graphviz) dot file."""
     log.debug('dumping network to %s in dot graph format', filename)

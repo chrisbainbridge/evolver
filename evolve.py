@@ -14,6 +14,7 @@ import os
 from numpy import matrix
 
 import cluster
+import rand
 
 from persistent import Persistent
 from persistent.list import PersistentList
@@ -38,7 +39,7 @@ class HostData(Persistent):
 class Generation(PersistentList):
 
     # cons sig must be ok when called with only self,size args due to
-    # assumptions of UserList.__getslice__ 
+    # assumptions of UserList.__getslice__
 
     def __init__(self, sizeOrList, new_individual_fn=None, new_individual_args=None, new_sim_fn=None, new_sim_args=None, ga='elite', mutationRate=0.01):
         """Create an initial generation
@@ -62,7 +63,7 @@ class Generation(PersistentList):
             x = new_individual_fn(**dict(new_individual_args))
             x.score = None
             x.parentFitness = None
-            x.numberOfMutations = None
+            x.mutations = None
             x.createdInGeneration = 0
             self.append(x)
             transaction.savepoint()
@@ -76,6 +77,7 @@ class Generation(PersistentList):
             self.hostData[hostname] = HostData()
         self.mutationStats = PersistentList() # (parentFitness, mutations, childFitness)
         self.statList = PersistentList()
+        self.mutgauss = 0
 
     def setFinalGeneration(self, extraGenerations):
         "Set final generation number, relative to current one"
@@ -83,16 +85,16 @@ class Generation(PersistentList):
 
     def recordStats(self):
         "Record statistics"
-        fitnessValues = [x.score for x in self if x.score != None]
+        fitnessValues = [x.score for x in self if x.score != None and x.score != -1]
         m = matrix([fitnessValues])
         if len(self.fitnessList) > self.gen_num:
             self.fitnessList = self.fitnessList[:self.gen_num]
         self.fitnessList.append((m.min(), m.mean(), m.max()))
         for bg in self.statList:
             assert isinstance(bg.parentFitness, float) or isinstance(bg.parentFitness, int)
-            assert isinstance(bg.numberOfMutations, int)
+            assert isinstance(bg.mutations, int)
             assert isinstance(bg.score, float) or isinstance(bg.score, int)
-            ms = (bg.parentFitness, bg.numberOfMutations, bg.score)
+            ms = (bg.parentFitness, bg.mutations, bg.score)
             self.mutationStats.append(ms)
         del self.statList[:]
 
@@ -106,15 +108,12 @@ class Generation(PersistentList):
         "Always generates a mutated child (m>0)"
         # don't save identical children. shortcut by forcing m>0.
         while 1:
-            m = child.mutate(self.mutationRate)
-            if not m:
-                log.warn('child is identical to parent, mutation rate is too low')
-            else:
+            child.mutate(self.mutationRate)
+            if child.mutations:
                 break
-        child.numberOfMutations = m
+            log.warn('identical child, mutation rate too low, trying again')
         self.statList.append(child)
-        log.debug('mutateChild created %d mutations', m)
-        return m
+        log.debug('mutateChild created %d mutations', child.mutations)
 
     def elitistUpdate(self):
         """Elitist GA.
@@ -124,7 +123,7 @@ class Generation(PersistentList):
         # update function must copy from self.prev_gen to self
         log.debug('elitistUpdate()')
         # 10% seems to be good for bpgs
-        num_elites = max(int(round(len(self.prev_gen)/100.0*50)), 1)
+        num_elites = max(int(round(len(self.prev_gen)*0.2)), 1)
         log.debug('%d elites',num_elites)
 
         # copy the elites into next generation
@@ -133,7 +132,7 @@ class Generation(PersistentList):
         for x in self.prev_gen[:num_elites]:
             y = copy.deepcopy(x)
             y.parentFitness = x.score
-            y.numberOfMutations = 0
+            y.mutations = 0
             self.append(y)
             transaction.savepoint()
             log.info('.' * count)
@@ -144,7 +143,7 @@ class Generation(PersistentList):
         for j in range(num_elites, len(self.prev_gen)):
             p = self.prev_gen[j%num_elites]
             child = copy.deepcopy(p)
-            m = self.mutateChild(child)
+            self.mutateChild(child)
             assert p.score != None
             child.parentFitness = p.score
             self.append(child)
@@ -196,16 +195,26 @@ class Generation(PersistentList):
         log.debug('evaluate')
         if type(x) is int:
             x = self[x]
-        if x.numberOfMutations == 0 and x.parentFitness != None:
-            log.debug('child same as parent, skip eval, fitness = %f', x.parentFitness)
-            x.score = x.parentFitness
-            return
+#        if x.mutations == 0 and x.parentFitness != None:
+#            log.debug('child is parent (elite?), skip eval, fitness = %f', x.parentFitness)
+#            x.score = x.parentFitness * 0.95
+#            return
+#        x.score = self.runSim(x)
         s0 = self.runSim(x)
-        if s0 == -1:
-            x.score = -1
-            return
         s1 = self.runSim(x)
-        x.score = matrix([s0, s1]).mean()
+        s2 = self.runSim(x)
+        x.score = min(s0,s1,s2)
+        return
+#        s0 = self.runSim(x)
+#        if s0 == -1:
+#            x.score = -1
+#            return
+#        s1 = self.runSim(x)
+#        x.score = matrix([s0, s1]).mean()
+#        x.score = min(s0,s1)
+#        l = min(s0,s1)
+#        h = max(s0,s1)
+#        print (h-l)/l
 
     def steadyStateClientInnerLoop(self):
         log.debug('steadyStateClientLoop')
@@ -227,7 +236,7 @@ class Generation(PersistentList):
 
         x = random.choice(self)
         y = copy.deepcopy(x)
-        m = self.mutateChild(y)
+        self.mutateChild(y)
         self.evaluate(y)
         log.debug('steady state eval done, score %f', y.score)
         assert x.score != None
@@ -300,6 +309,9 @@ class Generation(PersistentList):
         self.generations which is persistent
         (root['runs']['run_name'].generations)."""
 
+        rand.mutgauss = 0
+        if self.mutgauss:
+            rand.mutgauss = 1
         while 1:
             try:
                 transaction.begin()

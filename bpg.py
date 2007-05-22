@@ -14,10 +14,11 @@ from ode import Infinity
 from cgkit.cgtypes import vec3
 import network
 import node
+from rand import rnd, randomVec3, randomQuat, randomAxis
 
-BPG_MAX_NODES = 4
+BPG_MAX_NODES = 8
 BPG_MAX_EDGES = 6
-BP_MAX_RECURSIVE_LIMIT = 2
+BP_MAX_RECURSIVE_LIMIT = 3
 BP_MIN_LENGTH = 3
 BP_MAX_LENGTH = 10
 BPG_MIN_UNROLLED_BODYPARTS = 2
@@ -54,6 +55,7 @@ def unroll_bodypart_copy(bp_o, skipNetwork):
     bp_c._v_instance_count = bp_o._v_instance_count
     assert bp_c._v_instance_count != None
     bp_c.genotype = bp_o
+    bp_c.isRoot = 0
     return bp_c
 
 def unroll_bodyparts(bp_o, bpg_c, bp_c, skipNetwork):
@@ -98,6 +100,7 @@ def unroll_bodypart(bp_o, skipNetwork):
         bp_o._v_instance_count += 1
         assert bp_c
         bpg_c.root = bp_c
+        bpg_c.root.isRoot = 1
         bpg_c.bodyparts.append(bp_c)
         log.debug('unroll: added root bp')
         unroll_bodyparts(bp_o, bpg_c, bp_c, skipNetwork)
@@ -105,20 +108,6 @@ def unroll_bodypart(bp_o, skipNetwork):
     else:
         log.warn('unroll_bodypart: empty bpg')
     return bpg_c
-
-def randomVec3():
-    "Create a random normalised vector"
-    try:
-        v = vec3(random.uniform(-1,1), random.uniform(-1,1), random.uniform(-1,1)).normalize()
-    except:
-        v = vec3(1,0,0)
-    return v
-
-def randomQuat():
-    "Create a random quaternion (vector and angle)"
-    radians = random.uniform(0, 2*math.pi)
-    v = randomVec3()
-    return (radians, tuple(v))
 
 class BodyPart(Persistent):
     """Part of the articulated body. Geometry is a capped cylinder.
@@ -145,7 +134,8 @@ class BodyPart(Persistent):
         self.mutations = 0
         self.mutate(1)
         self.motor_input = PersistentList([None,None,None])
-        
+        self.isRoot = 0
+
     def destroy(self):
         self.network.destroy()
         del self.edges
@@ -164,35 +154,43 @@ class BodyPart(Persistent):
     def mutate(self, p):
         "Mutate BodyPart parameters with probability p"
         attrs = {
-            'scale' : 'random.uniform(0.2, 5.0)',
+            'scale' : 'rnd(0.2, 5.0, self.scale)',
             'recursive_limit' : 'random.randint(0, BP_MAX_RECURSIVE_LIMIT)',
             'joint' : "random.choice(['hinge','universal','ball'])",
-            'axis1' : 'tuple(vec3(random.uniform(-1,1), random.uniform(-1,1), 0).normalize())',
-            'axis2' : 'tuple(vec3((0,0,1)).cross(vec3(self.axis1)))',
-            'ball_rot' : 'randomQuat()',
-            'rotation' : 'randomQuat()',
-            'lostop' : 'random.uniform(0, -math.pi)',
+            'axis1' : 'randomAxis(self.axis1)',
+            'ball_rot' : 'randomQuat(self.ball_rot)',
+            'rotation' : 'randomQuat(self.rotation)',
+            # not using the rest atm
+            'lostop' : 'rnd(0, -math.pi, self.lostop)',
             # axis1 angle must be in -pi/2..pi/2 to avoid a singularity in ode
-            'lostop2' : 'random.uniform(0, -math.pi/2)',
-            'lostop3' : 'random.uniform(0, -math.pi)',
-            'histop' : 'random.uniform(0, math.pi)',
-            'histop2' : 'random.uniform(0, math.pi/2)',
-            'histop3' : 'random.uniform(0, math.pi)',
-            'friction_mu' : 'random.uniform(50, 600)',
+            'lostop2' : 'rnd(0, -math.pi/2, self.lostop2)',
+            'lostop3' : 'rnd(0, -math.pi, self.lostop3)',
+            'histop' : 'rnd(0, math.pi, self.histop)',
+            'histop2' : 'rnd(0, math.pi/2, self.histop2)',
+            'histop3' : 'rnd(0, math.pi, self.histop3)',
+            'friction_mu' : 'rnd(50, 600, self.friction_mu)',
             }
-        
+        if not hasattr(self, 'scale'):
+            for k in attrs.keys():
+                setattr(self, k, None)
+
         mutations = 0
         for attr in attrs:
             if random.random() < p:
                 setattr(self, attr, eval(attrs[attr]))
                 mutations += 1
         # we need to force recalc of axis2 if axis1 changed
-        self.axis2 = eval(attrs['axis2'])
+        self.axis2 = tuple(vec3((0,0,1)).cross(vec3(self.axis1)))
         # ensure stop2 is valid to avoid singularity
         if self.lostop2 > self.histop2:
             t = self.lostop2
             self.lostop2 = self.histop2
             self.histop2 = t
+        stops = ((self.lostop,self.histop),(self.lostop2,self.histop2),(self.lostop3,self.histop3))
+        for (l,h) in stops:
+#            print l,h
+            if h<l:
+                print 'stop ineffective'
         # mutate control network
         if p:
             self.mutations += self.network.mutate(p)
@@ -202,9 +200,19 @@ class BodyPart(Persistent):
         motors = { 'hinge' :     ['MOTOR_2'],
                    'universal' : ['MOTOR_0', 'MOTOR_1'],
                    'ball' :      ['MOTOR_0', 'MOTOR_1', 'MOTOR_2'] }
+        if self.isRoot:
+            return []
         return motors[self.joint]
-        
+
     motors = property(getMotors)
+
+    def getJointAxes(self):
+        jointAxes = { 'hinge' : [2], 'universal' : [0,1], 'ball' : [0,1,2] }
+        if self.isRoot:
+            return []
+        return jointAxes[self.joint]
+
+    jointAxes = property(getJointAxes)
 
 class BodyPartGraph(Persistent):
     """A collection of BodyParts joined by edges."""
@@ -224,14 +232,14 @@ class BodyPartGraph(Persistent):
     def destroy(self):
         for bp in self.bodyparts:
             bp.destroy()
-            
+
     def step(self):
         for bp in self.bodyparts:
             bp.network.step()
         for bp in self.bodyparts:
             if hasattr(bp, 'motor'):
                 bp.motor.step()
-                
+
     def randomInit(self, network_args):
         while 1:
             # create graph randomly
@@ -243,6 +251,7 @@ class BodyPartGraph(Persistent):
                 self.bodyparts.append(bp)
             # randomly select the root node
             self.root = random.choice(self.bodyparts)
+            self.root.isRoot = 1
             root_index = self.bodyparts.index(self.root)
             # possible n^2 connections
             num_connects = random.randint(1, BPG_MAX_EDGES)
@@ -277,7 +286,7 @@ class BodyPartGraph(Persistent):
 
     def getNeighbours(self, bp):
         """Calculate the set of valid neighbour bodyparts of bp
-        
+
         A bodypart is a neighbour of bp if it is a parent or child in the
         bodypartgraph, or if it is bp itself."""
         assert bp in self.bodyparts
@@ -294,7 +303,7 @@ class BodyPartGraph(Persistent):
 
     def connectInputNodes(self, sanitycheck=1):
         """Connect all sensory input nodes up to something.
-        
+
         If the bpg is already unrolled, then it is a phenotype and the results
         won't be backannotated to the genotype input_map. If anything is left
         unconnected, an assert error will be thrown.
@@ -302,7 +311,7 @@ class BodyPartGraph(Persistent):
         If the bpg isn't already unrolled, then it will be, and any missing
         connections will be randomly selected and backannotated into the
         genotype input_map, so that later calls to unroll and connect will be
-        able to succeed in connecting every input node up.        
+        able to succeed in connecting every input node up.
         """
         log.debug('BodyPartGraph.connectInputNodes(self=%s)', self)
         if self.unrolled:
@@ -317,7 +326,7 @@ class BodyPartGraph(Persistent):
         for bp in p_bpg.bodyparts:
             for i in 0,1,2:
                 if bp.motor_input[i]:
-                    (b,s) = bp.motor_input[i]
+                    (b,s,w) = bp.motor_input[i]
                     assert b in p_bpg.bodyparts
         log.debug('p_bpg=%s (bodyparts=%s)'%(p_bpg, p_bpg.bodyparts))
         # find all unconnected nodes
@@ -334,21 +343,21 @@ class BodyPartGraph(Persistent):
                 assert g_dst_signal in g_bp.network.inputs
             else:
                 g_dst_signal = p_dst_signal
-            # is there an entry in g_bp.input_map for the target node/motor? 
+            # is there an entry in g_bp.input_map for the target node/motor?
             if not g_bp.input_map.has_key(g_dst_signal):
                 g_bp.input_map[g_dst_signal] = PersistentList()
             # are there matching maps for this phenotype topology?
             p_neighbours = p_bpg.getNeighbours(p_dst_bp)
             # find all neighbour bps with valid src bp,signal for this dst in input_map
-            matches = [ (g_src_bp, g_src_signal, p_src_bp) for (g_src_bp, g_src_signal) in g_bp.input_map[g_dst_signal] for p_src_bp in p_neighbours if p_src_bp.genotype is g_src_bp]
+            matches = [ (g_src_bp, g_src_signal, p_src_bp, weight) for (g_src_bp, g_src_signal, weight) in g_bp.input_map[g_dst_signal] for p_src_bp in p_neighbours if p_src_bp.genotype is g_src_bp]
 
             log.debug('input_map matches = %s', matches)
             p_source = None
-            for (g_src_bp, g_src_signal, p_src_bp) in matches:
-                log.debug('using prestored map g_src_bp=%s g_src_signal=%s', g_src_bp, g_src_signal)
+            for (g_src_bp, g_src_signal, p_src_bp, weight) in matches:
+                log.debug('using prestored map g_src_bp=%s g_src_signal=%s weight=%f', g_src_bp, g_src_signal, weight)
                 # convert genotype src signal to phenotype value
                 if type(g_src_signal) is str:
-                    p_source = (p_src_bp, g_src_signal)
+                    p_source = (p_src_bp, g_src_signal, weight)
                     break
                 else:
                     # find phenotype src node
@@ -362,7 +371,7 @@ class BodyPartGraph(Persistent):
                     # already exists internaly to the network
                     if not isinstance(p_dst_signal, node.Node) or p_src_node not in p_dst_signal.inputs:
                         # set source to a phenotype (bp,s)
-                        p_source = (p_src_bp, p_src_node)
+                        p_source = (p_src_bp, p_src_node, weight)
                         break
                     log.debug('rejected map - nodes already connected')
 
@@ -388,17 +397,19 @@ class BodyPartGraph(Persistent):
                 p_src_signal = random.choice(posSrcs)
                 if isinstance(p_dst_signal, node.Node):
                     assert p_src_signal not in p_dst_signal.inputs
-                p_source = (p_src_bp, p_src_signal)
+                weight = random.uniform(-7,7)
+                p_source = (p_src_bp, p_src_signal, weight)
 
                 # find genotype of the chosen phenotype (bp,s)
                 g_src_bp = p_src_bp.genotype
+                weight = random.uniform(-7,7)
                 if isinstance(p_src_signal, node.Node):
-                    # phenotype output node -> genotype output node 
+                    # phenotype output node -> genotype output node
                     # (depends on offsets being the same)
                     g_src_signal = g_src_bp.network[p_src_bp.network.index(p_src_signal)]
-                    genosource = (g_src_bp, g_src_signal)
+                    genosource = (g_src_bp, g_src_signal, weight)
                 else:
-                    genosource = (g_src_bp, p_src_signal)
+                    genosource = (g_src_bp, p_src_signal, weight)
 
                 log.debug('entering %s -> %s into bp.input_map', genosource, g_dst_signal)
                 # add to genotype.input_map our backannotated source
@@ -407,20 +418,26 @@ class BodyPartGraph(Persistent):
                 assert g_bp in [ pbp.genotype for pbp in p_bpg.bodyparts ]
 
             # add to signal target.
-            if isinstance(p_dst_signal, node.Node):
-                p_dst_signal.addExternalInput(p_source)
+            if isinstance(p_dst_signal, node.WeightNode):
+                (p_src_bp, p_src_signal, weight) = p_source
+                p_dst_signal.addExternalInput(p_src_bp, p_src_signal, weight)
+            elif isinstance(p_dst_signal, node.LogicalNode):
+                (p_src_bp, p_src_signal, weight) = p_source
+                p_dst_signal.addExternalInput((p_src_bp, p_src_signal))
             elif p_dst_signal[:6] == 'MOTOR_':
                 i = ord(p_dst_signal[6])-ord('0')
                 assert not p_dst_bp.motor_input[i]
-                (sbp, ssig) = p_source
+                (sbp, ssig, weight) = p_source
                 log.debug('p_bp.motor_input[%d]=(%s,%s)'%(i,sbp,ssig))
                 assert sbp in p_bpg.bodyparts
                 p_dst_bp.motor_input[i] = p_source
+            else:
+                assert 0
 
         for bp in p_bpg.bodyparts:
             for i in 0,1,2:
-                (b,s) = bp.motor_input[i]
-                log.debug('p_bpg.bodyparts[%d].motor_input[%d]=(%s,%s)'%(p_bpg.bodyparts.index(bp),i,b,s))
+                (b,s,w) = bp.motor_input[i]
+                log.debug('p_bpg.bodyparts[%d].motor_input[%d]=(%s,%s,%f)'%(p_bpg.bodyparts.index(bp),i,b,s,w))
                 assert b in p_bpg.bodyparts
 
         log.debug('/connectInputNodes, calling sanityCheck')
@@ -431,11 +448,17 @@ class BodyPartGraph(Persistent):
 
     def getInputs(self, bp):
         """Return a list of all the external inputs to bodypart bp.
-        
-        Returns: [ (targetbp, (srcbp, signal)), ... ]"""
+
+        Returns: [ (targetneuron, (srcbp, signal, weight), ... ]"""
 
         if self.unrolled:
-            sources = [ (neuron, externalInput) for neuron in bp.network.inputs for externalInput in neuron.externalInputs ]
+            s0 = [ (neuron, externalInput) for neuron in bp.network.inputs for externalInput in neuron.externalInputs ]
+            sources = []
+            for (n,e) in s0:
+                w = n.weights[e]
+                (b,s) = e
+                sources += [ (n,(bp,s,w)) ]
+#            print bp.motor_input
             if bp.joint == 'hinge':
                 sources += [ ('MOTOR_2', bp.motor_input[2]) ]
             elif bp.joint == 'universal':
@@ -444,6 +467,7 @@ class BodyPartGraph(Persistent):
                 sources += [ ('MOTOR_0', bp.motor_input[0]), ('MOTOR_1',bp.motor_input[1]), ('MOTOR_2', bp.motor_input[2])]
         else:
             sources = [ (neuron, src) for neuron in bp.input_map for src in bp.input_map[neuron] ]
+            # src is (bp,sig,wei)
             # remove invalid motor connections
             if bp.joint == 'hinge':
                 invalid = ['MOTOR_0', 'MOTOR_1']
@@ -452,7 +476,11 @@ class BodyPartGraph(Persistent):
             elif bp.joint == 'ball':
                 invalid = []
             sources = [(n,s) for (n,s) in sources if n not in invalid]
+#        print sources
 
+#        for (tsignal, (sbp, signal, w)) in sources:
+#            if isinstance(tsignal, node.Node):
+#                 x = tsignal.weights[(sbp,signal)]
         return sources
 
     def unroll(self, skipNetwork=0):
@@ -482,6 +510,7 @@ class BodyPartGraph(Persistent):
         # check everything we can reach from the root is in our bodypart list
         assert self.root in self.bodyparts
         bps = [self.root]
+        assert len([x for x in self.bodyparts if x.isRoot == 1]) == 1
         reachable = bps
         while bps:
             bp = bps[0]
@@ -523,7 +552,7 @@ class BodyPartGraph(Persistent):
             # check motor connections
             for i in 0,1,2:
                 assert bp.motor_input[i]
-                (sbp, src) = bp.motor_input[i]
+                (sbp, src, weight) = bp.motor_input[i]
                 assert sbp in phen_bpg.bodyparts
                 if isinstance(src, node.Node):
                     assert src in sbp.network.outputs
@@ -536,12 +565,13 @@ class BodyPartGraph(Persistent):
                 # Make sure all entries in input_map are valid bodyparts and neurons
                 for (tsignal, srclist) in bp.input_map.items():
                     assert tsignal in bp.network.inputs or tsignal[:5] == 'MOTOR'
-                    for (sbp, ssignal) in srclist:
+                    for (sbp, ssignal, w) in srclist:
                         assert sbp in self.bodyparts
                         if isinstance(ssignal, node.Node):
                             assert ssignal in sbp.network
                         else:
                             assert ssignal in ['JOINT_0', 'JOINT_1', 'JOINT_2', 'CONTACT']
+                        assert isinstance(w, float)
 
     def fixup(self):
         """Fix any problems with this BodyPartGraph (ie. invalid connections,
@@ -558,9 +588,13 @@ class BodyPartGraph(Persistent):
             for e in edges_to_remove:
                 bp.edges.remove(e)
         # make sure root exists
-        if self.root not in self.bodyparts:
+        if self.root not in self.bodyparts or len([x for x in self.bodyparts if x.isRoot == 1]) != 1:
             # randomly select the root node
+            for b in self.bodyparts:
+                b.isRoot = 0
             self.root = random.choice(self.bodyparts)
+            self.root.isRoot = 1
+        assert len([x for x in self.bodyparts if x.isRoot == 1]) == 1
         # remove input_map entries that are invalid
         for bp in self.bodyparts:
             if bp.input_map:
@@ -571,13 +605,13 @@ class BodyPartGraph(Persistent):
                     if tneuron not in bp.network.inputs:
                         del bp.input_map[tneuron]
                     else:
-                        for (sbp, sneuron) in srclist[:]:
+                        for (sbp, sneuron, w) in srclist[:]:
                             if sbp not in self.bodyparts or sneuron not in sbp.network:
-                                srclist.remove((sbp, sneuron))
+                                srclist.remove((sbp, sneuron, w))
         for bp in self.bodyparts:
             if bp.input_map:
                 for (tneuron, srclist) in bp.input_map.items():
-                    for (sbp, sneuron) in srclist:
+                    for (sbp, sneuron, w) in srclist:
                         assert sbp in self.bodyparts
 
         # check whether input_map entries are still valid
@@ -590,17 +624,33 @@ class BodyPartGraph(Persistent):
                     else:
                         # key is valid
                         toremove = []
-                        for (sbp, sig) in bp.input_map[k]:
+                        for (sbp, sig, w) in bp.input_map[k]:
                             # check sbp is ok and src is a string or output node
                             if sbp not in self.bodyparts or (isinstance(sig, node.Node) and sig not in sbp.network.outputs):
-                                toremove.append((sbp, sig))
+                                toremove.append((sbp, sig, w))
                         for x in toremove:
                             bp.input_map[k].remove(x)
                 for k in krm:
                     del bp.input_map[k]
 
         # fix input_map so all input nodes are connected
+#        assert len([x for x in self.bodyparts if x.isRoot == 1]) == 1
+#        for bp in self.bodyparts:
+#            for axis in (0,1,2):
+#                bad = []
+#                (b,s,w) = bp.motor_input[axis]
+#                if b not in self.bodyparts:
+#                    bp.motor_input[axis] = None
+#        for bp in self.bodyparts:
+#            try:
+#                bad = [ (bp.motor_input[i], x, item) for bp in self.bodyparts for i in (0,1,2) for x in len(bp.motor_input[i]) for item in bp.motor_input[i] if bp.motor_input[i][x][0] not in self.bodyparts ]
+#                for (mi, k, i) in bad:
+#                    mi[k].remove(i)
+#            except:
+#                import pdb
+#                pdb.set_trace()
         self.connectInputNodes()
+        assert len([x for x in self.bodyparts if x.isRoot == 1]) == 1
         self.sanityCheck()
 
     def mutate_delete_edges(self, p):
@@ -630,7 +680,7 @@ class BodyPartGraph(Persistent):
                 # entries in their genotype bp for their neighbours, so fixup
                 self.fixup()
                 self.sanityCheck()
-        
+
     def mutate_delete_nodes(self, p):
         "Randomly delete nodes in this BodyPartGraph with probability p"
         for i in range(len(self.bodyparts)-1, -1, -1):
@@ -650,6 +700,7 @@ class BodyPartGraph(Persistent):
                 self.bodyparts.remove(bp_del)
                 if bp_del == self.root:
                     self.root = random.choice(self.bodyparts)
+                    self.root.isRoot = 1
                 self.fixup()
                 self.sanityCheck()
 
@@ -693,10 +744,17 @@ class BodyPartGraph(Persistent):
                     log.debug('mutate input_map')
                     self.mutations += 1
                     di = random.choice(bp.input_map.keys())
-                    del bp.input_map[di]
+                    if random.random() < 0.5:
+                        del bp.input_map[di]
+                    elif bp.input_map[di]:
+                        xp = random.randrange(0,len(bp.input_map[di]))
+                        x = list(bp.input_map[di][xp])
+                        x[2] = random.uniform(-7,7)
+                        bp.input_map[di][xp] = tuple(x)
+
         self.connectInputNodes()
         self.sanityCheck()
-        
+
     def mutate(self, p):
         "Mutate the BodyPartGraph nodes, edges, and all parameters."
         log.debug('bpg.mutate(p=%f)', p)

@@ -12,7 +12,7 @@ from cgkit.cgtypes import vec3
 import test_common
 from test_common import *
 from network import Network, TOPOLOGIES
-from node import SigmoidNode, BeerNode, LogicalNode
+from node import SigmoidNode, BeerNode, LogicalNode, SineNode
 from plot import plotNetwork
 
 class NetworkTest(TestCase):
@@ -20,7 +20,7 @@ class NetworkTest(TestCase):
     def setUp(self):
         random.seed()
         self.fprefix = 'test/network_'
-    
+
     def dot(self, n, name):
         name = self.fprefix + name
         plotNetwork(n, name+'.dot')
@@ -34,7 +34,7 @@ class NetworkTest(TestCase):
         nc = ns[ns.find('.')+1:ns.rfind('\'')]
         s = '%s_%s'%(nc, top)
         self.dot(net, s)
-        
+
     def test_01_1d(self):
         self.do(4,1,1, '1d', 'async')
 
@@ -60,6 +60,7 @@ class NetworkTest(TestCase):
 if __name__ == "__main__":
     opts = {'--sigmoid' : (SigmoidNode, {}),
             '--beer' :    (BeerNode, {}),
+            '--sine' :    (SineNode, {}),
             '--logical' : (LogicalNode, {'numberOfStates':2})}
     nodet = None
     for a in opts:

@@ -10,7 +10,7 @@ import node
 import network
 
 CYLINDER_RADIUS = 1.0
-CYLINDER_DENSITY = 6.0
+CYLINDER_DENSITY = 1.0
 MAX_UNROLLED_BODYPARTS = 20
 SOFT_WORLD = 1
 JOINT_MAXFORCE = 8.0 * CYLINDER_DENSITY * CYLINDER_RADIUS
@@ -19,8 +19,6 @@ RELAX_TIME = 5.0
 
 log = logging.getLogger('sim')
 log.setLevel(logging.INFO)
-
-jointAxes = { 'hinge' : [2], 'universal' : [0,1], 'ball' : [0,1,2] }
 
 class MyMotor(ode.AMotor):
     def __init__(self, world, jointgroup=None):
@@ -44,34 +42,43 @@ class MyMotor(ode.AMotor):
         dy = self.desired_axisangle[1] % (2*math.pi)
         dz = self.desired_axisangle[2] % (2*math.pi)
         log.debug('MyMotor angles=(%f,%f,%f) desired_angles=(%f,%f,%f)'%(x, y, z, dx, dy, dz))
-        
-        vs =[0,0,0]
+
+#        vs =[0,0,0]
         for (x, param) in (0, ode.ParamVel), (1, ode.ParamVel2), (2, ode.ParamVel3):
-            a = self.getAngle(x) % (2*math.pi)
-            b = self.desired_axisangle[x] % (2*math.pi)
+            a = self.getAngle(x) #% (2*math.pi)
+            assert -math.pi <= a <= math.pi
+            b = self.desired_axisangle[x] #% (2*math.pi)
+#            print b
+            assert -math.pi <= b <= math.pi
             # go shortest way - figure out direction
             dist = abs(a-b)
-            d = -1
-            if dist < math.pi and a <= b or dist >= math.pi and a > b:
-                d = 1
-
+#            d = -1
+#            if dist < math.pi and a <= b or dist >= math.pi and a > b:
+#                d = 1
+            d = 1
+            if a > b:
+                d = -1
           # ignore axes that we don't control for each joint
             if type(self.joint) is ode.HingeJoint and x != 2 \
             or type(self.joint) is ode.UniversalJoint and x == 2:
                 self.setParam(param, 0)
             else:
-                # Proportional derivative controller. We have to estimate the 
+                # Proportional derivative controller. We have to estimate the
                 # angular velocity because Motor.getAngleRate() is unimplemented
                 # and joint.getAngleRate only works for HingeJoint
                 ang_vel = abs(a - self.old_angles[x])*HZ
+#                dif = abs(a-self.old_angles[x])
+#                if (dif>0.1): print dif
                 self.old_angles[x] = a
+
                 Kp = 10.0 # proportional constant
                 Kd = 7.0 # derivative constant
-                v = Kp * dist - Kd * ang_vel
-                v = max(v, 0)
-                vs[x]= d*v
-                self.setParam(param, d*v)
-                
+                dv = Kp * dist - Kd * ang_vel
+                dv = max(dv, 0)
+#                vs[x]= d * dv
+#                print dv
+                self.setParam(param, d*dv)
+
 class Sim(object):
     "Simulation class, responsible for everything in the physical sim."
 
@@ -127,7 +134,7 @@ class Sim(object):
 
     def handleCollide(self, args, geom1, geom2):
         """Callback function for the geometry collide() method
-        
+
         Finds intersection points and calls self.addContact with each"""
         log.debug('handleCollide')
         # calculate intersection points
@@ -162,7 +169,7 @@ class Sim(object):
             self.finished = 1
         else:
             self.updateFitness()
-        
+
 class BpgSim(Sim):
     "Simulate articulated bodies built from BodyPartGraphs"
 
@@ -173,16 +180,20 @@ class BpgSim(Sim):
         self.startpos = vec3(0, 0, 0)
         self.relaxed = 0
         self.prev_v = []
-        fitnessMap = { 'meandistance' : self.fitnessMeanDistance, 'cumulativez' : self.fitnessCumulativeZ, 'movement' : self.fitnessMovement }
+        fitnessMap = {
+                'meandistance' : self.fitnessMeanDistance,
+                'cumulativez' : self.fitnessCumulativeZ,
+                'movement' : self.fitnessMovement,
+                'walk' : self.fitnessWalk}
         if not fitnessName:
             fitnessName = 'meandistance'
         self.fitnessMethod = fitnessMap[fitnessName]
         self.relax_time = RELAX_TIME
         self.d = 0.0
         self.m = 0.0
-    
+
     def getMaxSimTime(self):
-        """max_simsecs attribute. add relax time to the sim time when set. 
+        """max_simsecs attribute. add relax time to the sim time when set.
             return the real full sim time so that it can be rendered correctly."""
         return self.max_simsecs_value
 
@@ -198,7 +209,6 @@ class BpgSim(Sim):
         self.siglog = open(fname, 'w')
         assert self.bpgs
         s = '# time '
-        # will need to change this when we have more than 1 bpg
         self.signals = []
         for bg in self.bpgs:
             for bp in bg.bodyparts:
@@ -212,17 +222,19 @@ class BpgSim(Sim):
                     l = 'bp%d-%d%s'%(bpi, bp.network.index(n), p)
                     s += '%s '%l
                     self.signals.append((bp,n))
-                if bp != bg.root:
-                    for m in bp.motors:
-                        s += 'bp%d-M%c '%(bpi, m[-1])
-                        self.signals.append((bp,m))
-                    axes = [ 'JOINT_%d'%j for j in jointAxes[bp.joint] ]
-                    for a in axes:
-                        s += 'bp%d-J%c '%(bpi, a[-1])
-                        self.signals.append((bp,a))
+#                if not bp.isRoot:
+#                if bp != bg.root:
+                for m in bp.motors:
+                    s += 'bp%d-M%c '%(bpi, m[-1])
+                    self.signals.append((bp,m))
+                axes = [ 'JOINT_%d'%j for j in bp.jointAxes ]
+                for a in axes:
+                    s += 'bp%d-J%c '%(bpi, a[-1])
+                    self.signals.append((bp,a))
                 s += 'bp%d-C '%(bpi)
                 self.signals.append((bp, 'CONTACT'))
         s += '\n'
+#        print s
         self.siglog.write(s)
 
     def addBP(self, bp, parent=None, joint_end=None):
@@ -239,9 +251,11 @@ class BpgSim(Sim):
             # if this is the root we have an absolute length,
             # root scale is relative to midpoint of min..max
             bp.length = bp.scale*(bpg.BP_MIN_LENGTH+(bpg.BP_MAX_LENGTH-bpg.BP_MIN_LENGTH)/2)
+            bp.isRoot = 1
         else:
             # otherwise child scale is relative to parent
             bp.length = parent.length * bp.scale
+            bp.isRoot = 0
         # limit the bp length
         bp.length = min(bp.length, bpg.BP_MAX_LENGTH)
         # mass along x axis, with length without caps==bp.length
@@ -253,7 +267,7 @@ class BpgSim(Sim):
         # aligned along z-axis by default!!
         geom = ode.GeomCCylinder(self.space, CYLINDER_RADIUS, bp.length)
         self.geoms.append(geom)
-        self.geom_contact[geom] = 0 
+        self.geom_contact[geom] = 0
         # remember parent for collison detection
         if not parent:
             geom.parent = None
@@ -337,19 +351,27 @@ class BpgSim(Sim):
             for ls, hs in (('lostop', 'histop'), ('lostop2', 'histop2'), ('lostop3', 'histop3')):
                 l = getattr(bp, ls)
                 h = getattr(bp, hs)
-                if type(l) in [float, int]:
-                    motor.setParam(stop_attrs[ls], l)
-                if type(h) in [float, int]:
-                    motor.setParam(stop_attrs[hs], h)
+#                if l != None:
+#                    motor.setParam(stop_attrs[ls], l)
+#                if h != None:
+#                    motor.setParam(stop_attrs[hs], h)
 
             # set joint axes
             maxforce = JOINT_MAXFORCE * bp.length * parent.length
+            maxforce = 5000
+#            maxforce = JOINT_MAXFORCE
+#            print maxforce
             log.debug('motor maxforce = %f', maxforce)
             if bp.joint == 'hinge':
                 # we have 3 points - parent body, joint, child body
                 # find the normal to these points
                 # (hinge only has 1 valid axis!)
-                axis1 = ((j_v-p_v).cross(j_v-c_v)).normalize()
+                try:
+                    axis1 = ((j_v-p_v).cross(j_v-c_v)).normalize()
+                except ZeroDivisionError:
+                    v = (j_v-p_v).cross(j_v-c_v)
+                    v.z = 1**-10
+                    axis1 = v.normalize()
                 log.debug('setting hinge joint axis to %s', axis1)
                 log.debug('hinge axis = %s', j.getAxis())
                 axis_inv = rotmat.inverse()*axis1
@@ -380,7 +402,7 @@ class BpgSim(Sim):
                 motor.setParam(ode.ParamFMax3, 0)
             elif bp.joint == 'ball':
                 # the ball rotation is an evolvable parameter, so the joint axes
-                # do evolve 
+                # do evolve
                 ball_rot = quat(bp.ball_rot[0], vec3(bp.ball_rot[1])).toMat3()
                 x = ball_rot * vec3((1, 0, 0))
                 y = ball_rot * vec3((0, 1, 0))
@@ -434,19 +456,19 @@ class BpgSim(Sim):
 
         num_bps = len(bpgraph.bodyparts)
         log.debug('BPGSim.setSolution: number of unrolled bodyparts = %d', num_bps)
-        if num_bps > MAX_UNROLLED_BODYPARTS:
-            log.warn('BPGSim.setSolution: num_bps (%d) > MAX_UNROLLED_BODYPARTS (%d)',
-                         num_bps,
-                         MAX_UNROLLED_BODYPARTS)
-            log.warn('Pruning bodyparts!')
-            while num_bps > MAX_UNROLLED_BODYPARTS:
-                # randomly remove bodyparts.. this should mix things up a bit
-                # and encourage smaller BPGs
-                num_bps = len(bpgraph.bodyparts)
-                i = random.randint(0, num_bps-1)
-                del bpgraph.bodyparts[i]
-            # fixup the unrolled, pruned bpg
-            bpgraph.fixup()
+#        if num_bps > MAX_UNROLLED_BODYPARTS:
+#            log.warn('BPGSim.setSolution: num_bps (%d) > MAX_UNROLLED_BODYPARTS (%d)',
+#                         num_bps,
+#                         MAX_UNROLLED_BODYPARTS)
+#            log.warn('Pruning bodyparts!')
+#            while num_bps > MAX_UNROLLED_BODYPARTS:
+#                 randomly remove bodyparts.. this should mix things up a bit
+#                 and encourage smaller BPGs
+#                num_bps = len(bpgraph.bodyparts)
+#                i = random.randint(0, num_bps-1)
+#                del bpgraph.bodyparts[i]
+#             fixup the unrolled, pruned bpg
+#            bpgraph.fixup()
 
         assert bpgraph.root
         # recursively add all bodyparts
@@ -499,6 +521,7 @@ class BpgSim(Sim):
 
     def fitnessCumulativeZ(self):
         # fitness is mean z over bodies over time
+        # per second
         total_z = 0.0
         count = 0
         for i in range(self.space.getNumGeoms()):
@@ -507,7 +530,8 @@ class BpgSim(Sim):
                 (x, y, z) = geom.getPosition()
                 total_z += z
                 count += 1
-        self.score += total_z
+        self.score += total_z/count*1/self.max_simsecs
+#        self.score += total_z/self.max_simsecs #/count*1/self.max_simsecs
 
     def meanPos(self, bpg):
         tx = 0.0
@@ -538,6 +562,20 @@ class BpgSim(Sim):
                 self.d += d / 500
             bp.lastPos = p
 
+    def fitnessWalk(self):
+        m = self.meanPos(self.bpgs[0])
+        y = m[0]
+        self.score = 0
+        self.fitnessMovement()
+        x = self.score
+        if not hasattr(self,'cumx'):
+            self.cumx = 0
+        self.cumx += x
+#        y = self.fitnessMeanDistance()
+        z = len(self.bpgs[0].bodyparts)
+#        print self.cumx/100,10*y,z
+        self.score = self.cumx/100 + 100*y + z
+
     def updateFitness(self):
         try:
             self.fitnessMethod()
@@ -546,7 +584,7 @@ class BpgSim(Sim):
         if type(self.score) not in [float, int]:
             log.critical('score is %s', self.score)
             assert type(self.score) in [float, int]
-        
+
     def fail(self, reason='sim blew up'):
         self.score = -1
         self.finished = 1
@@ -591,15 +629,20 @@ class BpgSim(Sim):
     def logSignals(self):
         if self.siglog:
             s = '%f '%self.total_time
+#            print self.signals
             for (bp,n) in self.signals:
                 if isinstance(n, node.Node):
                     s += '%f '%n.output
                 elif n[0] == 'M':
                     mi = ord(n[-1]) - ord('0')
                     s += '%f '%bp.motor.desired_axisangle[mi]
+#                    print n,bp.motor.desired_axisangle[mi]
                 elif n[0] == 'J' or n[0] == 'C':
                     v = self.getSensorValue(bp, n)
                     s += '%f '%v
+#                    if n[0]=='J':
+#                        v = self.getSensorValue(bp, 'JOINT_2')
+#                        print v
             self.siglog.write(s+'\n')
             self.siglog.flush()
 
@@ -634,6 +677,7 @@ class BpgSim(Sim):
             else:
                 mu = 0
         if mu:
+            mu = 300
             self.points.append((cpos, (0,1,1), mu/1000.0))
             c.setMu(mu)
             j = ode.ContactJoint(self.world, self.contactGroup, c)
@@ -643,13 +687,16 @@ class BpgSim(Sim):
         self.geom_contact[geom2] = 1
 
     def getSensorValue(self, sbp, src):
-        if src == 'CONTACT':
+        if isinstance(src, str) and src[0] == 'C':
             # sbp in contact with anything?
             value = self.geom_contact[sbp.geom]
-        elif type(src) is str and src[:6] == 'JOINT_':
+        elif isinstance(src, str) and src[0] == 'J':
             # sbp joint angle
-            if not hasattr(sbp.geom, 'motor'):
-                # this is the root; no joint with parent.
+#            if not hasattr(sbp.geom, 'motor'):
+#                 this is the root; no joint with parent.
+#                value = 0
+#                print 'X'
+            if sbp.isRoot == 1:
                 value = 0
             elif src == 'JOINT_0':
                 # angle of joint 0 with parent
@@ -660,13 +707,16 @@ class BpgSim(Sim):
             elif src == 'JOINT_2':
                 # angle of joint 2
                 value = sbp.motor.getAngle(2)
+            else:
+                log.critical('bad sensor')
             # scale value to [0,1]
             value = (value/math.pi+1)/2
         elif isinstance(src, node.Node):
             # network output node, in domain [0,1]
             value = src.output
+
         assert 0 <= value <= 1
-        
+
         # gaussian noise on sensors and motors
         noisyValue = random.gauss(value, self.gaussNoise)
         if noisyValue < 0: noisyValue = 0
@@ -684,7 +734,7 @@ class BpgSim(Sim):
 
           * Go through all BodyParts, for each motor, find connected
             OutputNode (if any) and get value."""
-                
+
         if not self.relaxed:
             e = self.relax()
             if e:
@@ -692,10 +742,10 @@ class BpgSim(Sim):
                 return
 
         self.logSignals()
-                
+
         for g in self.geom_contact:
             self.geom_contact[g] = 0 # reset contact sensors
-        
+
         # update sensor input values
         for bg in self.bpgs:
             for bp in bg.bodyparts:
@@ -709,12 +759,15 @@ class BpgSim(Sim):
                     motors = [0, 1, 2]
                 if hasattr(bp, 'motor') and bp.motor_input:
                     for mi in motors:
-                        (sbp, src) = bp.motor_input[mi]
+                        (sbp, src, weight) = bp.motor_input[mi]
                         v = self.getSensorValue(sbp, src)
-                        v = (v*2-1)*math.pi # map to -pi..pi
+                        assert 0 <= v <= 1
+                        assert -7 <= weight <= 7
+                        v = ((v-0.5)*2*weight/7)*math.pi # map to -pi..pi
+                        assert -math.pi <= v <= math.pi
                         bp.motor.desired_axisangle[mi] = v
 
-                # now do inputs to network 
+                # now do inputs to network
                 for n in bp.network.inputs:
                     for (sbp, src) in n.externalInputs:
                         v = self.getSensorValue(sbp, src)
@@ -730,18 +783,18 @@ class BpgSim(Sim):
 class LqrController:
     def __init__(self):
         """Create LQR controller.
-        
+
         The control matrix was derived in Octave.
         The NBAR input amplification factor was found through trial and error."""
         self.NBAR = -202.25
         self.K = matrix([[-202.25, -304.63, 2349.83, 1402.09]])
         self.U = 0.0
-        
+
     def calculateResponse(self, state):
         "Return error force correction from LQR control matrix applied to state"
-        fe = self.NBAR * self.U - self.K * state  
+        fe = self.NBAR * self.U - self.K * state
         return fe
-        
+
     def setReferenceInput(self, U):
         "Set the reference input - in this case, the desired cart position."
         self.U = U
@@ -759,7 +812,7 @@ class PoleBalanceSim(Sim):
         Sim.__init__(self, max_simsecs, gaussNoise)
         log.debug('init PoleBalance sim')
         self.network = net
-        
+
         CART_POSITION = (0, 0, 2)
         POLE_POSITION = (0, 0, 3+(5.0/2))
         CART_SIZE = (8, 8, 2)
@@ -768,9 +821,9 @@ class PoleBalanceSim(Sim):
         CART_MASS = 10
         POLE_MASS = 0.5
         self.MAXF = 1000
-        
+
         self.INIT_U = [] # initial force, eg [10000]
-        
+
         self.cart_geom = ode.GeomBox(self.space, CART_SIZE)
         self.geoms.append(self.cart_geom)
         self.cart_body = ode.Body(self.world)
@@ -779,7 +832,7 @@ class PoleBalanceSim(Sim):
         cart_mass.setBoxTotal(CART_MASS, CART_SIZE[0], CART_SIZE[1], CART_SIZE[2])
         self.cart_body.setMass(cart_mass)
         self.cart_geom.setBody(self.cart_body)
-        
+
         self.pole_geom = ode.GeomBox(self.space, POLE_SIZE)
         self.geoms.append(self.pole_geom)
         self.pole_body = ode.Body(self.world)
@@ -788,10 +841,10 @@ class PoleBalanceSim(Sim):
         pole_mass.setBoxTotal(POLE_MASS, POLE_SIZE[0], POLE_SIZE[1], POLE_SIZE[2])
         self.pole_body.setMass(pole_mass)
         self.pole_geom.setBody(self.pole_body)
-        
+
         self.cart_geom.setCategoryBits(long(0))
         self.pole_geom.setCategoryBits(long(0))
-        
+
         # joint 0 - slide along 1D
         self.slider_joint = ode.SliderJoint(self.world)
         self.joints.append(self.slider_joint)
@@ -800,14 +853,14 @@ class PoleBalanceSim(Sim):
 #        self.slider_joint.setParam(ode.ParamFMax, self.MAXF)
         self.slider_joint.setParam(ode.ParamLoStop, -5)
         self.slider_joint.setParam(ode.ParamHiStop, 5)
-        
+
         # joint 1 - hinge between the two boxes
         self.hinge_joint = ode.HingeJoint(self.world)
         self.joints.append(self.hinge_joint)
         self.hinge_joint.attach(self.cart_body, self.pole_body)
         self.hinge_joint.setAnchor(HINGE_POSITION)
         self.hinge_joint.setAxis((0, 1, 0))
-        
+
         self.last_hit = 0.0
         self.init_u_count = 0
         self.regular_random_force = 1
@@ -817,7 +870,7 @@ class PoleBalanceSim(Sim):
 
     def setUseLqr(self):
         self.lqr = LqrController()
-        
+
     def add(self, net):
         self.setNetwork(net)
 
@@ -831,11 +884,11 @@ class PoleBalanceSim(Sim):
         self.network.setState()
         self.finished = 0
         # fake external_input connection so node knows its an input
-        self.angleSignal = (None,'ANGLE_0')
+        self.angleSignal = (None,'ANGLE_0', 1.0)
         for n in self.network:
             assert not n.externalInputs
         self.inputNode = self.network.inputs[0]
-        self.inputNode.addExternalInput(self.angleSignal)
+        self.inputNode.addExternalInput(self.angleSignal[0],self.angleSignal[1],self.angleSignal[2],)
 
     def setControlForce(self, f):
         f = min(self.MAXF, max(-self.MAXF, f))
@@ -857,7 +910,7 @@ class PoleBalanceSim(Sim):
         angle = random.gauss(angle, self.gaussNoise) # random noise
         angle = max(0, min(angle, 1)) # clip
         # send angle to network
-        self.inputNode.externalInputs[self.angleSignal] = angle
+        self.inputNode.externalInputs[(self.angleSignal[0],self.angleSignal[1])] = angle
         self.network.step()
         # read network, get desired force/velocity
         v = self.network.outputs[0].output
@@ -873,7 +926,7 @@ class PoleBalanceSim(Sim):
         self.randomForce = f
         self.pole_body.addForce((f, 0, 0))
         self.last_hit = self.total_time
-        
+
     def updateFitness(self):
         self.score = self.total_time
         log.debug('current score is %f', self.score)
@@ -889,7 +942,7 @@ class PoleBalanceSim(Sim):
         the simulation, and then step the simulation."""
 
         self.logSignals()
-                
+
         if self.lqr:
             self.applyLqrForce()
         elif self.network:
@@ -906,7 +959,7 @@ class PoleBalanceSim(Sim):
             self.applyRandomForce()
 
         log.debug('absolute value of angle is %f', abs(self.hinge_joint.getAngle()))
-        
+
         # set finished if the pole has fallen beyond pi/2
         if not self.finished and abs(self.hinge_joint.getAngle()) > math.pi/2 and self.max_simsecs != 0:
                 log.debug('angle too high, simulation finished')
@@ -918,7 +971,7 @@ class PoleBalanceSim(Sim):
         Sim.run(self)
         if self.network:
             # hack, setNetwork adds an external input, so we remove it here
-            self.inputNode.removeExternalInput(self.angleSignal)
+            self.inputNode.removeExternalInput(self.angleSignal[0],self.angleSignal[1])
 
     def initSignalLog(self, fname):
         self.siglog = open(fname, 'w')
