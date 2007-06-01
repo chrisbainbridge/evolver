@@ -14,6 +14,7 @@
  -c                   Client - Do evals (port always 8090)
      -b                 Run client in background
  -m                   Master - Do evolution and logging
+ --cluster            Start all cluster clients
 
 ===== Erase =====
 
@@ -43,6 +44,8 @@
      --fitness x     Specify fitness function [bpgsim only], can be:
                        cumulativez : average z value of all body parts summed over time
                        meandistance : average Euclidean distance of all body parts
+                       movement : sum of distances from previous frame
+                       walk : movement and meandistance combined
  --elite             Use an elitist GA
  --steadystate       Use a steady state parallel GA
  --mutate x          Specify mutation probability
@@ -126,7 +129,14 @@ def main():
     log.debug(' '.join(sys.argv))
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:lp:q:sz:t:uvm', ['blank','qt=','topology=','update=','nodetype=','nodes=','dombias=','domvalue=','domweight=','elite', 'lqr', 'steadystate','mutate=','mutgauss','noise=','nodes_per_input=','network=','nostrip','plotbpg=','pf=','plotnets=','plotsignals=','unroll','radius=','toponly','movie=','sim=','states=', 'fitness=', 'plotpi=', 'plotfc='])
+        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:lp:q:sz:t:uvm',
+                ['blank', 'qt=', 'topology=', 'update=', 'nodetype=', 'nodes=',
+                    'dombias=', 'domvalue=', 'domweight=', 'elite', 'lqr',
+                    'steadystate', 'mutate=', 'mutgauss', 'noise=',
+                    'nodes_per_input=', 'network=', 'nostrip', 'plotbpg=',
+                    'pf=', 'plotnets=', 'plotsignals=', 'unroll', 'radius=',
+                    'toponly', 'movie=', 'sim=', 'states=', 'fitness=',
+                    'plotpi=', 'plotfc=', 'cluster'])
         log.debug('opts %s', opts)
         log.debug('args %s', args)
         # print help for no args
@@ -288,9 +298,14 @@ def main():
         elif o == '--states':
             numberOfStates = int(a)
         elif o == '--fitness':
+            assert a in ['meandistance', 'cumulativez', 'movement', 'walk']
             fitnessFunctionName = a
         elif o == '--blank':
             blank = 1
+        elif  o == '--cluster':
+            import cluster
+            print 'Starting all cluster clients...'
+            cluster.startZeoClients()
         else:
             log.critical('unhandled option %s',o)
             return 1
@@ -460,8 +475,15 @@ def main():
             l.sort()
             for (k,i) in l:
                 if isinstance(i, evolve.Generation):
-                    print 'Generation: %s [ga=%s gen=%d/%d max=%s]'%(k, i.ga,
-                            i.gen_num, i.final_gen_num, i.getMaxIndividual())
+                    fn = 'default'
+                    if 'fitnessName' in i.new_sim_args.keys():
+                        fn = i.new_sim_args['fitnessName']
+                    rate = 0
+                    if hasattr(i, 'updateRate'):
+                        rate = i.updateRate
+                    print 'Generation: %s [ga=%s gen=%d/%d max=%s fitness=%s rate=%d]'%(k,
+                            i.ga, i.gen_num, i.final_gen_num,
+                            i.getMaxIndividual(), fn, rate)
         else:
             # print list of individuals in a generation
             print 'Num\tScore\tP.score\tMutations'
@@ -481,9 +503,15 @@ def main():
                 if b.mutations != None:
                     s_m = '%d'%b.mutations
                 print '%d\t%s\t%s\t%s'%(i, s_f, s_pf, s_m)
-            print 'Generation: name=%s ga=%s gen=%d/%d'%(g, root[g].ga,
-                                                          root[g].gen_num,
-                                                          root[g].final_gen_num)
+            fn = 'default'
+            if 'fitnessName' in root[g].new_sim_args.keys():
+                fn = root[g].new_sim_args['fitnessName']
+            rate = 0
+            if hasattr(root[g], 'updateRate'):
+                rate = root[g].updateRate
+            print 'Generation: name=%s ga=%s gen=%d/%d fitness=%s rate=%d'%(g,
+                    root[g].ga, root[g].gen_num, root[g].final_gen_num, fn,
+                    rate)
             if root[g].updateInfo[2]:
                 print 'Generation is currently being updated on %s, update '\
                         'running for %d seconds'%(root[g].updateInfo[0],
@@ -496,18 +524,25 @@ def main():
             runs = [g]
         else:
             runs = [k for (k, i) in root.iteritems() if isinstance(i, evolve.Generation)]
-        # run evolution
-        for r in runs:
-            if root[r].gen_num <= root[r].final_gen_num:
-                if client:
-                    s = 'client'
-                if master:
-                    s = 'master'
-                log.info('%s mode on run %s', s, r)
-                root[r].runClientLoop(master, client)
-            else:
-                log.debug('run %s is done (%d/%d)', r, root[r].gen_num,
-                          root[r].final_gen_num)
+        # print completed runs
+        done = [r for r in runs if root[r].gen_num > root[r].final_gen_num]
+        for r in done:
+            log.debug('run %s is done (%d/%d)', r, root[r].gen_num,
+                    root[r].final_gen_num)
+        # do a run from the rest
+        while 1:
+            ready = [r for r in runs if root[r].gen_num < root[r].final_gen_num]
+            if not ready:
+                break
+            r = random.choice(ready)
+            if client:
+                s = 'client'
+            if master:
+                s = 'master'
+            log.info('%s mode on run %s (%d/%d)', s, r, root[r].gen_num,
+                    root[r].final_gen_num)
+            root[r].runClientInnerLoop(master, client)
+
         log.info('client exiting')
         if background:
             os.unlink('/tmp/client.pid')

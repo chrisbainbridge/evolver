@@ -78,6 +78,8 @@ class Generation(PersistentList):
         self.mutationStats = PersistentList() # (parentFitness, mutations, childFitness)
         self.statList = PersistentList()
         self.mutgauss = 0
+        self.updateTime = int(time.time())
+        self.updateRate = 0
 
     def setFinalGeneration(self, extraGenerations):
         "Set final generation number, relative to current one"
@@ -151,6 +153,11 @@ class Generation(PersistentList):
             log.info('.' * count)
             count += 1
 
+        t = int(time.time())
+        # evals per hour
+        self.updateRate = len(self) * 60*60 / (t - self.updateTime)
+        self.updateTime = t
+
     def setUpdateInfo(self, updating=0):
         self.updateInfo = (socket.gethostname(), time.time(), updating)
 
@@ -179,9 +186,10 @@ class Generation(PersistentList):
             x.score = None
 
         self.gen_num += 1
+        log.info('New generation created took %d seconds', time.time() - self.updateInfo[1])
         self.setUpdateInfo(0)
         transaction.commit()
-        log.info('New generation created in %d seconds', time.time() - self.updateInfo[1])
+        log.info('Commit took %d seconds', time.time() - self.updateInfo[1])
 
     def runSim(self, x):
         "Evaluate performance of individual(s) x in sim"
@@ -286,14 +294,18 @@ class Generation(PersistentList):
     def eliteInnerLoop(self, master, slave):
         ready = self.leftToEval()
         if slave and ready:
-            x = random.choice(ready)
+#            x = random.choice(ready)
+            hosts = self.hostData.keys()
+            i = hosts.index(cluster.getHostname())
+            i %= len(ready)
+            x = ready[i]
             self.evaluate(x)
             transaction.commit()
         elif master and not ready:
             self.update()
         else:
             log.debug('nothing to do, sleeping...')
-            time.sleep(15)
+            time.sleep(5)
 
     def getMaxIndividual(self):
         l = [(x.score, x) for x in self]
@@ -309,37 +321,42 @@ class Generation(PersistentList):
         self.generations which is persistent
         (root['runs']['run_name'].generations)."""
 
+        done = 0
+        while not done:
+            done = runClientInnerLoop(master, slave)
+
+    def runClientInnerLoop(self, master=1, slave=1):
         rand.mutgauss = 0
         if self.mutgauss:
             rand.mutgauss = 1
-        while 1:
-            try:
-                transaction.begin()
-                log.debug('runClientLoop: %d/%d', self.gen_num, self.final_gen_num)
-                if self.gen_num == self.final_gen_num \
-                        and (self.ga == 'steady-state' or self.ga == 'elite' and ((master and not slave) or slave)) \
-                        and not self.leftToEval() :
-                    log.info('all individuals done in final generation, exiting')
-                    transaction.abort()
-                    return
-                if self.ga == 'steady-state':
-                    if slave:
-                        self.steadyStateClientInnerLoop()
-                    if master:
-                        self.steadyStateMasterInnerLoop()
-                elif self.ga == 'elite':
-                    self.eliteInnerLoop(master, slave)
-                else:
-                    log.info('nothing for us to do')
-            except ConflictError:
+        try:
+            transaction.begin()
+            log.debug('runClientLoop: %d/%d', self.gen_num, self.final_gen_num)
+            if self.gen_num == self.final_gen_num \
+                    and (self.ga == 'steady-state' or self.ga == 'elite' and ((master and not slave) or slave)) \
+                    and not self.leftToEval() :
+                log.info('all individuals done in final generation, exiting')
                 transaction.abort()
-                time.sleep(5)
-                log.debug('commit conflict')
-            except POSKeyError:
-                log.critical('poskeyerror - this should not happen')
-                raise
-            except DisconnectedError:
-                log.debug('we lost connection to the server, sleeping..')
-                # FIXME: do i need to manually reestablish connection here??
-                time.sleep(60)
-        log.debug('/runClientLoop')
+                return 1
+            if self.ga == 'steady-state':
+                if slave:
+                    self.steadyStateClientInnerLoop()
+                if master:
+                    self.steadyStateMasterInnerLoop()
+            elif self.ga == 'elite':
+                self.eliteInnerLoop(master, slave)
+            else:
+                log.info('nothing for us to do')
+        except ConflictError:
+            transaction.abort()
+            time.sleep(5)
+            log.debug('commit conflict')
+        except POSKeyError:
+            log.critical('poskeyerror - this should not happen')
+            raise
+        except DisconnectedError:
+            log.debug('we lost connection to the server, sleeping..')
+            # FIXME: do i need to manually reestablish connection here??
+            time.sleep(60)
+        log.debug('/runClientInnerLoop')
+        return 0

@@ -16,7 +16,7 @@ serverName = None
 def getDefaultServer():
     global serverName
     if cluster.isHost():
-        serverName = cluster.MASTER
+        serverName = cluster.ZEOSERVER
     else:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
@@ -24,17 +24,20 @@ def getDefaultServer():
             s.close()
             serverName = 'localhost'
         except:
-            serverName = cluster.MASTER
+            serverName = cluster.ZEOSERVER
     return serverName
 
 def connect(server = None):
     global conn, once_only, serverName
-    if server:
-        serverName = server
-    elif not serverName:
+    if ':' in server:
+        serverName, port = server.split(':')
+        port = int(port)
+    else:
+        serverName, port = server, 12345
+    if not serverName:
         serverName = getDefaultServer()
     MB = 1024**2
-    storage = ClientStorage((serverName, 12345), cache_size=16*MB)
+    storage = ClientStorage((serverName, port), cache_size=16*MB)
     db = DB(storage)
     conn = db.open()
     root = conn.root()

@@ -1,5 +1,6 @@
 import re
 import socket
+import os
 from logging import debug, info
 from os import kill, popen3
 from popen2 import Popen4
@@ -9,13 +10,33 @@ import signal
 CLUSTER = 'bw64'
 HOME = '/home/s9734229'
 INSTDIR = HOME + '/phd'
-MASTER = CLUSTER + 'node01'
+MASTER = CLUSTER + 'node02'
+ZEOSERVER = CLUSTER + 'node01'
 REGEXP = r'bw240n\d\d.inf.ed.ac.uk'
+
+def getBadHosts():
+    # bad host list in tentakel.conf looks like '# BAD: host1 host2'
+    p = os.path.expanduser('~/.tentakel/tentakel.conf')
+    bad = []
+    if os.path.exists(p):
+        f = open(p)
+        s = f.readlines()
+        for l in s:
+            if '# BAD:' in l:
+                i = 6
+                while 1:
+                    m = re.search(r'bw64node\d\d', l[i:])
+                    if not m:
+                        break
+                    bad.append(m.group())
+                    i += m.end()
+    return bad
 
 def nodeName(n):
     return CLUSTER + 'node' + str(n).zfill(2)
 
-HOSTS = [nodeName(x) for x in range(1,65)]
+HOSTS = list(set([nodeName(x) for x in range(1,65)]) - set(getBadHosts()))
+HOSTS.sort()
 HOSTNAMES = [ 'bw240n%s'%(str(x).zfill(2)) for x in range(1,65) ] + ['bob']
 
 def isHost():
@@ -49,8 +70,8 @@ def stopAlarm():
     signal.signal(signal.SIGALRM, signal.SIG_DFL)
 
 def isZeoServerRunning():
-    info('trying zeo server %s', MASTER)
-    cmd = 'ssh %s zdctl.py -C %s/server/zdctl.conf status 2>&1'%(MASTER, INSTDIR)
+    info('trying zeo server %s', ZEOSERVER)
+    cmd = 'ssh %s zdctl.py -C %s/server/zdctl.conf status 2>&1'%(ZEOSERVER, INSTDIR)
     debug(cmd)
     startAlarm()
     p = Popen4(cmd)
@@ -68,14 +89,14 @@ def startZeoServer():
     running = isZeoServerRunning()
     if not running:
         info('starting zeo server')
-        _,_,_ = popen3('ssh %s make -C %s startserver'%(MASTER, INSTDIR))
+        _,_,_ = popen3('ssh %s make -C %s startserver'%(ZEOSERVER, INSTDIR))
         time.sleep(5)
-    
+
 def stopZeoServer():
     running = isZeoServerRunning()
     if running:
         info ('stopping zeo server')
-        _,_,_ = popen3('ssh %s make -C %s stopserver'%(MASTER, INSTDIR))
+        _,_,_ = popen3('ssh %s make -C %s stopserver'%(ZEOSERVER, INSTDIR))
 
 def getZeoClientPid(host):
     info('trying zeo client %s', host)
@@ -134,7 +155,7 @@ def startZeoClient(host, run=None):
                 opt = '-c'
                 s = 'slave'
             info('Restarting %s client on %s', s, host)
-            cmd = 'ssh %s /bin/nice -n 5 %s/src/ev.py -z %s -b %s'%(host, INSTDIR, MASTER, opt)
+            cmd = 'ssh %s /bin/nice -n 5 %s/src/ev.py -z %s -b %s'%(host, INSTDIR, ZEOSERVER, opt)
             if run:
                 cmd += ' -r %s'%run
             debug(cmd)

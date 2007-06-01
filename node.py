@@ -273,7 +273,7 @@ class BeerNode(WeightNode):
 
     def setState(self):
         self.state = rnd(-0.1, 0.1, self.state) # should internal state be quantised?
-        self.output = rnd(0, 1, self.output)
+        self.output = 1/(1 + math.e**-(self.state + self.bias))
 
 class MultiValueLogicFunction(PersistentList):
     """logical function of k inputs. outputs in the domain [low,high]
