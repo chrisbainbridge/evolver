@@ -80,6 +80,7 @@ class Generation(PersistentList):
         self.mutgauss = 0
         self.updateTime = int(time.time())
         self.updateRate = 0
+        self.pause = 0
 
     def setFinalGeneration(self, extraGenerations):
         "Set final generation number, relative to current one"
@@ -203,26 +204,11 @@ class Generation(PersistentList):
         log.debug('evaluate')
         if type(x) is int:
             x = self[x]
-#        if x.mutations == 0 and x.parentFitness != None:
-#            log.debug('child is parent (elite?), skip eval, fitness = %f', x.parentFitness)
-#            x.score = x.parentFitness * 0.95
-#            return
-#        x.score = self.runSim(x)
         s0 = self.runSim(x)
         s1 = self.runSim(x)
         s2 = self.runSim(x)
         x.score = min(s0,s1,s2)
         return
-#        s0 = self.runSim(x)
-#        if s0 == -1:
-#            x.score = -1
-#            return
-#        s1 = self.runSim(x)
-#        x.score = matrix([s0, s1]).mean()
-#        x.score = min(s0,s1)
-#        l = min(s0,s1)
-#        h = max(s0,s1)
-#        print (h-l)/l
 
     def steadyStateClientInnerLoop(self):
         log.debug('steadyStateClientLoop')
@@ -294,12 +280,16 @@ class Generation(PersistentList):
     def eliteInnerLoop(self, master, slave):
         ready = self.leftToEval()
         if slave and ready:
-#            x = random.choice(ready)
             hosts = self.hostData.keys()
             i = hosts.index(cluster.getHostname())
             i %= len(ready)
             x = ready[i]
+            if not hasattr(x, 'busy'):
+                x.busy = 1
+                transaction.commit()
             self.evaluate(x)
+            if hasattr(x, 'busy'):
+                del x.busy
             transaction.commit()
         elif master and not ready:
             self.update()
@@ -331,6 +321,9 @@ class Generation(PersistentList):
             rand.mutgauss = 1
         try:
             transaction.begin()
+            if self.pause:
+                time.sleep(5)
+                return 0
             log.debug('runClientLoop: %d/%d', self.gen_num, self.final_gen_num)
             if self.gen_num == self.final_gen_num \
                     and (self.ga == 'steady-state' or self.ga == 'elite' and ((master and not slave) or slave)) \
