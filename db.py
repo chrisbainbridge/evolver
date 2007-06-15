@@ -29,13 +29,13 @@ def getDefaultServer():
 
 def connect(server = None):
     global conn, once_only, serverName
-    if ':' in server:
+    if not server:
+        serverName, port = getDefaultServer(), 12345
+    elif ':' in server:
         serverName, port = server.split(':')
         port = int(port)
     else:
         serverName, port = server, 12345
-    if not serverName:
-        serverName = getDefaultServer()
     MB = 1024**2
     storage = ClientStorage((serverName, port), cache_size=16*MB)
     db = DB(storage)
