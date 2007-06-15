@@ -35,7 +35,7 @@ def getBadHosts():
 def nodeName(n):
     return CLUSTER + 'node' + str(n).zfill(2)
 
-HOSTS = list(set([nodeName(x) for x in range(1,65)]) - set(getBadHosts()))
+HOSTS = list(set([nodeName(x) for x in range(2,65)]) - set(getBadHosts()))
 HOSTS.sort()
 HOSTNAMES = [ 'bw240n%s'%(str(x).zfill(2)) for x in range(1,65) ] + ['bob']
 
@@ -78,7 +78,7 @@ def isZeoServerRunning():
     s = p.fromchild.read().strip()
     stopAlarm()
     debug(s)
-    running = re.match(r'.* running .*', s) and not re.match(r'.* not running.*', s)
+    running = not re.search(r'not running', s)
     if running:
         info('zeo server is running')
     else:
