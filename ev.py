@@ -497,6 +497,8 @@ def main():
                     s_pf = ' %.2f'%pf
                 if f == None:
                     s_f = 'X'
+                    if hasattr(b, 'busy'):
+                        s_f += '*'
                 else:
                     s_f = '%.2f'%f
                 s_m = 'X'
@@ -525,13 +527,12 @@ def main():
         else:
             runs = [k for (k, i) in root.iteritems() if isinstance(i, evolve.Generation)]
         # print completed runs
-        done = [r for r in runs if root[r].gen_num > root[r].final_gen_num]
-        for r in done:
-            log.debug('run %s is done (%d/%d)', r, root[r].gen_num,
-                    root[r].final_gen_num)
+        done = [r for r in runs if root[r].gen_num == root[r].final_gen_num and not root[r].leftToEval()]
+        log.debug('done %s', done)
         # do a run from the rest
         while 1:
-            ready = [r for r in runs if root[r].gen_num < root[r].final_gen_num]
+            ready = [r for r in runs if root[r].gen_num < root[r].final_gen_num or root[r].leftToEval()]
+            log.debug('ready %s', ready)
             if not ready:
                 break
             r = random.choice(ready)
