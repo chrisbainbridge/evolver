@@ -456,19 +456,6 @@ class BpgSim(Sim):
 
         num_bps = len(bpgraph.bodyparts)
         log.debug('BPGSim.setSolution: number of unrolled bodyparts = %d', num_bps)
-#        if num_bps > MAX_UNROLLED_BODYPARTS:
-#            log.warn('BPGSim.setSolution: num_bps (%d) > MAX_UNROLLED_BODYPARTS (%d)',
-#                         num_bps,
-#                         MAX_UNROLLED_BODYPARTS)
-#            log.warn('Pruning bodyparts!')
-#            while num_bps > MAX_UNROLLED_BODYPARTS:
-#                 randomly remove bodyparts.. this should mix things up a bit
-#                 and encourage smaller BPGs
-#                num_bps = len(bpgraph.bodyparts)
-#                i = random.randint(0, num_bps-1)
-#                del bpgraph.bodyparts[i]
-#             fixup the unrolled, pruned bpg
-#            bpgraph.fixup()
 
         assert bpgraph.root
         # recursively add all bodyparts
