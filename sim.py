@@ -388,7 +388,6 @@ class BpgSim(Sim):
         # recurse on children
         geom.child_joint_ends = set([ e.joint_end for e in bp.edges ])
         geom.parent_joint_end = joint_end
-        geom.friction_mu = bp.friction_mu
         if joint_end == None:
             # root
             if -1 in geom.child_joint_ends:
@@ -597,10 +596,9 @@ class BpgSim(Sim):
             self.siglog.flush()
 
     def addContact(self, geom1, geom2, c):
-        "friction based on evolved parameter and remember contact for geom sensors."
-        mu = 0
+        # add a contact between a capped cylinder BP and the ground
         (cpos, cnor, cdep, cg1, cg2) = c.getContactGeomParams()
-        # figure out which cylinder foot it was, and apply correct friction
+        # figure out which cylinder foot this contact describes
         if type(geom1) is ode.GeomCCylinder:
             cylinder = geom1
         elif type(geom2) is ode.GeomCCylinder:
@@ -618,23 +616,19 @@ class BpgSim(Sim):
             d2 = (cpos-ep).length()
             if (d2 <= radius**2*1.01):
                 epc = ep
-        # friction mu is from evolved bp
-        if not cylinder.parent: # root
-            mu = cylinder.friction_mu
-        else:
-            if epc == ep1:
-                mu = cylinder.friction_mu
-            else:
-                mu = 0
-        if mu:
+        # we will get two addContact() calls for each real contact, one for each
+        # of the joined capped cylinders, so only add a contact for the
+        # 'furthest out' from the root. If geom is the root then always add the
+        # contact.
+        if not cylinder.parent or epc == ep1:
             mu = 300
             self.points.append((cpos, (0,1,1), mu/1000.0))
             c.setMu(mu)
             j = ode.ContactJoint(self.world, self.contactGroup, c)
             j.attach(geom1.getBody(), geom2.getBody())
-        # remember contact for touch sensors
-        self.geom_contact[geom1] = 1
-        self.geom_contact[geom2] = 1
+            # remember contact for touch sensors
+            self.geom_contact[geom1] = 1
+            self.geom_contact[geom2] = 1
 
     def getSensorValue(self, sbp, src):
         if isinstance(src, str) and src[0] == 'C':

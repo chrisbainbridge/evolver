@@ -161,7 +161,6 @@ class BodyPart(Persistent):
             'axis1' : 'randomAxis(self.axis1)',
             'ball_rot' : 'randomQuat(self.ball_rot)',
             'rotation' : 'randomQuat(self.rotation)',
-            'friction_mu' : 'rnd(50, 600, self.friction_mu)',
             }
         if not hasattr(self, 'scale'):
             for k in attrs.keys():
