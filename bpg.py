@@ -157,17 +157,10 @@ class BodyPart(Persistent):
             'scale' : 'rnd(0.2, 5.0, self.scale)',
             'recursive_limit' : 'random.randint(0, BP_MAX_RECURSIVE_LIMIT)',
             'joint' : "random.choice(['hinge','universal','ball'])",
+            # axis1 angle must be in -pi/2..pi/2 to avoid a singularity in ode
             'axis1' : 'randomAxis(self.axis1)',
             'ball_rot' : 'randomQuat(self.ball_rot)',
             'rotation' : 'randomQuat(self.rotation)',
-            # not using the rest atm
-            'lostop' : 'rnd(0, -math.pi, self.lostop)',
-            # axis1 angle must be in -pi/2..pi/2 to avoid a singularity in ode
-            'lostop2' : 'rnd(0, -math.pi/2, self.lostop2)',
-            'lostop3' : 'rnd(0, -math.pi, self.lostop3)',
-            'histop' : 'rnd(0, math.pi, self.histop)',
-            'histop2' : 'rnd(0, math.pi/2, self.histop2)',
-            'histop3' : 'rnd(0, math.pi, self.histop3)',
             'friction_mu' : 'rnd(50, 600, self.friction_mu)',
             }
         if not hasattr(self, 'scale'):
@@ -181,16 +174,6 @@ class BodyPart(Persistent):
                 mutations += 1
         # we need to force recalc of axis2 if axis1 changed
         self.axis2 = tuple(vec3((0,0,1)).cross(vec3(self.axis1)))
-        # ensure stop2 is valid to avoid singularity
-        if self.lostop2 > self.histop2:
-            t = self.lostop2
-            self.lostop2 = self.histop2
-            self.histop2 = t
-        stops = ((self.lostop,self.histop),(self.lostop2,self.histop2),(self.lostop3,self.histop3))
-        for (l,h) in stops:
-#            print l,h
-            if h<l:
-                print 'stop ineffective'
         # mutate control network
         if p:
             self.mutations += self.network.mutate(p)

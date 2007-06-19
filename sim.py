@@ -329,21 +329,6 @@ class BpgSim(Sim):
             motor.attach(parent.geom.getBody(), body)
             motor.setMode(ode.AMotorEuler)
 
-            # set joint stops
-#            stop_attrs = { 'lostop' : ode.ParamLoStop,
-#                            'histop' : ode.ParamHiStop,
-#                            'lostop2' : ode.ParamLoStop2,
-#                            'histop2' : ode.ParamHiStop2,
-#                            'lostop3' : ode.ParamLoStop3,
-#                            'histop3' : ode.ParamHiStop3 }
-#            for ls, hs in (('lostop', 'histop'), ('lostop2', 'histop2'), ('lostop3', 'histop3')):
-#                l = getattr(bp, ls)
-#                h = getattr(bp, hs)
-#                if l != None:
-#                    motor.setParam(stop_attrs[ls], l)
-#                if h != None:
-#                    motor.setParam(stop_attrs[hs], h)
-
             # set joint axes
             maxforce = JOINT_MAXFORCE * bp.length * parent.length
             maxforce = 5000
