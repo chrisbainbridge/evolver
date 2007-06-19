@@ -43,18 +43,13 @@ class MyMotor(ode.AMotor):
         dz = self.desired_axisangle[2] % (2*math.pi)
         log.debug('MyMotor angles=(%f,%f,%f) desired_angles=(%f,%f,%f)'%(x, y, z, dx, dy, dz))
 
-#        vs =[0,0,0]
         for (x, param) in (0, ode.ParamVel), (1, ode.ParamVel2), (2, ode.ParamVel3):
-            a = self.getAngle(x) #% (2*math.pi)
+            a = self.getAngle(x)
             assert -math.pi <= a <= math.pi
-            b = self.desired_axisangle[x] #% (2*math.pi)
-#            print b
+            b = self.desired_axisangle[x]
             assert -math.pi <= b <= math.pi
             # go shortest way - figure out direction
             dist = abs(a-b)
-#            d = -1
-#            if dist < math.pi and a <= b or dist >= math.pi and a > b:
-#                d = 1
             d = 1
             if a > b:
                 d = -1
@@ -67,16 +62,12 @@ class MyMotor(ode.AMotor):
                 # angular velocity because Motor.getAngleRate() is unimplemented
                 # and joint.getAngleRate only works for HingeJoint
                 ang_vel = abs(a - self.old_angles[x])*HZ
-#                dif = abs(a-self.old_angles[x])
-#                if (dif>0.1): print dif
                 self.old_angles[x] = a
 
                 Kp = 10.0 # proportional constant
                 Kd = 7.0 # derivative constant
                 dv = Kp * dist - Kd * ang_vel
                 dv = max(dv, 0)
-#                vs[x]= d * dv
-#                print dv
                 self.setParam(param, d*dv)
 
 class Sim(object):
@@ -222,8 +213,6 @@ class BpgSim(Sim):
                     l = 'bp%d-%d%s'%(bpi, bp.network.index(n), p)
                     s += '%s '%l
                     self.signals.append((bp,n))
-#                if not bp.isRoot:
-#                if bp != bg.root:
                 for m in bp.motors:
                     s += 'bp%d-M%c '%(bpi, m[-1])
                     self.signals.append((bp,m))
@@ -234,7 +223,6 @@ class BpgSim(Sim):
                 s += 'bp%d-C '%(bpi)
                 self.signals.append((bp, 'CONTACT'))
         s += '\n'
-#        print s
         self.siglog.write(s)
 
     def addBP(self, bp, parent=None, joint_end=None):
@@ -342,15 +330,15 @@ class BpgSim(Sim):
             motor.setMode(ode.AMotorEuler)
 
             # set joint stops
-            stop_attrs = { 'lostop' : ode.ParamLoStop,
-                            'histop' : ode.ParamHiStop,
-                            'lostop2' : ode.ParamLoStop2,
-                            'histop2' : ode.ParamHiStop2,
-                            'lostop3' : ode.ParamLoStop3,
-                            'histop3' : ode.ParamHiStop3 }
-            for ls, hs in (('lostop', 'histop'), ('lostop2', 'histop2'), ('lostop3', 'histop3')):
-                l = getattr(bp, ls)
-                h = getattr(bp, hs)
+#            stop_attrs = { 'lostop' : ode.ParamLoStop,
+#                            'histop' : ode.ParamHiStop,
+#                            'lostop2' : ode.ParamLoStop2,
+#                            'histop2' : ode.ParamHiStop2,
+#                            'lostop3' : ode.ParamLoStop3,
+#                            'histop3' : ode.ParamHiStop3 }
+#            for ls, hs in (('lostop', 'histop'), ('lostop2', 'histop2'), ('lostop3', 'histop3')):
+#                l = getattr(bp, ls)
+#                h = getattr(bp, hs)
 #                if l != None:
 #                    motor.setParam(stop_attrs[ls], l)
 #                if h != None:
@@ -359,8 +347,6 @@ class BpgSim(Sim):
             # set joint axes
             maxforce = JOINT_MAXFORCE * bp.length * parent.length
             maxforce = 5000
-#            maxforce = JOINT_MAXFORCE
-#            print maxforce
             log.debug('motor maxforce = %f', maxforce)
             if bp.joint == 'hinge':
                 # we have 3 points - parent body, joint, child body
@@ -518,7 +504,6 @@ class BpgSim(Sim):
                 total_z += z
                 count += 1
         self.score += total_z/count*1/self.max_simsecs
-#        self.score += total_z/self.max_simsecs #/count*1/self.max_simsecs
 
     def meanPos(self, bpg):
         tx = 0.0
@@ -558,9 +543,7 @@ class BpgSim(Sim):
         if not hasattr(self,'cumx'):
             self.cumx = 0
         self.cumx += x
-#        y = self.fitnessMeanDistance()
         z = len(self.bpgs[0].bodyparts)
-#        print self.cumx/100,10*y,z
         self.score = self.cumx/100 + 100*y + z
 
     def updateFitness(self):
@@ -616,20 +599,15 @@ class BpgSim(Sim):
     def logSignals(self):
         if self.siglog:
             s = '%f '%self.total_time
-#            print self.signals
             for (bp,n) in self.signals:
                 if isinstance(n, node.Node):
                     s += '%f '%n.output
                 elif n[0] == 'M':
                     mi = ord(n[-1]) - ord('0')
                     s += '%f '%bp.motor.desired_axisangle[mi]
-#                    print n,bp.motor.desired_axisangle[mi]
                 elif n[0] == 'J' or n[0] == 'C':
                     v = self.getSensorValue(bp, n)
                     s += '%f '%v
-#                    if n[0]=='J':
-#                        v = self.getSensorValue(bp, 'JOINT_2')
-#                        print v
             self.siglog.write(s+'\n')
             self.siglog.flush()
 
@@ -679,10 +657,6 @@ class BpgSim(Sim):
             value = self.geom_contact[sbp.geom]
         elif isinstance(src, str) and src[0] == 'J':
             # sbp joint angle
-#            if not hasattr(sbp.geom, 'motor'):
-#                 this is the root; no joint with parent.
-#                value = 0
-#                print 'X'
             if sbp.isRoot == 1:
                 value = 0
             elif src == 'JOINT_0':
@@ -837,7 +811,6 @@ class PoleBalanceSim(Sim):
         self.joints.append(self.slider_joint)
         self.slider_joint.attach(self.cart_body, ode.environment)
         self.slider_joint.setAxis((1, 0, 0))
-#        self.slider_joint.setParam(ode.ParamFMax, self.MAXF)
         self.slider_joint.setParam(ode.ParamLoStop, -5)
         self.slider_joint.setParam(ode.ParamHiStop, 5)
 
