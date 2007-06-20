@@ -10,7 +10,7 @@ qtgui.py: qtgui.ui
 
 test: $(SRC) $(TEST)
 	rm -f test/*
-	-for t in $(TEST); do echo $$t; $$t -v; done
+	-for t in $(TEST); do echo $$t; $$t --color-mode=always -v; done 2>&1 | tee test.txt
 
 checker:
 	pychecker *.py
@@ -42,7 +42,7 @@ viewstats:
 clean:
 	rm -f *.pyc 
 	rm -f qtgui.py 
-	rm -rf types/* test/* *~
+	rm -rf types/* test/* *~ test.txt
 	rm -f divx2pass.log
 	rm -rf doc
 

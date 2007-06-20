@@ -1,14 +1,11 @@
 #!/usr/bin/python
 
 from unittest import TestCase
-import logging
+from logging import critical
 import random
 import sys
 import os
-import testoob
 
-from persistent.list import PersistentList
-from cgkit.cgtypes import vec3
 import test_common
 from test_common import *
 from network import Network, TOPOLOGIES
@@ -73,5 +70,5 @@ if __name__ == "__main__":
     else:
         for nodet in opts:
             cmd = '%s %s %s'%(sys.argv[0], nodet, ' '.join(sys.argv[1:]))
-            print cmd
+            critical(cmd)
             os.system(cmd)

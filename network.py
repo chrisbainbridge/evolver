@@ -68,7 +68,7 @@ class Network(PersistentList):
     def destroy(self):
         for n in self:
             n.destroy()
-            
+
     def getNumberOfInputsPerNode(self, topology, neighbourhood_dist, num_nodes):
         if topology == '1d':
             return neighbourhood_dist * 2
@@ -79,7 +79,7 @@ class Network(PersistentList):
             return neighbourhood_dist
         else: #if topology == 'full':
             return num_nodes - 1
-        
+
     def mutate(self, p):
         """Mutate the network with probability p of mutating each parameter.
 
@@ -87,12 +87,12 @@ class Network(PersistentList):
         # MUTATE NODE POSITIONS IN TOPOLOGY
         # The topology never changes (except for ARBNS) so we just randomly
         # select two nodes and swap them
-        mutations = 0
+        self.mutations = 0
         self.check()
         for a_index in range(len(self)):
             # Since a change mutates two nodes, we halve p
             if random() < p/2:
-                mutations += 1
+                self.mutations += 1
                 # choose another node to swap with
                 b_index = a_index
                 while b_index == a_index:
@@ -129,25 +129,25 @@ class Network(PersistentList):
             # with p probability we choose a random bit and replace it
             for x in range(len(self.function)):
                 if random() < p:
-                    mutations += 1
+                    self.mutations += 1
                     x = randint(0,len(self.function)-1)
                     self.function[x] = choice([0,1])
- 
+
         # MUTATE INDIVIDUAL NODE AND PARAMS, OTHERWISE
         else:
             for node in self:
                 m = node.mutate(p)
-                mutations += m
+                self.mutations += m
 
         # mutate inputs and outputs
         for puts in self.inputs, self.outputs:
             for i in range(len(puts)):
                 if random() < p:
-                    mutations += 1
+                    self.mutations += 1
                     old = puts[i]
                     new = choice([x for x in self if x != old])
                     puts[i] = new
-        return mutations
+        return self.mutations
 
     def setState(self):
         for n in self:
@@ -243,11 +243,11 @@ class Network(PersistentList):
         """
         log.debug('connect2D(num_nodes=%d, neighbourhood_dist=%d)', len(self), neighbourhood_dist)
         nodes_per_d = math.sqrt(len(self))
-        if nodes_per_d%1.0 != 0:
+        if math.modf(nodes_per_d)[0]:
             raise '2d topology requested but number of nodes %d is not square'%len(self)
 
         neighbour_len = neighbourhood_dist*2+1
-        # connect function doesn't work when neighbourhood length wraps around 
+        # connect function doesn't work when neighbourhood length wraps around
         assert nodes_per_d >= neighbour_len
         # make a torus grid
         dimension_len = int(math.sqrt(len(self)))
@@ -269,7 +269,7 @@ class Network(PersistentList):
                             log.debug('add link %s -> %s', str(self[src_index]), str(self[target_index]))
                             self[target_index].addInput(self[src_index])
         for n in self:
-            assert len(n.inputs) == neighbour_len**2-1 
+            assert len(n.inputs) == neighbour_len**2-1
 
     def connectRandomK(self, k):
         """Each node has a fixed number of inputs randomly chosen from other nodes.

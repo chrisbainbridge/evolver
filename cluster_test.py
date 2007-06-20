@@ -1,13 +1,12 @@
 #!/usr/bin/python
 
 from unittest import TestCase
-import logging
+from logging import debug, critical
 import sys
 import time
 import testoob
 import transaction
 
-import ev
 import ev_test
 from test_common import *
 import cluster
@@ -15,7 +14,8 @@ import db
 
 def run(gen):
     hosts = ('bw64node01','bw64node02','bw64node03','bw64node04')
-    cluster.startZeoClients(hosts, gen)
+    h = cluster.startZeoClients(hosts, gen)
+    assert len(h) == len(hosts)
     r = db.connect()
     g = r[gen]
     while g.gen_num < g.final_gen_num or g.leftToEval():
@@ -47,26 +47,27 @@ def runRateTest(gn):
     nh.reverse()
     for n in nh:
         dbset(g, 'pause', 1)
-        print 'n=%d'%n
+        debug('n=%d',n)
         hosts = list(set(cluster.HOSTS) - set([cluster.MASTER]))
         hosts = hosts[:n]
-        print '%d hosts : %s'%(len(hosts), hosts)
+        debug('%d hosts : %s', len(hosts), hosts)
         assert len(hosts) == n
         for x in g:
             dbset(x, 'score', None)
         dbset(g, 'updateRate', 0)
         dbset(g, 'updateInfo', ('reset', time.time(), 0))
-        cluster.startZeoClients(hosts, gn)
+        h = cluster.startZeoClients(hosts, gn)
+        assert len(h) == len(hosts)
         starttime = time.time()
         dbset(g, 'pause', 0)
-        print 'unpaused clients'
+        debug('unpaused clients')
         while g.leftToEval():
             time.sleep(1)
             db.sync()
         endtime = time.time()
         runtime = endtime - starttime
         e = len(g)
-        print '%d evals in %d seconds'%(e, runtime)
+        debug('%d evals in %d seconds', e, runtime)
         eh = e*(60*60)/runtime
         f.write('%d\t%d\n'%(n, eh))
         f.flush()
@@ -74,43 +75,53 @@ def runRateTest(gn):
     f.close()
 
 class TestClusterElite(TestCase):
-    def test_0_startZeoServer(self):
-        cluster.startZeoServer()
+    def setUp(self):
+        ev_test.g = 'test_clusterElite'
     def test_1_delete(self):
-        ev_test.delete('test_clusterElite')
+        ev_test.delete()
     def test_2_create(self):
-        ev_test.create('test_clusterElite', '--nodetype sigmoid --ga-elite')
+        ev_test.args = '--nodetype sigmoid --elite'
+        ev_test.create()
     def test_3_run(self):
-        run('test_clusterElite')
+        run(ev_test.g)
 
 class TestClusterSteadyState(TestCase):
-    def test_0_startZeoServer(self):
-        cluster.startZeoServer()
+    def setUp(self):
+        ev_test.g = 'test_clusterSS'
     def test_1_delete(self):
-        ev_test.delete('test_clusterSS')
+        ev_test.delete()
     def test_2_create(self):
-        ev_test.create('test_clusterSS', '--nodetype sigmoid --ga-steady-state')
+        ev_test.args = '--nodetype sigmoid --steadystate'
+        ev_test.create()
     def test_3_run(self):
-        run('test_clusterSS')
+        run(ev_test.g)
 
 class TestClusterRate(TestCase):
-    def test_0_startZeoServer(self):
-        cluster.startZeoServer()
+    def setUp(self):
+        ev_test.g = 'test_clusterRate'
     def test_1_delete(self):
-        ev_test.main('ev.py -r test_clusterRate -e')
+        ev_test.delete()
     def test_2_create(self):
-        ev_test.main('ev.py -r test_clusterRate -p 50 -t 30 -g 2 --topology full'\
-                ' --update sync --nodetype sine --nodes 5 --sim bpg --fitness movement')
+        ev_test.args = '-p 50 -t 30 -g 2 --topology full --update sync'\
+        '--nodetype sine --nodes 5 --sim bpg --fitness movement'
+        ev_test.create()
     def test_3_run(self):
         # run for a few gens to get a more typical workload
-        run('test_clusterRate')
-        ev_test.main('ev.py -r test_clusterRate -g 50')
+        run(ev_test.g)
+        ev_test.main('ev.py -r %s -g 50'%ev_test.g)
     def test_4_run(self):
-        runRateTest('test_clusterRate')
+        # now run the main rate test
+        runRateTest(ev_test.g)
 
 if __name__ == "__main__":
     setup_logging()
     if not cluster.isZeoServerRunning():
-        print 'Can\'t contact ZEO server, skipping tests...'
+        critical('Can\'t contact ZEO server %s, skipping tests...', cluster.ZEOSERVER)
+        sys.exit(0)
+    hosts = ('bw64node02','bw64node03')
+    h = cluster.startZeoClients(hosts)
+    cluster.stopZeoClients(h)
+    if len(h) != len(hosts):
+        critical('Can\'t start ZEO clients %s, skipping tests...', hosts)
         sys.exit(0)
     test_main()

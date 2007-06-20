@@ -2,16 +2,22 @@
 
 import random
 
-number = [2,4,8,10]
-model = ['beer','sine','sigmoid']
-topology = ['1d','2d','3d','full']
-quanta = [4,8,16,0]
+number = [4,9]
+model = ['beer','sine','sigmoid','ekeberg','x']
+topology = ['1d','2d','full']
+quanta = [10,100,1000,0]
+ga = ['ss','gen']
 
 factors = {'number' : number, 'model' : model, 'topology' : topology, 'quanta' : quanta }
 
-print 'number\tmodel\ttopology\tquanta\tfitness'
-for n in number:
-    for m in model:
-        for t in topology:
-            for q in quanta:
-                print '%d\t%s\t%s\t\t%d\t%f'%(n,m,t,q,random.gauss(1000,100))
+def main():
+    print 'number\tmodel\ttopology\tquanta\tfitness'
+    for g in ga:
+        for n in number:
+            for m in model:
+                for t in topology:
+                    for q in quanta:
+                        print '%s\t%d\t%s\t%s\t\t%d\t%f'%(g,n,m,t,q,random.gauss(1000,100))
+
+if __name__ == '__main__':
+    main()

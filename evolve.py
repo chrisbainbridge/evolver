@@ -78,7 +78,7 @@ class Generation(PersistentList):
         self.mutationStats = PersistentList() # (parentFitness, mutations, childFitness)
         self.statList = PersistentList()
         self.mutgauss = 0
-        self.updateTime = int(time.time())
+        self.updateTime = time.time()
         self.updateRate = 0
         self.pause = 0
 
@@ -88,11 +88,16 @@ class Generation(PersistentList):
 
     def recordStats(self):
         "Record statistics"
+
         fitnessValues = [x.score for x in self if x.score != None and x.score != -1]
-        m = matrix([fitnessValues])
+        if fitnessValues:
+            m = matrix([fitnessValues])
+        else:
+            m = matrix([0])
         if len(self.fitnessList) > self.gen_num:
             self.fitnessList = self.fitnessList[:self.gen_num]
         self.fitnessList.append((m.min(), m.mean(), m.max()))
+
         for bg in self.statList:
             assert isinstance(bg.parentFitness, float) or isinstance(bg.parentFitness, int)
             assert isinstance(bg.mutations, int)
@@ -110,11 +115,16 @@ class Generation(PersistentList):
     def mutateChild(self, child):
         "Always generates a mutated child (m>0)"
         # don't save identical children. shortcut by forcing m>0.
+        i = 0
         while 1:
             child.mutate(self.mutationRate)
             if child.mutations:
                 break
             log.warn('identical child, mutation rate too low, trying again')
+            i += 1
+            if i > 100:
+                log.critical('mutation failure limit exceeded, exiting')
+                sys.exit(1)
         self.statList.append(child)
         log.debug('mutateChild created %d mutations', child.mutations)
 
@@ -154,9 +164,9 @@ class Generation(PersistentList):
             log.info('.' * count)
             count += 1
 
-        t = int(time.time())
+        t = time.time()
         # evals per hour
-        self.updateRate = len(self) * 60*60 / (t - self.updateTime)
+        self.updateRate = len(self) * 60.0 * 60.0 / (t - self.updateTime)
         self.updateTime = t
 
     def setUpdateInfo(self, updating=0):
@@ -313,7 +323,7 @@ class Generation(PersistentList):
 
         done = 0
         while not done:
-            done = runClientInnerLoop(master, slave)
+            done = self.runClientInnerLoop(master, slave)
 
     def runClientInnerLoop(self, master=1, slave=1):
         rand.mutgauss = 0

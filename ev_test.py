@@ -7,8 +7,7 @@ import testoob
 
 import ev
 from test_common import *
-from logging import debug
-import pdb
+from logging import debug, info, critical
 
 STDARGS = '-p 3 -t 3 -g 3 --topology 1d --update async --nodes 5'
 TESTS = ['-r ev_logical --nodetype logical --states 2',
@@ -17,6 +16,9 @@ TESTS = ['-r ev_logical --nodetype logical --states 2',
         '-r ev_steadystate --nodetype sigmoid --steadystate',
         '-r ev_pb --sim pb',
         '-r ev_beer --nodetype beer --steadystate']
+
+g = None # name of the run
+args = None # ev cmd line args
 
 def main(s):
     sys.argv = s.split()
@@ -51,9 +53,10 @@ class EvTest(TestCase):
 
 if __name__ == "__main__":
     if '--args' not in sys.argv:
+        setup_logging()
         for args in TESTS:
             cmd = '%s --args "%s %s" %s'%(sys.argv[0], args, STDARGS, ' '.join(sys.argv[1:]))
-            print cmd
+            critical(cmd)
             os.system(cmd)
     else:
         i = sys.argv.index('--args')

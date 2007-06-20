@@ -18,16 +18,16 @@ class G:
         for i in range(100):
             d = (random(), randint(0,10), random())
             self.mutationStats.append(d)
-        
-g = G()
+
+data = G()
 
 class PlotTest(TestCase):
-    def test_plotGenerationVsFitness(self):
-        plotGenerationVsFitness(g, 'test/test_plotGenerationVsFitness.pdf')
-    def test_plotMutationVsProbImprovement(self):
-        plotMutationVsProbImprovement(g, 'test/test_plotMutationVsProbImprovement.pdf')
-    def test_plotMutationVsFitnessChange(self):
-        plotMutationVsFitnessChange(g, 'test/test_plotMutationVsFitnessChange.pdf')
+    def test_plot_generation_vs_fitness(self):
+        plot_generation_vs_fitness(data, 'test/plot_generation_vs_fitness.pdf')
+    def test_plot_mutation_vs_prob_improvement(self):
+        plot_mutation_vs_prob_improvement(data, 'test/plot_mutation_vs_prob_improvement.pdf')
+    def test_plot_mutation_vs_fitness_change(self):
+        plot_mutation_vs_fitness_change(data, 'test/plot_mutation_vs_fitness_change.pdf')
 
 if __name__ == "__main__":
     test_main()

@@ -139,6 +139,7 @@ def gnuplotSetup(filename, genName):
     view = 0
     if filename == '-':
         view = 1
+        assert genName
         filename = 'tmp-%s.pdf'%genName
     (fbase, ext) = os.path.splitext(filename)
     gnuplotFile = fbase + '.gnuplot'
@@ -154,7 +155,7 @@ def gnuplot(gnuplotFile, ext, view, datFile, fbase):
         if view:
             os.system('kpdf %s.pdf'%fbase)
 
-def plotGenerationVsFitness(g, outputFilename, genName):
+def plot_generation_vs_fitness(g, outputFilename, genName=None):
     (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename, genName)
 
     fdat = open(datFile, 'w')
@@ -179,7 +180,7 @@ def plotGenerationVsFitness(g, outputFilename, genName):
 
     gnuplot(gnuplotFile, ext, view, datFile, fbase)
 
-def plotMutationVsProbImprovement(g, outputFilename, genName):
+def plot_mutation_vs_prob_improvement(g, outputFilename, genName=None):
     (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename, genName)
 
     improved = {}
@@ -215,7 +216,7 @@ def plotMutationVsProbImprovement(g, outputFilename, genName):
 
     gnuplot(gnuplotFile, ext, view, datFile, fbase)
 
-def plotMutationVsFitnessChange(g, outputFilename, genName):
+def plot_mutation_vs_fitness_change(g, outputFilename, genName=None):
     (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename, genName)
 
     fdat = open(datFile, 'w')

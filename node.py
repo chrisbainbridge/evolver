@@ -242,6 +242,9 @@ class BeerNode(WeightNode):
 
     def __init__(self, weightDomain=(-16,16), quanta=None, biasDomain=(-16,16)):
         WeightNode.__init__(self, weightDomain, quanta)
+        self.adaptRate = None
+        self.bias = None
+        self.state = None
         self.setAdaptRate()
         self.biasDomain = biasDomain
         self.setBias()
@@ -269,7 +272,7 @@ class BeerNode(WeightNode):
         self.adaptRate = rnd(0.5, 10, self.adaptRate)
 
     def setBias(self):
-        self.bias = randomFromDomain(self.biasDomain, self.quanta)
+        self.bias = randomFromDomain(self.biasDomain, self.bias, self.quanta)
 
     def setState(self):
         self.state = rnd(-0.1, 0.1, self.state) # should internal state be quantised?

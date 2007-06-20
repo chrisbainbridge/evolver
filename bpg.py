@@ -3,7 +3,6 @@
 import random
 import copy
 import math
-import os
 
 from persistent import Persistent
 from persistent.list import PersistentList

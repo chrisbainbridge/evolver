@@ -247,13 +247,11 @@ def main():
         elif o == '--domvalue':
             # FIXME: THIS IS NOT BEING USED
             domvalue = eval(a)
-            fixme
         elif o == '--domweight':
             domweight = eval(a)
         elif o == '--nodes_per_input':
             # FIXME: THIS IS NOT BEING USED
             nodes_per_input = int(a)
-            fixme
         elif o == '--elite':
             ga = 'elite'
         elif o == '--lqr':
@@ -445,11 +443,11 @@ def main():
             log.critical('which generation?')
             return 1
         if plotfitness:
-            plotGenerationVsFitness(root[g], plotfitness, g)
+            plot_generation_vs_fitness(root[g], plotfitness, g)
         elif plotpi:
-            plotMutationVsProbImprovement(root[g], plotpi, g)
+            plot_mutation_vs_prob_improvement(root[g], plotpi, g)
         elif plotfc:
-            plotMutationVsFitnessChange(root[g], plotfc, g)
+            plot_mutation_vs_fitness_change(root[g], plotfc, g)
 
     if plotbpg or plotnets:
         if not g:
