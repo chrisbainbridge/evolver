@@ -249,7 +249,7 @@ class GLWidget(QGLWidget):
                       gsize*ground_scale + ground_ofsy)
         glVertex3f (-gsize,gsize,offset)
         glEnd()
-        
+
         glDisable(GL_TEXTURE_2D)
         glEnable(GL_LIGHTING)
         glShadeModel(GL_SMOOTH)
@@ -303,11 +303,8 @@ class GLWidget(QGLWidget):
             gluQuadricDrawStyle(self.quadratic, GLU_SILHOUETTE)
         else:
             gluQuadricDrawStyle(self.quadratic, GLU_FILL)
-            
 
-        for i in range(self.sim.space.getNumGeoms()):
-            geom = self.sim.space.getGeom(i)
-
+        for geom in self.sim.space:
             glPushMatrix()
 
             if type(geom) is ode.GeomSphere:
@@ -519,7 +516,7 @@ class GLWidget(QGLWidget):
         "Turn all of the frames into a mpeg4 movie"
         assert(self.record)
         log.debug('glwidget.finaliseRecording')
-        
+
         _,_,width,height = self.getViewport()
         # 2-pass xvid encoding at 160kbit
         cmd0 = 'mencoder mf://%s/*.jpg'\

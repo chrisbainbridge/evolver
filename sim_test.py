@@ -21,9 +21,12 @@ import test_common
 from test_common import *
 from network import Network
 from plot import plotSignals
+from qtapp import MyApp
+
+myapp = MyApp([sys.argv[0]] + ['-geometry','640x480'])
 
 TESTDIR = '/tmp/'
-SECONDS = 20
+SECONDS = 5
 
 class TestBodyPart(BodyPart):
     """Create a random test BodyPart aligned along z axis"""
@@ -133,23 +136,21 @@ class BpgTestCase(unittest.TestCase):
         s.run()
         assert s.score == -1 or s.score >= 0
 
-def runVisualSim(sim, record=0, avifile=None, qtargs=[]):
+def runVisualSim(sim, record=0, avifile=None):
     "Open the QT renderer and run the simulation"
-    from qtapp import MyApp
-    myapp = MyApp([sys.argv[0]]+qtargs, sim)
-    if record and avifile:
-        myapp.setRecord(record, avifile)
+    myapp.setRecord(record, avifile)
+    myapp.setSim(sim)
     myapp.endtime = sim.max_simsecs
+    myapp.glwidget.pause = 1
     err = myapp.exec_loop()
     assert not err
-    myapp.destroy()
 
 def runNonVisualSim(sim):
     sim.run()
 
-def runSim(sim, record=0, avifile=None, qtargs=[]):
+def runSim(sim, record=0, avifile=None):
     if test_common.interactive:
-        runVisualSim(sim, record, avifile, qtargs)
+        runVisualSim(sim, record, avifile)
     else:
         runNonVisualSim(sim)
 
@@ -224,7 +225,7 @@ class BpgSimTestCase(unittest.TestCase):
         if not record:
             runSim(s)
         else:
-            runSim(s, 1, '%s/record_test.avi'%TESTDIR, ['-geometry','640x480'])
+            runSim(s, 1, '%s/record_test.avi'%TESTDIR)
 
     def test_5_hinge_motor(self):
         self.do_joint_motor('hinge')

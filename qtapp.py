@@ -34,7 +34,7 @@ import logging
 log = logging.getLogger('qtapp')
 
 class MyApp(QApplication):
-    def __init__(self, args, sim):
+    def __init__(self, args, sim=None):
         """Initialise QApplication.
 
         args -- QT flags string
@@ -43,7 +43,6 @@ class MyApp(QApplication):
         """
         log.debug('myapp init with args %s', args)
         QApplication.__init__(self, args)
-        self.sim = sim
         if not QGLFormat.hasOpenGL():
             raise Exception('No Qt OpenGL support.')
         log.debug('We have OpenGL support')
@@ -52,7 +51,6 @@ class MyApp(QApplication):
         self.window.statusBar().hide()
         self.glwidget = self.window.glwidget
         # tell GL widget what to draw
-        self.glwidget.sim = sim
         self.glwidget.qtapp = self
         # set timerEvent for each timestep
         self.startTimer(DT*1000)
@@ -67,25 +65,28 @@ class MyApp(QApplication):
         self.window.score_label.setText('0')
         self._old_sim_total_time = 0
         self._old_sim_score = 0
-        self.window.progressBar1.setTotalSteps(round(self.sim.max_simsecs))
         self.window.progressBar1.show()
         self.steps = 0
         log.debug('end of qtapp init')
         self.frameno = 0
+        if sim:
+            self.setSim(sim)
 
-    def destroy(self):
-        self.killTimers()
-        del self.window
-        del self.sim
-        del self.glwidget.sim
+    def setSim(self, sim):
+        self.sim = sim
+        self.glwidget.sim = sim
+        self.window.progressBar1.setTotalSteps(round(self.sim.max_simsecs))
+        self.window.show()
 
     def quit(self):
         "Quit the application"
-        log.debug('QEEET!')
+        log.debug('quit : ends exec_loop()')
         # if recording is on, shut it down
         if self.glwidget.record:
             self.window.hide()
             self.glwidget.finaliseRecording()
+        del self.sim
+        del self.glwidget.sim
         QApplication.quit(self)
 
     def setRecord(self, record, avifile=''):
