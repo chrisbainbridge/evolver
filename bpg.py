@@ -556,21 +556,14 @@ class BodyPartGraph(Persistent):
                         assert isinstance(w, float)
         # check src and dst nodes for externalInputs are in respective bp.network
         for bp in phen_bpg.bodyparts:
-            print 'bp=%s'%bp
             sources = phen_bpg.getInputs(bp)
-            for i in range(len(sources)):
-                print 'sources[%d]=%s'%(i,sources[i])
             for (tsignal, (sbp, signal, w)) in sources:
-                print 'consider %s'%tsignal
                 sbp_i = phen_bpg.bodyparts.index(sbp)
                 tbp_i = phen_bpg.bodyparts.index(bp)
                 if isinstance(tsignal, node.Node):
                     bp.network.index(tsignal)
                 if isinstance(signal, node.Node):
-                    print 'signal %s'%signal
-                    if signal not in sbp.network:
-                        print '%s not in %s.network'%(signal, sbp)
-                    sbp.network.index(signal)
+                    assert signal in sbp.network
 
     def fixup(self):
         """Fix any problems with this BodyPartGraph (ie. invalid connections,
