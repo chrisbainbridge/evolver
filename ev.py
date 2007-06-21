@@ -30,7 +30,7 @@
      --topology x     Specify topology of [full,1d,2d,3d,randomk]
        -k x           Specify k inputs for randomk topology
      --update x       Update style [sync,async]
-     --nodetype x     Type of node [sigmoid,logical,beer,sine]
+     --nodetype x     Type of node [sigmoid,logical,beer,wallen,sine]
      --states x       Number of states per cell [logical only]
      --nodes x       (1d, randomk, full) - Total number of nodes
                       (2d, 3d) - length of a dimension
@@ -296,7 +296,7 @@ def main():
         elif o == '--states':
             numberOfStates = int(a)
         elif o == '--fitness':
-            assert a in ['meandistance', 'cumulativez', 'movement', 'walk']
+            assert a in ['meandistance', 'cumulativez', 'movement', 'walk', 'after']
             fitnessFunctionName = a
         elif o == '--blank':
             blank = 1
@@ -361,11 +361,14 @@ def main():
                 'sigmoid' : node.SigmoidNode,
                 'logical': node.LogicalNode,
                 'beer' : node.BeerNode,
+                'wallen' : node.WallenNode,
                 'sine' : node.SineNode }
         new_node_class = new_node_arg_class_map[nodetype]
 
         new_node_args = {}
-        if new_node_class in [node.SigmoidNode, node.BeerNode, node.SineNode]:
+        if issubclass(new_node_class, node.WeightNode):
+            if nodetype == 'wallen':
+                domweight = (0,16)
             new_node_args = {
                     'weightDomain' : domweight,
                     'quanta': quanta }

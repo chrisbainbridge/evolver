@@ -9,7 +9,7 @@ import os
 import test_common
 from test_common import *
 from network import Network, TOPOLOGIES
-from node import SigmoidNode, BeerNode, LogicalNode, SineNode
+from node import SigmoidNode, BeerNode, WallenNode, LogicalNode, SineNode
 from plot import plotNetwork
 
 class NetworkTest(TestCase):
@@ -47,8 +47,7 @@ class NetworkTest(TestCase):
     def test_06_run_net_with_all_topologies(self):
         for topology in TOPOLOGIES:
             net = Network(9,3,2, nodet, nodea, topology, 'sync')
-            for n in net:
-                n.setState()
+            net.reset()
             for n in net:
                 n.preUpdate()
             for n in net:
@@ -58,6 +57,7 @@ if __name__ == "__main__":
     opts = {'--sigmoid' : (SigmoidNode, {}),
             '--beer' :    (BeerNode, {}),
             '--sine' :    (SineNode, {}),
+            '--wallen' :    (WallenNode, {}),
             '--logical' : (LogicalNode, {'numberOfStates':2})}
     nodet = None
     for a in opts:

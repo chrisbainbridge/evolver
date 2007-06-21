@@ -177,15 +177,13 @@ class BodyPart(Persistent):
             self.mutations += self.network.mutate(p)
         return mutations
 
-    def getMotors(self):
+    def getMotors(self, bg=None):
         motors = { 'hinge' :     ['MOTOR_2'],
                    'universal' : ['MOTOR_0', 'MOTOR_1'],
                    'ball' :      ['MOTOR_0', 'MOTOR_1', 'MOTOR_2'] }
-        if self.isRoot:
+        if bg and bg.unrolled and self.isRoot:
             return []
         return motors[self.joint]
-
-    motors = property(getMotors)
 
     def getJointAxes(self):
         jointAxes = { 'hinge' : [2], 'universal' : [0,1], 'ball' : [0,1,2] }
@@ -442,7 +440,9 @@ class BodyPartGraph(Persistent):
             s0 = [ (neuron, externalInput) for neuron in bp.network.inputs for externalInput in neuron.externalInputs ]
             sources = []
             for (n,e) in s0:
-                w = n.weights[e]
+                w = None
+                if isinstance(n,node.WeightNode):
+                    w = n.weights[e]
                 (b,s) = e
                 sources += [ (n,(b,s,w)) ]
             if bp.joint == 'hinge':

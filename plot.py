@@ -280,8 +280,10 @@ def plotNetworks(bg, filename, toponly):
         s += ' subgraph cluster%d {\n'%i
         bp = bg.bodyparts[i]
         nodet = bp.network.getNodeName(0)
-        if bp == bg.root:
+        if bp.isRoot:
             j = 'root'
+            if not bg.unrolled:
+                j += ', ' + bp.joint
         else:
             j = bp.joint
         s += '  label = "bp%d (%s, %s)"\n'%(i, j, nodet)
@@ -290,7 +292,7 @@ def plotNetworks(bg, filename, toponly):
         s += plotEdges(bp.network, toponly, prefix)
         signals = ['CONTACT', 'JOINT_0', 'JOINT_1', 'JOINT_2']
 
-        for signal in signals + bp.motors:
+        for signal in signals + bp.getMotors(bg):
             if toponly:
                 s += '  %s%s [shape=point]\n'%(prefix, signal)
             else:
@@ -305,7 +307,7 @@ def plotNetworks(bg, filename, toponly):
         sources = bg.getInputs(bp)
         # the root node has motor_input values set, but they aren't used, so
         # filter them out
-        if bp.isRoot:
+        if bg.unrolled and bp.isRoot:
             sources = [(target,src) for (target,src) in sources if not isinstance(target,str) or target[0]!='M']
         for (tsignal, (sbp, signal, w)) in sources:
             sbp_i = bg.bodyparts.index(sbp)

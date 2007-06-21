@@ -15,6 +15,7 @@ MAX_UNROLLED_BODYPARTS = 20
 SOFT_WORLD = 1
 JOINT_MAXFORCE = 8.0 * CYLINDER_DENSITY * CYLINDER_RADIUS
 HZ = 50
+DT = 1.0/HZ
 RELAX_TIME = 5.0
 
 log = logging.getLogger('sim')
@@ -80,7 +81,6 @@ class Sim(object):
         self.total_time = 0.0
         self.relax_time = 0
         self.max_simsecs = float(max_simsecs)
-        self.dt = 1.0/HZ
         self.world = ode.World()
         if SOFT_WORLD:
             self.world.setCFM(10**-6) # was 10**-3
@@ -118,7 +118,7 @@ class Sim(object):
         log.debug('/Sim.__del__()')
 
     def run(self):
-        log.debug('Sim.run (secs=%f, dt=%f)', self.max_simsecs, self.dt)
+        log.debug('Sim.run (secs=%f, dt=%f)', self.max_simsecs, DT)
         log.debug('num geoms = %d', self.space.getNumGeoms())
         while not self.finished:
             self.step()
@@ -142,10 +142,10 @@ class Sim(object):
         log.debug('step')
         self.points = []
         self.space.collide(None, self.handleCollide)
-        self.world.step(self.dt)
+        self.world.step(DT)
         self.contactGroup.empty()
-        self.total_time += self.dt
-        log.debug('stepped world by %f time is %f', self.dt, self.total_time)
+        self.total_time += DT
+        log.debug('stepped world by %f time is %f', DT, self.total_time)
         # check for sim blowing up
         for g in self.space:
             if g.placeable():
@@ -175,6 +175,7 @@ class BpgSim(Sim):
                 'meandistance' : self.fitnessMeanDistance,
                 'cumulativez' : self.fitnessCumulativeZ,
                 'movement' : self.fitnessMovement,
+                'after' : self.fitnessAfter,
                 'walk' : self.fitnessWalk}
         if not fitnessName:
             fitnessName = 'meandistance'
@@ -213,7 +214,7 @@ class BpgSim(Sim):
                     l = 'bp%d-%d%s'%(bpi, bp.network.index(n), p)
                     s += '%s '%l
                     self.signals.append((bp,n))
-                for m in bp.motors:
+                for m in bp.getMotors(bg):
                     s += 'bp%d-M%c '%(bpi, m[-1])
                     self.signals.append((bp,m))
                 axes = [ 'JOINT_%d'%j for j in bp.jointAxes ]
@@ -433,7 +434,7 @@ class BpgSim(Sim):
         self.raiseGeoms()
         # initialise the networks into random state
         for bp in bpgraph.bodyparts:
-            bp.network.setState()
+            bp.network.reset()
         self.bpgs.append(bpgraph)
 
     def raiseGeoms(self):
@@ -518,6 +519,14 @@ class BpgSim(Sim):
                 self.d += d / 500
             bp.lastPos = p
 
+    def fitnessAfter(self):
+        mpos = self.meanPos(self.bpgs[0])
+        if self.total_time < 10:
+            self.startpos = self.meanPos(self.bpgs[0])
+            self.score = 0
+        else:
+            self.score = (mpos - self.startpos).length()
+
     def fitnessWalk(self):
         m = self.meanPos(self.bpgs[0])
         y = m[0]
@@ -550,7 +559,7 @@ class BpgSim(Sim):
         while 1:
             self.contactGroup.empty()
             self.space.collide(None, self.handleCollide)
-            self.world.step(self.dt)
+            self.world.step(DT)
             # calc total linear velocity
             total = 0
             for g in self.space:
@@ -820,7 +829,7 @@ class PoleBalanceSim(Sim):
 
         assert type(net) is network.Network
         self.network = net
-        self.network.setState()
+        self.network.reset()
         self.finished = 0
         # fake external_input connection so node knows its an input
         self.angleSignal = (None,'ANGLE_0', 1.0)
@@ -873,7 +882,7 @@ class PoleBalanceSim(Sim):
     def step(self):
         """Run the simulation for one time step.
 
-        The time step has already been specified as self.dt.
+        The time step has already been specified as DT.
 
         Here we record any simulation values that we are tracing, send
         values from the simulation to the neural network inputs, step the

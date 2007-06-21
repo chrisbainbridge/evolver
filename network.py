@@ -149,9 +149,9 @@ class Network(PersistentList):
                     puts[i] = new
         return self.mutations
 
-    def setState(self):
+    def reset(self):
         for n in self:
-            n.setState()
+            n.reset()
 
     def step(self):
         """Step every node in the network.

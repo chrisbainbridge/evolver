@@ -28,6 +28,8 @@ except ImportError:
     os.system('make qtgui.py')
     import qtgui
 
+from sim import DT
+
 import logging
 log = logging.getLogger('qtapp')
 
@@ -52,8 +54,8 @@ class MyApp(QApplication):
         # tell GL widget what to draw
         self.glwidget.sim = sim
         self.glwidget.qtapp = self
-        # set timerEvent at sim.dt milliseconds for simulator time
-        self.startTimer(self.sim.dt*1000)
+        # set timerEvent for each timestep
+        self.startTimer(DT*1000)
         # create main window
         self.setMainWidget(self.window)
         self.window.show()
