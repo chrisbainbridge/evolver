@@ -303,6 +303,10 @@ def plotNetworks(bg, filename, toponly):
     # plot inter-bodypart (node.external_input) edges here
     for bp in bg.bodyparts:
         sources = bg.getInputs(bp)
+        # the root node has motor_input values set, but they aren't used, so
+        # filter them out
+        if bp.isRoot:
+            sources = [(target,src) for (target,src) in sources if not isinstance(target,str) or target[0]!='M']
         for (tsignal, (sbp, signal, w)) in sources:
             sbp_i = bg.bodyparts.index(sbp)
             tbp_i = bg.bodyparts.index(bp)
@@ -317,8 +321,6 @@ def plotNetworks(bg, filename, toponly):
                 s += ' bp%d_%d -> bp%d_%s'%(sbp_i, sbp.network.index(signal), tbp_i, ts)
             color = weightToColor(w)
             s += '[%s]\n'%color
-#            import pdb
-#            pdb.set_trace()
 
     # plot bpg topology
     for i in range(len(bg.bodyparts)):
