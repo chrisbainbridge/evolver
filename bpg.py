@@ -352,6 +352,7 @@ class BodyPartGraph(Persistent):
                     # already exists internaly to the network
                     if not isinstance(p_dst_signal, node.Node) or p_src_node not in p_dst_signal.inputs:
                         # set source to a phenotype (bp,s)
+                        assert p_src_node in p_src_bp.network
                         p_source = (p_src_bp, p_src_node, weight)
                         break
                     log.debug('rejected map - nodes already connected')
@@ -378,6 +379,8 @@ class BodyPartGraph(Persistent):
                 p_src_signal = random.choice(posSrcs)
                 if isinstance(p_dst_signal, node.Node):
                     assert p_src_signal not in p_dst_signal.inputs
+                if isinstance(p_src_signal, node.Node):
+                    assert p_src_signal in p_src_bp.network
                 weight = random.uniform(-7,7)
                 p_source = (p_src_bp, p_src_signal, weight)
 
@@ -388,6 +391,7 @@ class BodyPartGraph(Persistent):
                     # phenotype output node -> genotype output node
                     # (depends on offsets being the same)
                     g_src_signal = g_src_bp.network[p_src_bp.network.index(p_src_signal)]
+                    assert g_src_signal in g_src_bp.network
                     genosource = (g_src_bp, g_src_signal, weight)
                 else:
                     genosource = (g_src_bp, p_src_signal, weight)
@@ -401,6 +405,8 @@ class BodyPartGraph(Persistent):
             # add to signal target.
             if isinstance(p_dst_signal, node.WeightNode):
                 (p_src_bp, p_src_signal, weight) = p_source
+                if isinstance(p_src_signal, node.Node):
+                    assert p_src_signal in p_src_bp.network
                 p_dst_signal.addExternalInput(p_src_bp, p_src_signal, weight)
             elif isinstance(p_dst_signal, node.LogicalNode):
                 (p_src_bp, p_src_signal, weight) = p_source
@@ -438,8 +444,7 @@ class BodyPartGraph(Persistent):
             for (n,e) in s0:
                 w = n.weights[e]
                 (b,s) = e
-                sources += [ (n,(bp,s,w)) ]
-#            print bp.motor_input
+                sources += [ (n,(b,s,w)) ]
             if bp.joint == 'hinge':
                 sources += [ ('MOTOR_2', bp.motor_input[2]) ]
             elif bp.joint == 'universal':
@@ -457,11 +462,6 @@ class BodyPartGraph(Persistent):
             elif bp.joint == 'ball':
                 invalid = []
             sources = [(n,s) for (n,s) in sources if n not in invalid]
-#        print sources
-
-#        for (tsignal, (sbp, signal, w)) in sources:
-#            if isinstance(tsignal, node.Node):
-#                 x = tsignal.weights[(sbp,signal)]
         return sources
 
     def unroll(self, skipNetwork=0):
@@ -528,6 +528,7 @@ class BodyPartGraph(Persistent):
                     for (sbp, src) in n.externalInputs:
                         assert sbp in phen_bpg.bodyparts
                         if isinstance(src, node.Node):
+                            assert src in sbp.network
                             assert src in sbp.network.outputs
                             assert bp != sbp # no inter-network connections
             # check motor connections
@@ -553,6 +554,23 @@ class BodyPartGraph(Persistent):
                         else:
                             assert ssignal in ['JOINT_0', 'JOINT_1', 'JOINT_2', 'CONTACT']
                         assert isinstance(w, float)
+        # check src and dst nodes for externalInputs are in respective bp.network
+        for bp in phen_bpg.bodyparts:
+            print 'bp=%s'%bp
+            sources = phen_bpg.getInputs(bp)
+            for i in range(len(sources)):
+                print 'sources[%d]=%s'%(i,sources[i])
+            for (tsignal, (sbp, signal, w)) in sources:
+                print 'consider %s'%tsignal
+                sbp_i = phen_bpg.bodyparts.index(sbp)
+                tbp_i = phen_bpg.bodyparts.index(bp)
+                if isinstance(tsignal, node.Node):
+                    bp.network.index(tsignal)
+                if isinstance(signal, node.Node):
+                    print 'signal %s'%signal
+                    if signal not in sbp.network:
+                        print '%s not in %s.network'%(signal, sbp)
+                    sbp.network.index(signal)
 
     def fixup(self):
         """Fix any problems with this BodyPartGraph (ie. invalid connections,
