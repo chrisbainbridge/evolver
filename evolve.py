@@ -208,6 +208,7 @@ class Generation(PersistentList):
         sim = self.new_sim_fn(**dict(self.new_sim_args))
         sim.add(x)
         sim.run()
+        sim.destroy()
         return sim.score
 
     def evaluate(self, x):

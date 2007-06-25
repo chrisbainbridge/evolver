@@ -10,7 +10,7 @@ import node
 import network
 
 CYLINDER_RADIUS = 1.0
-CYLINDER_DENSITY = 1.0
+CYLINDER_DENSITY = 0.5
 MAX_UNROLLED_BODYPARTS = 20
 SOFT_WORLD = 1
 JOINT_MAXFORCE = 8.0 * CYLINDER_DENSITY * CYLINDER_RADIUS
@@ -29,20 +29,47 @@ class MyMotor(ode.AMotor):
         self.setParam(ode.ParamFMax2, 0.0)
         self.setParam(ode.ParamFMax3, 0.0)
         self.old_angles = [0.0, 0.0, 0.0]
+        self.f = None
+
+    def setJoint(self, joint):
+        self.joint = joint
+
+    def log(self, prefix):
+        n = '%s.txt'%prefix
+        self.f = open(n, 'w')
+        s = 'seconds ax dx'
+        if not isinstance(self.joint, ode.HingeJoint):
+            s += ' ay dy'
+        if isinstance(self.joint, ode.BallJoint):
+            s += ' az dz'
+        self.f.write(s+'\n')
+        self.t = 0.0
+        return n
+
+    def endlog(self):
+        if self.f:
+            self.f.close()
 
     def __del__(self):
         del self.joint
+        self.endlog()
 
     def step(self):
         log.debug('MyMotor.step')
 
-        x = self.getAngle(0) % (2*math.pi)
-        y = self.getAngle(1) % (2*math.pi)
-        z = self.getAngle(2) % (2*math.pi)
-        dx = self.desired_axisangle[0] % (2*math.pi)
-        dy = self.desired_axisangle[1] % (2*math.pi)
-        dz = self.desired_axisangle[2] % (2*math.pi)
-        log.debug('MyMotor angles=(%f,%f,%f) desired_angles=(%f,%f,%f)'%(x, y, z, dx, dy, dz))
+        a = ['%1.2f'%self.getAngle(x) for x in 0,1,2]
+        d = ['%1.2f'%x for x in self.desired_axisangle]
+        if isinstance(self.joint, ode.HingeJoint):
+            s = '%s %s\n'%(a[2], d[2])
+        elif isinstance(self.joint, ode.UniversalJoint):
+            s = '%s %s %s %s\n'%(a[0], d[0], a[2], d[2])
+        if isinstance(self.joint, ode.BallJoint):
+            s = '%s %s %s %s %s %s\n'%(a[0], d[0], a[1], d[1], a[2], d[2])
+
+        if self.f:
+            self.f.write('%2.2f '%self.t + s)
+            self.t += 0.02
+        log.debug('MyMotor angles=%s desired_angles=%s', ['%1.2f'%self.getAngle(x) for x in 0,1,2], ['%1.2f'%x for x in self.desired_axisangle])
 
         for (x, param) in (0, ode.ParamVel), (1, ode.ParamVel2), (2, ode.ParamVel3):
             a = self.getAngle(x)
@@ -56,7 +83,7 @@ class MyMotor(ode.AMotor):
                 d = -1
           # ignore axes that we don't control for each joint
             if type(self.joint) is ode.HingeJoint and x != 2 \
-            or type(self.joint) is ode.UniversalJoint and x == 2:
+            or type(self.joint) is ode.UniversalJoint and x == 1:
                 self.setParam(param, 0)
             else:
                 # Proportional derivative controller. We have to estimate the
@@ -65,8 +92,10 @@ class MyMotor(ode.AMotor):
                 ang_vel = abs(a - self.old_angles[x])*HZ
                 self.old_angles[x] = a
 
-                Kp = 10.0 # proportional constant
-                Kd = 7.0 # derivative constant
+                Kp = 30.0 # proportional constant 10
+                Kd = 5 # derivative constant 7
+                if isinstance(self.joint, ode.BallJoint) and x == 0:
+                    Kd = 275
                 dv = Kp * dist - Kd * ang_vel
                 dv = max(dv, 0)
                 self.setParam(param, d*dv)
@@ -98,6 +127,9 @@ class Sim(object):
         self.joints = []
         self.gaussNoise = gaussNoise
         self.points = []
+
+    def destroy(self):
+        pass
 
     def __del__(self):
         log.debug('Sim.__del__()')
@@ -183,6 +215,10 @@ class BpgSim(Sim):
         self.relax_time = RELAX_TIME
         self.d = 0.0
         self.m = 0.0
+
+    def destroy(self):
+        # for some reason this instance method keeps a pointer to the sim object
+        del self.fitnessMethod
 
     def getMaxSimTime(self):
         """max_simsecs attribute. add relax time to the sim time when set.
@@ -319,6 +355,7 @@ class BpgSim(Sim):
                            'universal':ode.UniversalJoint,
                            'ball':ode.BallJoint }
             j = jointclass[bp.joint](self.world)
+
             self.joints.append(j)
             # attach bodies to joint
             j.attach(parent.geom.getBody(), body)
@@ -327,16 +364,16 @@ class BpgSim(Sim):
             geom.parent_joint = j
 
             # create motor and attach to this geom
-            motor = MyMotor(self.world)
+            motor = MyMotor(self.world, None)
+            motor.setJoint(j)
             self.joints.append(motor)
-            motor.joint = j
             bp.motor = motor
             motor.attach(parent.geom.getBody(), body)
             motor.setMode(ode.AMotorEuler)
 
             # set joint axes
             maxforce = JOINT_MAXFORCE * bp.length * parent.length
-            maxforce = 5000
+            maxforce = 10000
             log.debug('motor maxforce = %f', maxforce)
             if bp.joint == 'hinge':
                 # we have 3 points - parent body, joint, child body
@@ -374,8 +411,8 @@ class BpgSim(Sim):
                 motor.setAxis(0, 1, tuple(axis1))
                 motor.setAxis(2, 2, tuple(axis2))
                 motor.setParam(ode.ParamFMax, maxforce)
-                motor.setParam(ode.ParamFMax2, maxforce)
-                motor.setParam(ode.ParamFMax3, 0)
+                motor.setParam(ode.ParamFMax2, 0)
+                motor.setParam(ode.ParamFMax3, maxforce)
             elif bp.joint == 'ball':
                 # the ball rotation is an evolvable parameter, so the joint axes
                 # do evolve

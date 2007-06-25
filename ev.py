@@ -611,7 +611,7 @@ def main():
                     cmd = 'kghostview %s'%f
                     log.info(cmd)
                     os.system(cmd)
-
+        s.destroy()
     return 0
 
 if __name__=='__main__':

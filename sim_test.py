@@ -13,6 +13,7 @@ import copy
 
 from persistent.list import PersistentList
 from cgkit.cgtypes import vec3
+from Cheetah.Template import Template
 
 import sim
 from bpg import Edge, BodyPart, BodyPartGraph
@@ -26,7 +27,8 @@ from qtapp import MyApp
 myapp = MyApp([sys.argv[0]] + ['-geometry','640x480'])
 
 TESTDIR = '/tmp/'
-SECONDS = 5
+SECONDS = 3
+random.seed(1)
 
 class TestBodyPart(BodyPart):
     """Create a random test BodyPart aligned along z axis"""
@@ -61,9 +63,6 @@ class TestBodyPartGraph(BodyPartGraph):
 class BpgTestCase(unittest.TestCase):
 
     def setUp(self):
-#        s = random.randint(0,1000)
-        s = 445
-        random.seed(s)
         if not os.path.exists('test'):
             os.mkdir('test')
 
@@ -153,6 +152,7 @@ def runSim(sim, record=0, avifile=None):
         runVisualSim(sim, record, avifile)
     else:
         runNonVisualSim(sim)
+    sim.destroy()
 
 def nudgeGeomsInSpace(s):
     "Apply a small force to every geom in space s"
@@ -170,12 +170,6 @@ def createAndRunSim(jtype):
     runSim(s)
 
 class BpgSimTestCase(unittest.TestCase):
-
-    def setUp(self):
-        random.seed()
-
-    def tearDown(self):
-        pass
 
     def test_1_single_bodypart(self):
         b = TestBodyPartGraph(new_network_args, 1)
@@ -201,10 +195,9 @@ class BpgSimTestCase(unittest.TestCase):
         b.bodyparts[0].rotation = (0, (1,0,0))
         b.bodyparts[1].rotation = (math.pi/2, (0,1,0))
         for i in 0,1:
-            for attr in 'lostop', 'lostop2', 'lostop3', 'histop', 'histop2', 'histop3', 'motor_input':
-                setattr(b.bodyparts[i], attr, None)
+            b.bodyparts[i].motor_input = None
         s = sim.BpgSim(SECONDS)
-        s.relax_time = 0
+        s.relaxed = 1
         s.add(b)
         s.bpgs[0].bodyparts[0].motor_input = None
         s.bpgs[0].bodyparts[1].motor_input = None
@@ -218,14 +211,25 @@ class BpgSimTestCase(unittest.TestCase):
         j.setFixed()
         # start motor
         m = s.bpgs[0].bodyparts[1].motor
-        m.desired_axisangle[0] = -math.pi/2 #math.pi*3/2
-        m.desired_axisangle[2] = -3*math.pi/4 #5*math.pi/4
-
+        motor_data = m.log('test/'+jointtype)
+        m.desired_axisangle[0] = math.pi/4
+        m.desired_axisangle[1] = -math.pi/4
+        m.desired_axisangle[2] = -math.pi/2
         s.initSignalLog('test/signal.log')
         if not record:
             runSim(s)
         else:
             runSim(s, 1, '%s/record_test.avi'%TESTDIR)
+        m.endlog()
+
+        t = Template(file='plot_motor.t')
+        t.data = motor_data
+        t.png = motor_data[:-4] + '.png'
+        t.joint = jointtype
+        f = open('tmp.r', 'w')
+        f.write(t.respond())
+        f.close()
+        os.system('R -q --no-save < tmp.r > /dev/null')
 
     def test_5_hinge_motor(self):
         self.do_joint_motor('hinge')
@@ -246,9 +250,6 @@ class BpgSimTestCase(unittest.TestCase):
             os.system('rm %s/record_test.avi'%TESTDIR)
 
 class PoleBalanceSimTestCase(unittest.TestCase):
-
-    def setUp(self):
-        random.seed()
 
     def test_1_random_network_control(self):
         s = sim.PoleBalanceSim(SECONDS)
