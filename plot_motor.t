@@ -1,4 +1,4 @@
-png('$png', 680, 480)
+pdf('$out')
 
 d <- read.table('$data', header=T)
 attach(d)

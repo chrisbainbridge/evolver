@@ -224,7 +224,7 @@ class BpgSimTestCase(unittest.TestCase):
 
         t = Template(file='plot_motor.t')
         t.data = motor_data
-        t.png = motor_data[:-4] + '.png'
+        t.out = motor_data[:-4] + '.pdf'
         t.joint = jointtype
         f = open('tmp.r', 'w')
         f.write(t.respond())
