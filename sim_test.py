@@ -229,7 +229,7 @@ class BpgSimTestCase(unittest.TestCase):
         f = open('tmp.r', 'w')
         f.write(t.respond())
         f.close()
-        os.system('R -q --no-save < tmp.r > /dev/null')
+        os.system('R -q --no-save < tmp.r >> r.out 2>&1')
 
     def test_5_hinge_motor(self):
         self.do_joint_motor('hinge')
