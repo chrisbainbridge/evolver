@@ -254,9 +254,6 @@ class BodyPartGraph(Persistent):
             u = self.unroll(1)
             if len(u.bodyparts) >= BPG_MIN_UNROLLED_BODYPARTS:
                 self.connectInputNodes()
-                for bp in self.bodyparts:
-                    for i in 0,1,2:
-                        assert not bp.motor_input[i]
                 self.sanityCheck()
                 break
 
@@ -298,12 +295,6 @@ class BodyPartGraph(Persistent):
             log.debug('self.unrolled=0')
             backannotate = 1
             p_bpg = self.unroll()
-        # check that all motor inputs come from valid bodyparts
-        for bp in p_bpg.bodyparts:
-            for i in 0,1,2:
-                if bp.motor_input[i]:
-                    (b,s,w) = bp.motor_input[i]
-                    assert b in p_bpg.bodyparts
         log.debug('p_bpg=%s (bodyparts=%s)'%(p_bpg, p_bpg.bodyparts))
         # find all unconnected nodes
         un = set([ (p_dst_bp, p_dst_signal) for p_dst_bp in p_bpg.bodyparts for p_dst_signal in p_dst_bp.network.inputs if not p_dst_signal.externalInputs ])
@@ -344,7 +335,7 @@ class BodyPartGraph(Persistent):
                     # assert not two nodes in same bp network
                     assert not (isinstance(p_dst_signal, node.Node) and isinstance(p_src_node, node.Node)) or (p_src_bp != p_dst_bp)
                     # don't allow an external_input if the connection
-                    # already exists internaly to the network
+                    # already exists internally to the network
                     if not isinstance(p_dst_signal, node.Node) or p_src_node not in p_dst_signal.inputs:
                         # set source to a phenotype (bp,s)
                         assert p_src_node in p_src_bp.network
@@ -415,12 +406,6 @@ class BodyPartGraph(Persistent):
                 p_dst_bp.motor_input[i] = p_source
             else:
                 assert 0
-
-        for bp in p_bpg.bodyparts:
-            for i in 0,1,2:
-                (b,s,w) = bp.motor_input[i]
-                log.debug('p_bpg.bodyparts[%d].motor_input[%d]=(%s,%s,%f)'%(p_bpg.bodyparts.index(bp),i,b,s,w))
-                assert b in p_bpg.bodyparts
 
         log.debug('/connectInputNodes, calling sanityCheck')
         if sanitycheck:
@@ -535,6 +520,11 @@ class BodyPartGraph(Persistent):
                 assert sbp in phen_bpg.bodyparts
                 if isinstance(src, node.Node):
                     assert src in sbp.network.outputs
+        if not self.unrolled:
+            # assert that *genotype* has no motor_inputs
+            for bp in self.bodyparts:
+                for i in 0,1,2:
+                    assert not bp.motor_input[i]
         for bp in self.bodyparts:
             if self.unrolled:
                 # we only use input maps for the genotype, since phenotype BPs
@@ -622,24 +612,7 @@ class BodyPartGraph(Persistent):
                 for k in krm:
                     del bp.input_map[k]
 
-        # fix input_map so all input nodes are connected
-#        assert len([x for x in self.bodyparts if x.isRoot == 1]) == 1
-#        for bp in self.bodyparts:
-#            for axis in (0,1,2):
-#                bad = []
-#                (b,s,w) = bp.motor_input[axis]
-#                if b not in self.bodyparts:
-#                    bp.motor_input[axis] = None
-#        for bp in self.bodyparts:
-#            try:
-#                bad = [ (bp.motor_input[i], x, item) for bp in self.bodyparts for i in (0,1,2) for x in len(bp.motor_input[i]) for item in bp.motor_input[i] if bp.motor_input[i][x][0] not in self.bodyparts ]
-#                for (mi, k, i) in bad:
-#                    mi[k].remove(i)
-#            except:
-#                import pdb
-#                pdb.set_trace()
         self.connectInputNodes()
-        assert len([x for x in self.bodyparts if x.isRoot == 1]) == 1
         self.sanityCheck()
 
     def mutate_delete_edges(self, p):
@@ -735,10 +708,11 @@ class BodyPartGraph(Persistent):
                     di = random.choice(bp.input_map.keys())
                     if random.random() < 0.5:
                         del bp.input_map[di]
-                    elif bp.input_map[di]:
+                    else:
+                        # mutate weight
                         xp = random.randrange(0,len(bp.input_map[di]))
                         x = list(bp.input_map[di][xp])
-                        x[2] = random.uniform(-7,7)
+                        x[2] = rnd(-7,7,x[2])
                         bp.input_map[di][xp] = tuple(x)
 
         self.connectInputNodes()
