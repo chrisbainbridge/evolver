@@ -129,7 +129,7 @@ def plotSignals(tracefile, quanta=0):
         fo.write(s)
         fo.close()
         os.chmod(fname, 0755)
-        os.system('gnuplot %s'%fname)
+        os.system('gnuplot %s >> gnuplot.out 2>&1'%fname)
         log.debug('generated %s-p%d.eps', basename, page)
         page += 1
     log.info('generated %s', fnames)
@@ -149,7 +149,7 @@ def gnuplotSetup(filename, genName):
 def gnuplot(gnuplotFile, ext, view, datFile, fbase):
     if ext != '.gnuplot':
         assert ext == '.pdf'
-        os.system('gnuplot %s'%(gnuplotFile))
+        os.system('gnuplot %s >> gnuplot.out 2>&1'%(gnuplotFile))
         os.remove(gnuplotFile)
         os.remove(datFile)
         if view:
@@ -260,13 +260,13 @@ def dot(filename, s):
     f.close()
     if ext != '.dot':
         if ext == '.pdf':
-            os.system('dot -Tps -o%s.eps %s.dot'%(fbase, fbase))
+            os.system('dot -Tps -o%s.eps %s.dot >> dot.out 2>&1'%(fbase, fbase))
             os.system('epstopdf %s.eps'%fbase)
             os.remove(fbase+'.eps')
             if view:
                 os.system('kpdf %s.pdf'%fbase)
         else:
-            cmd = 'dot -T%s -o%s%s %s.dot'%(ext[1:], fbase, ext, fbase)
+            cmd = 'dot -T%s -o%s%s %s.dot >> dot.out 2>&1'%(ext[1:], fbase, ext, fbase)
             os.system(cmd)
             os.remove(fbase+'.dot')
 
