@@ -10,7 +10,7 @@ import node
 import network
 
 CYLINDER_RADIUS = 1.0
-CYLINDER_DENSITY = 0.5
+CYLINDER_DENSITY = 1.0
 MAX_UNROLLED_BODYPARTS = 20
 SOFT_WORLD = 1
 JOINT_MAXFORCE = 8.0 * CYLINDER_DENSITY * CYLINDER_RADIUS
@@ -761,7 +761,7 @@ class BpgSim(Sim):
                         v = self.getSensorValue(sbp, src)
                         assert 0 <= v <= 1
                         assert -7 <= weight <= 7
-                        v = ((v-0.5)*2*weight/7)*math.pi # map to -pi..pi
+                        v = ((v-0.5)*2*abs(weight)/7)*math.pi # map to -pi..pi
                         assert -math.pi <= v <= math.pi
                         bp.motor.desired_axisangle[mi] = v
 
