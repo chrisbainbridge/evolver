@@ -74,43 +74,28 @@ def runRateTest(gn):
         cluster.stopZeoClients(hosts)
     f.close()
 
-class TestClusterElite(TestCase):
+class Cluster:
     def setUp(self):
-        ev_test.g = 'test_clusterElite'
-    def test_1_delete(self):
-        ev_test.delete()
-    def test_2_create(self):
-        ev_test.args = '--nodetype sigmoid --elite'
-        ev_test.create()
-    def test_3_run(self):
-        run(ev_test.g)
+        ev_test.delete(self.g)
+    def test_1_create(self):
+        ev_test.create(self.g, self.args)
+    def test_2_run(self):
+        run(self.g)
 
-class TestClusterSteadyState(TestCase):
-    def setUp(self):
-        ev_test.g = 'test_clusterSS'
-    def test_1_delete(self):
-        ev_test.delete()
-    def test_2_create(self):
-        ev_test.args = '--nodetype sigmoid --steadystate'
-        ev_test.create()
-    def test_3_run(self):
-        run(ev_test.g)
+class Elite(Cluster, TestCase):
+    g = 'test_cluster_elite'
+    args = '--nodetype sigmoid --elite'
 
-class TestClusterRate(TestCase):
-    def setUp(self):
-        ev_test.g = 'test_clusterRate'
-    def test_1_delete(self):
-        ev_test.delete()
-    def test_2_create(self):
-        ev_test.args = '-p 50 -t 30 -g 2 --topology full --update sync'\
+class SteadyState(Cluster, TestCase):
+    g = 'test_cluster_ss'
+    args = '--nodetype sigmoid --steadystate'
+
+class TestClusterRate(Cluster, TestCase):
+    g = 'test_cluster_rate'
+    args = '-p 50 -t 30 -g 2 --topology full --update sync'\
         '--nodetype sine --nodes 5 --sim bpg --fitness movement'
-        ev_test.create()
     def test_3_run(self):
-        # run for a few gens to get a more typical workload
-        run(ev_test.g)
-        ev_test.main('ev.py -r %s -g 50'%ev_test.g)
-    def test_4_run(self):
-        # now run the main rate test
+        ev_test.main('ev.py -r %s -g 10'%self.g)
         runRateTest(ev_test.g)
 
 if __name__ == "__main__":

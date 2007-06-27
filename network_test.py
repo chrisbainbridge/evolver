@@ -12,11 +12,12 @@ from network import Network, TOPOLOGIES
 from node import SigmoidNode, BeerNode, WallenNode, LogicalNode, SineNode
 from plot import plotNetwork
 
-class NetworkTest(TestCase):
+random.seed()
 
-    def setUp(self):
-        random.seed()
-        self.fprefix = 'test/network_'
+class NetworkTest:
+
+    fprefix = 'test/network_'
+    nodea = {}
 
     def dot(self, n, name):
         name = self.fprefix + name
@@ -26,8 +27,8 @@ class NetworkTest(TestCase):
             os.popen('kghostview %s.ps'%name)
 
     def do(self, n, i, o, top, update):
-        net = Network(n, i, o, nodet, nodea, top, update)
-        ns = str(nodet)
+        net = Network(n, i, o, self.nodet, self.nodea, top, update)
+        ns = str(self.nodet)
         nc = ns[ns.find('.')+1:ns.rfind('\'')]
         s = '%s_%s'%(nc, top)
         self.dot(net, s)
@@ -46,29 +47,24 @@ class NetworkTest(TestCase):
 
     def test_06_run_net_with_all_topologies(self):
         for topology in TOPOLOGIES:
-            net = Network(9,3,2, nodet, nodea, topology, 'sync')
+            net = Network(9,3,2, self.nodet, self.nodea, topology, 'sync')
             net.reset()
             for n in net:
                 n.preUpdate()
             for n in net:
                 n.postUpdate()
 
+class Sigmoid(NetworkTest,TestCase):
+    nodet = SigmoidNode
+class Beer(NetworkTest,TestCase):
+    nodet = BeerNode
+class Sine(NetworkTest,TestCase):
+    nodet = SineNode
+class Wallen(NetworkTest,TestCase):
+    nodet = WallenNode
+class Logical(NetworkTest,TestCase):
+    nodet = LogicalNode
+    nodea = {'numberOfStates':2}
+
 if __name__ == "__main__":
-    opts = {'--sigmoid' : (SigmoidNode, {}),
-            '--beer' :    (BeerNode, {}),
-            '--sine' :    (SineNode, {}),
-            '--wallen' :    (WallenNode, {}),
-            '--logical' : (LogicalNode, {'numberOfStates':2})}
-    nodet = None
-    for a in opts:
-        if a in sys.argv:
-            sys.argv.remove(a)
-            nodet = opts[a][0]
-            nodea = opts[a][1]
-    if nodet:
-        test_main()
-    else:
-        for nodet in opts:
-            cmd = '%s %s %s'%(sys.argv[0], nodet, ' '.join(sys.argv[1:]))
-            critical(cmd)
-            os.system(cmd)
+    test_main()

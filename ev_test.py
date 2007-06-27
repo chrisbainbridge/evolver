@@ -1,39 +1,29 @@
 #!/usr/bin/python
 
 from unittest import TestCase
-import os
 import sys
 import testoob
 
 import ev
-from test_common import *
+from test_common import test_main
 from logging import debug, info, critical
 
 STDARGS = '-p 3 -t 3 -g 3 --topology 1d --update async --nodes 5'
-TESTS = ['-r ev_logical --nodetype logical --states 2',
-        '-r ev_sigmoid --nodetype sigmoid',
-        '-r ev_sigmoid_q --nodetype sigmoid -q 32',
-        '-r ev_steadystate --nodetype sigmoid --steadystate',
-        '-r ev_pb --sim pb',
-        '-r ev_beer --nodetype beer --steadystate']
-
-g = None # name of the run
-args = None # ev cmd line args
 
 def main(s):
     sys.argv = s.split()
     ev.main()
 
-def delete():
+def delete(g):
     main('ev.py -r %s -e'%g)
 
-def create():
+def create(g, args):
     main('ev.py -r %s %s'%(g, args))
 
-def run():
+def run(g):
     main('ev.py -r %s -c -m'%g)
 
-def plot():
+def plot(g):
     debug('testing --pf')
     main('ev.py -r %s --pf test/%s-fitness.pdf'%(g, g))
     debug('testing --plotpi')
@@ -41,27 +31,35 @@ def plot():
     debug('testing --plotfc')
     main('ev.py -r %s --plotfc test/%s-childfc.pdf'%(g, g))
 
-class EvTest(TestCase):
-    def test_1_delete(self):
-        delete()
-    def test_2_create(self):
-        create()
-    def test_3_run(self):
-        run()
-    def test_4_plot(self):
-        plot()
+class EvTest:
+    def setUp(self):
+        delete(self.name)
+    def test_1_create(self):
+        create(self.name, STDARGS + ' ' + self.args)
+    def test_2_run(self):
+        run(self.name)
+    def test_3_plot(self):
+        plot(self.name)
+
+class Sigmoid(EvTest, TestCase):
+    name = 'ev_sigmoid'
+    args = '--nodetype sigmoid'
+class Beer(EvTest, TestCase):
+    name = 'ev_beer'
+    args = '--nodetype beer'
+class SigmoidQuanta(EvTest, TestCase):
+    name = 'ev_sigmoid_q'
+    args = '--nodetype sigmoid -q 32'
+class SteadyState(EvTest, TestCase):
+    name = 'ev_steadystate'
+    args = '--nodetype sigmoid --steadystate'
+class Logical(EvTest, TestCase):
+    name = 'ev_logical'
+    args = '--nodetype logical --states 2'
+class Pb(EvTest, TestCase):
+    name = 'ev_pb'
+    args = '--sim pb'
+
 
 if __name__ == "__main__":
-    if '--args' not in sys.argv:
-        setup_logging()
-        for args in TESTS:
-            cmd = '%s --args "%s %s" %s'%(sys.argv[0], args, STDARGS, ' '.join(sys.argv[1:]))
-            critical(cmd)
-            os.system(cmd)
-    else:
-        i = sys.argv.index('--args')
-        args = sys.argv[i+1]
-        del sys.argv[i:i+2]
-        x = args.split()
-        g = x[x.index('-r')+1]
-        test_main()
+    test_main()
