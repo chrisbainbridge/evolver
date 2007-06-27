@@ -19,7 +19,6 @@ checker:
 	@dot -Tps -o$@ $<
 
 popd:
-	rm -f evo.stats
 	ev.py -r x -e
 
 pop:
@@ -33,11 +32,8 @@ popz:
 
 run:
 	ev.py -r x -u
-	rm -f pymemprof.log evo.stats
-	ev.py -r x -c -m --statlog evo.stats
-
-viewstats:
-	kghostview stats.eps
+	rm -f pymemprof.log
+	ev.py -r x -c -m
 
 clean:
 	rm -f *.pyc 
