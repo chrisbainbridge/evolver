@@ -156,8 +156,7 @@ class BodyPart(Persistent):
             'scale' : 'rnd(0.2, 5.0, self.scale)',
             'recursive_limit' : 'random.randint(0, BP_MAX_RECURSIVE_LIMIT)',
             'joint' : "random.choice(['hinge','universal','ball'])",
-            # axis1 angle must be in -pi/2..pi/2 to avoid a singularity in ode
-            'axis1' : 'randomAxis(self.axis1)',
+            'axis1' : 'randomAxis(self.axis1)', # axis is (x,y,0)
             'ball_rot' : 'randomQuat(self.ball_rot)',
             'rotation' : 'randomQuat(self.rotation)',
             }
@@ -170,8 +169,6 @@ class BodyPart(Persistent):
             if random.random() < p:
                 setattr(self, attr, eval(attrs[attr]))
                 mutations += 1
-        # we need to force recalc of axis2 if axis1 changed
-        self.axis2 = tuple(vec3((0,0,1)).cross(vec3(self.axis1)))
         # mutate control network
         if p:
             self.mutations += self.network.mutate(p)

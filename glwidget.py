@@ -337,6 +337,45 @@ class GLWidget(QGLWidget):
 
             elif type(geom) is ode.GeomCCylinder:
                 log.debug('draw ccylinder')
+
+                def red(): glColor(1,0,0)
+                def green(): glColor(0,1,0)
+                def blue(): glColor(0,0,1)
+                def plot_axes(ax,ay,az):
+                    for axis,colour in (ax,red),(ay,blue),(az,green):
+                        if axis:
+                            x,y,z = axis
+                            colour()
+                            glBegin(GL_LINES)
+                            glVertex(0,0,0)
+                            glVertex(x*5,y*5,z*5)
+                            glEnd()
+
+                if self.render_axes and hasattr(geom, 'motor'):
+                    glPushMatrix()
+                    glDisable(GL_LIGHTING)
+
+                    m = geom.motor
+                    x,y,z = m.joint.getAnchor()
+                    glTranslate(x,y,z)
+                    ax = None
+                    ay = None
+                    az = None
+                    if isinstance(m.joint, ode.HingeJoint):
+                        ax = m.joint.getAxis()
+                    elif isinstance(m.joint, ode.UniversalJoint):
+                        ax = m.joint.getAxis1()
+                        ay = m.joint.getAxis2()
+                    plot_axes(ax,ay,az)
+
+                    # plot motor axes
+                    # these should be aligned with the joint axes above
+                    ax,ay,az = m.getAxis(0), m.getAxis(1), m.getAxis(2)
+                    plot_axes(ax,ay,az)
+
+                    glEnable(GL_LIGHTING)
+                    glPopMatrix()
+
                 # construct transformation matrix from position and rotation
                 x,y,z = geom.getPosition()
                 rotmat = mat3(geom.getRotation())

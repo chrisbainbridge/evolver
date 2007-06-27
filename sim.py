@@ -17,6 +17,8 @@ JOINT_MAXFORCE = 8.0 * CYLINDER_DENSITY * CYLINDER_RADIUS
 HZ = 50
 DT = 1.0/HZ
 RELAX_TIME = 5.0
+M_MAX_FORCE = 10000
+M_AXES = { 0 : ode.ParamFMax, 1 : ode.ParamFMax2, 2 : ode.ParamFMax3 }
 
 log = logging.getLogger('sim')
 log.setLevel(logging.INFO)
@@ -25,14 +27,31 @@ class MyMotor(ode.AMotor):
     def __init__(self, world, jointgroup=None):
         ode.AMotor.__init__(self, world, jointgroup)
         self.desired_axisangle = [0.0, 0.0, 0.0]
-        self.setParam(ode.ParamFMax, 0.0)
-        self.setParam(ode.ParamFMax2, 0.0)
-        self.setParam(ode.ParamFMax3, 0.0)
+        for p in M_AXES.values():
+            self.setParam(p, 0.0)
         self.old_angles = [0.0, 0.0, 0.0]
         self.f = None
+        # prevent singularity (see manual p.36)
+        self.setParam(ode.ParamLoStop2, -math.pi)
+        self.setParam(ode.ParamHiStop2, math.pi)
+
+    def setAxes(self, axis0, axis2):
+        # axis0 is anchored to first body
+        # axis1 is computed by ODE perpendicular to 0 and 2
+        # axis2 is anchored to second body
+        self.setAxis(0, 1, tuple(axis0))
+        self.setAxis(2, 2, tuple(axis2))
 
     def setJoint(self, joint):
         self.joint = joint
+        if isinstance(joint, ode.HingeJoint):
+            axes = [2]
+        elif isinstance(joint, ode.UniversalJoint):
+            axes = [0,2]
+        else:
+            axes = [0,1,2]
+        for x in axes:
+            self.setParam(M_AXES[x], M_MAX_FORCE)
 
     def log(self, prefix):
         n = '%s.txt'%prefix
@@ -368,13 +387,10 @@ class BpgSim(Sim):
             motor.setJoint(j)
             self.joints.append(motor)
             bp.motor = motor
+            geom.motor = motor
             motor.attach(parent.geom.getBody(), body)
             motor.setMode(ode.AMotorEuler)
 
-            # set joint axes
-            maxforce = JOINT_MAXFORCE * bp.length * parent.length
-            maxforce = 10000
-            log.debug('motor maxforce = %f', maxforce)
             if bp.joint == 'hinge':
                 # we have 3 points - parent body, joint, child body
                 # find the normal to these points
@@ -396,34 +412,21 @@ class BpgSim(Sim):
                 # instability when the angle switches from -pi to +pi
                 # so.. use parameter3 to control the hinge
                 # (maybe this is only a problem in the test case with perfect axis alignment?)
-                motor.setAxis(0, 1, tuple(axis2))
-                motor.setAxis(2, 2, tuple(rotmat*axis1))
-                motor.setParam(ode.ParamFMax, 0)
-                motor.setParam(ode.ParamFMax2, 0)
-                motor.setParam(ode.ParamFMax3, maxforce)
+                motor.setAxes(axis2, rotmat*axis1)
             elif bp.joint == 'universal':
                 # bp.axis1/2 is relative to bp rotation, so rotate axes
                 axis1 = rotmat * vec3(bp.axis1)
-                axis2 = rotmat * vec3(bp.axis2)
+                axis2 = rotmat * vec3((0,0,1)).cross(vec3(bp.axis1))
                 j.setAxis1(tuple(axis1))
                 j.setAxis2(tuple(axis2))
-                # rotate about the first and third parameters for these axis
-                motor.setAxis(0, 1, tuple(axis1))
-                motor.setAxis(2, 2, tuple(axis2))
-                motor.setParam(ode.ParamFMax, maxforce)
-                motor.setParam(ode.ParamFMax2, 0)
-                motor.setParam(ode.ParamFMax3, maxforce)
+                motor.setAxes(axis1, axis2)
             elif bp.joint == 'ball':
                 # the ball rotation is an evolvable parameter, so the joint axes
                 # do evolve
                 ball_rot = quat(bp.ball_rot[0], vec3(bp.ball_rot[1])).toMat3()
                 x = ball_rot * vec3((1, 0, 0))
                 y = ball_rot * vec3((0, 1, 0))
-                motor.setAxis(0, 1, tuple(x))
-                motor.setAxis(2, 2, tuple(y))
-                motor.setParam(ode.ParamFMax, maxforce)
-                motor.setParam(ode.ParamFMax2, maxforce)
-                motor.setParam(ode.ParamFMax3, maxforce)
+                motor.setAxes(x, y)
 
             log.debug('created joint with parent at %f,%f,%f', j_v[0], j_v[1], j_v[2])
 
