@@ -574,12 +574,13 @@ def main():
             (traceBase, traceExt) = os.path.splitext(tracefile)
             if traceExt in ['.trace', '.txt']:
                 fname = tracefile
-            elif traceExt == '.eps':
+            elif traceExt in ['.eps', '.pdf']:
                 fname = '%s.trace'%traceBase
                 plotTrace = 1
-            else:
+            elif traceBase == '-':
                 fname = 'tmp.trace'
                 plotTrace = 1
+                traceExt = '.pdf'
             s.initSignalLog(fname)
         if gui:
             log.debug('Launching GUI')
@@ -595,20 +596,20 @@ def main():
             s.run()
             log.info('Final score was %f', s.score)
         if plotTrace:
-            assert traceExt == '.eps' or tracefile == '-'
+            assert traceExt in ['.eps','.pdf']
             if strip:
                 stripTraceFile(fname)
             if root[g].new_individual_args.has_key('new_node_args'):
                 q = root[g].new_individual_args['new_node_args']['quanta']
             else:
                 q = root[g].new_individual_args['network_args']['new_node_args']['quanta']
-            epsFiles = plotSignals(fname, q)
-            if not epsFiles:
+            plots = plotSignals(fname, q, traceExt)
+            if not plots:
                 log.critical('failed to generate trace - bad sim?')
                 return 1
             if tracefile == '-':
-                for f in epsFiles:
-                    cmd = 'kghostview %s'%f
+                for f in plots:
+                    cmd = 'kpdf %s'%f
                     log.info(cmd)
                     os.system(cmd)
         s.destroy()

@@ -73,7 +73,7 @@ def stripTraceFile(tracefile):
     os.rename(tracefile, tracefile+'.bak')
     os.rename('strip.trace', tracefile)
 
-def plotSignals(tracefile, quanta=0):
+def plotSignals(tracefile, quanta=0, ext='.pdf'):
     log.debug('plotting tracefile %s', tracefile)
 
     f = open(tracefile, 'r')
@@ -83,10 +83,16 @@ def plotSignals(tracefile, quanta=0):
     num_plots = len(labels)-1
     log.debug('%d signals to plot', num_plots)
     PLOTS_PER_PAGE = 10
-    (basename, ext) = os.path.splitext(tracefile)
+    (basename, _) = os.path.splitext(tracefile)
     log.debug('basename = %s', basename)
+    font = 'Helvetica'
+    font_size = 8
+    if ext == '.pdf':
+        term = 'pdf font "%s,%d" size 21cm,30cm'%(font, font_size)
+    elif ext == '.eps':
+        term = 'postscript portrait "%s" %d'%(font, font_size)
     header = """#!/usr/bin/gnuplot
-    set terminal postscript portrait "Helvetica" 8
+    set terminal %s
     set out "%%s"
     set multiplot layout %d,1
     set border 3
@@ -94,7 +100,7 @@ def plotSignals(tracefile, quanta=0):
     set style line 1 linetype 1 linewidth 1
     set lmargin 10
     set xtics nomirror
-    """%(PLOTS_PER_PAGE)
+    """%(term, PLOTS_PER_PAGE)
 
     page = 0
     fnames = []
@@ -103,7 +109,7 @@ def plotSignals(tracefile, quanta=0):
         fname = '%s-p%d.gnuplot'%(basename, page)
         fo = open(fname, 'w')
         log.debug('creating gnuplot script %s', fname)
-        epsFile = "%s-p%d.eps"%(basename, page)
+        epsFile = "%s-p%d%s"%(basename, page, ext)
         fnames.append(epsFile)
         s = header%(epsFile)
         for i in range(x, x+min(PLOTS_PER_PAGE, num_plots-x+1)):
