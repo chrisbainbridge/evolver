@@ -76,7 +76,7 @@
  -v                   Visualise with graphical user interface
      --qt 'qt options'  Pass string onto QT options (eg. -geometry 640x480)
      --movie file.avi   Record movie to file.avi
- --plotsignals fname  Record signal traces. f can be *.[txt/trace/eps]
+ --ps fname  Record signal traces. f can be *.[txt/trace/eps]
    --nostrip          Don't strip flat signals from the trace
  --sim x              Select simulator [pb, bpg]
  --lqr                Use LQR controller for pb sim
@@ -134,7 +134,7 @@ def main():
                     'dombias=', 'domvalue=', 'domweight=', 'elite', 'lqr',
                     'steadystate', 'mutate=', 'mutgauss', 'noise=',
                     'nodes_per_input=', 'network=', 'nostrip', 'plotbpg=',
-                    'pf=', 'plotnets=', 'plotsignals=', 'unroll', 'radius=',
+                    'pf=', 'plotnets=', 'ps=', 'unroll', 'radius=',
                     'toponly', 'movie=', 'sim=', 'states=', 'fitness=',
                     'plotpi=', 'plotfc=', 'cluster'])
         log.debug('opts %s', opts)
@@ -278,7 +278,7 @@ def main():
             plotpi = a
         elif o == '--plotfc':
             plotfc = a
-        elif o == '--plotsignals':
+        elif o == '--ps':
             tracefile = a
         elif o == '--unroll':
             unroll = 1
