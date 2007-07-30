@@ -29,6 +29,8 @@ myapp = MyApp([sys.argv[0]] + ['-geometry','640x480'])
 TESTDIR = '/tmp/'
 SECONDS = 3
 random.seed(1)
+if not os.path.exists('test'):
+    os.mkdir('test')
 
 class TestBodyPart(BodyPart):
     """Create a random test BodyPart aligned along z axis"""
@@ -61,10 +63,6 @@ class TestBodyPartGraph(BodyPartGraph):
         self.connectInputNodes()
 
 class BpgTestCase(unittest.TestCase):
-
-    def setUp(self):
-        if not os.path.exists('test'):
-            os.mkdir('test')
 
     def test_0_init(self):
         sim.BpgSim()
@@ -212,8 +210,8 @@ class BpgSimTestCase(unittest.TestCase):
         # start motor
         m = s.bpgs[0].bodyparts[1].motor
         motor_data = m.log('test/'+jointtype)
-        m.desired_axisangle[0] = math.pi/4
-        m.desired_axisangle[1] = -math.pi/4
+        m.desired_axisangle[0] = math.pi/2
+        m.desired_axisangle[1] = math.pi/4
         m.desired_axisangle[2] = -math.pi/2
         s.initSignalLog('test/signal.log')
         if not record:
