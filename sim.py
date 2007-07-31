@@ -9,11 +9,10 @@ import bpg
 import node
 import network
 
-CYLINDER_RADIUS = 1.0
-CYLINDER_DENSITY = 1.0
+CYLINDER_RADIUS = 0.5
+CYLINDER_DENSITY = 0.5
 MAX_UNROLLED_BODYPARTS = 20
 SOFT_WORLD = 1
-JOINT_MAXFORCE = 8.0 * CYLINDER_DENSITY * CYLINDER_RADIUS
 HZ = 50
 DT = 1.0/HZ
 RELAX_TIME = 5.0
@@ -31,9 +30,16 @@ class MyMotor(ode.AMotor):
             self.setParam(p, 0.0)
         self.old_angles = [0.0, 0.0, 0.0]
         self.f = None
-        # prevent singularity (see manual p.36)
-        self.setParam(ode.ParamLoStop2, -math.pi)
-        self.setParam(ode.ParamHiStop2, math.pi)
+        self.prev_e = [None, None, None]
+        self.stop = 0.5
+        self.lostop = -math.pi + self.stop
+        self.histop = math.pi - self.stop
+        self.watch_maxf = 0
+
+    def watchMaxForce(self):
+        self.watch_maxf = 1
+        self.setFeedback(1)
+        self.maxf = 0
 
     def setAxes(self, axis0, axis2):
         # axis0 is anchored to first body
@@ -52,6 +58,16 @@ class MyMotor(ode.AMotor):
             axes = [0,1,2]
         for x in axes:
             self.setParam(M_AXES[x], M_MAX_FORCE)
+        # stops must be applied to the motor, not the joint, otherwise they will
+        # be violated when the motor pushes against the stop.
+        self.setParam(ode.ParamLoStop, self.lostop)
+        self.setParam(ode.ParamHiStop, self.histop)
+        self.setParam(ode.ParamLoStop3, self.lostop)
+        self.setParam(ode.ParamHiStop3, self.histop)
+        # prevent singularity (see manual p.36)
+        self.setParam(ode.ParamLoStop2, -math.pi/2)
+        self.setParam(ode.ParamHiStop2, math.pi/2)
+        # if there are problems in future try ParamStopCFM/ERP and ParamBounce
 
     def log(self, prefix):
         n = '%s.txt'%prefix
@@ -75,7 +91,19 @@ class MyMotor(ode.AMotor):
 
     def step(self):
         log.debug('MyMotor.step')
-
+        if self.watch_maxf:
+            _,a,_,b = self.getFeedback()
+            for f in a+b:
+                if f > self.maxf:
+                    self.maxf = f
+                    log.debug('joint maxf now %f', f)
+        # check violation of stops
+        for x in 0,2:
+            z = 0.05
+            a = self.getAngle(x)
+            if not -math.pi+z <= a <= math.pi-z:
+                log.warn('stop failed (%f), possible 360 joint rotation', a)
+        # log joint angles for unit tests
         a = ['%1.2f'%self.getAngle(x) for x in 0,1,2]
         d = ['%1.2f'%x for x in self.desired_axisangle]
         if isinstance(self.joint, ode.HingeJoint):
@@ -84,40 +112,60 @@ class MyMotor(ode.AMotor):
             s = '%s %s %s %s\n'%(a[0], d[0], a[2], d[2])
         if isinstance(self.joint, ode.BallJoint):
             s = '%s %s %s %s %s %s\n'%(a[0], d[0], a[1], d[1], a[2], d[2])
-
         if self.f:
             self.f.write('%2.2f '%self.t + s)
             self.t += 0.02
         log.debug('MyMotor angles=%s desired_angles=%s', ['%1.2f'%self.getAngle(x) for x in 0,1,2], ['%1.2f'%x for x in self.desired_axisangle])
 
+        # use error to calculate velocity for ODE internal motor model
+        # (tried force based control but it's unstable)
         for (x, param) in (0, ode.ParamVel), (1, ode.ParamVel2), (2, ode.ParamVel3):
             a = self.getAngle(x)
-            assert -math.pi <= a <= math.pi
             b = self.desired_axisangle[x]
-            assert -math.pi <= b <= math.pi
-            # go shortest way - figure out direction
-            dist = abs(a-b)
-            d = 1
-            if a > b:
-                d = -1
-          # ignore axes that we don't control for each joint
+            for ab in a,b:
+                assert -math.pi <= ab <= math.pi
+            # Cap the desired joint angle to stop motor force pushing through
+            # the stop limit resulting in 360 degree joint rotation. According
+            # to the ODE src it should detect this condition and reduce motor
+            # force to 0, but it doesn't.
+            if b<self.lostop: b=self.lostop
+            if b>self.histop: b=self.histop
+
+            # ignore axes that we don't control for each joint
             if type(self.joint) is ode.HingeJoint and x != 2 \
             or type(self.joint) is ode.UniversalJoint and x == 1:
-                self.setParam(param, 0)
+                pass
             else:
                 # Proportional derivative controller. We have to estimate the
                 # angular velocity because Motor.getAngleRate() is unimplemented
                 # and joint.getAngleRate only works for HingeJoint
-                ang_vel = abs(a - self.old_angles[x])*HZ
-                self.old_angles[x] = a
-
-                Kp = 30.0 # proportional constant 10
-                Kd = 5 # derivative constant 7
-                if isinstance(self.joint, ode.BallJoint) and x == 0:
-                    Kd = 275
-                dv = Kp * dist - Kd * ang_vel
-                dv = max(dv, 0)
-                self.setParam(param, d*dv)
+                #
+                # Derivative is currently set to 0, seems to work ok. This means
+                # desired velocity scales down linearly as joint error falls.
+                # ODE treats motors as general constraints so it will apply a
+                # braking force, perhaps making the derivative constant
+                # unnecessary.
+                e = b-a # error
+                Kp = 1.6 # proportional constant
+                Kd = 0 # derivative constant
+                if isinstance(self.joint, ode.BallJoint) and x == 1:
+                    # for some reason rotation is special
+                    # ode doesn't seem to preserve rotational momentum so we
+                    # don't need a derivative force to slow down
+                    if x == 1:
+                        Kp = 0.8
+                        Kd = 0
+                # calculate derivative based force
+                if self.prev_e[x] == None:
+                    deriv = 0
+                else:
+                    deriv = Kd * (self.prev_e[x] - e)
+                self.prev_e[x] = e
+                # calculate proportional force
+                prop = Kp * e
+                log.debug('a%d %f %f %f', x, e, prop, deriv)
+                dv = prop - deriv
+                self.setParam(param, dv)
 
 class Sim(object):
     "Simulation class, responsible for everything in the physical sim."
@@ -423,10 +471,15 @@ class BpgSim(Sim):
             elif bp.joint == 'ball':
                 # the ball rotation is an evolvable parameter, so the joint axes
                 # do evolve
-                ball_rot = quat(bp.ball_rot[0], vec3(bp.ball_rot[1])).toMat3()
-                x = ball_rot * vec3((1, 0, 0))
-                y = ball_rot * vec3((0, 1, 0))
-                motor.setAxes(x, y)
+#                ball_rot = quat(bp.ball_rot[0], vec3(bp.ball_rot[1])).toMat3()
+#                x = ball_rot * vec3((1, 0, 0))
+#                y = ball_rot * vec3((0, 1, 0))
+                axis1 = rotmat * vec3(bp.axis1)
+                axis2 = rotmat * vec3((0,0,1)).cross(vec3(bp.axis1))
+                motor.setAxes(axis1, axis2)
+#                j.setAxis1(tuple(axis1))
+#                j.setAxis2(tuple(axis2))
+#                motor.setAxes(x, y)
 
             log.debug('created joint with parent at %f,%f,%f', j_v[0], j_v[1], j_v[2])
 
@@ -672,7 +725,7 @@ class BpgSim(Sim):
         for ep in ep0, ep1:
             cpos = vec3(cpos)
             d2 = (cpos-ep).length()
-            if (d2 <= radius**2*1.01):
+            if (d2 <= radius+0.1):
                 epc = ep
         # we will get two addContact() calls for each real contact, one for each
         # of the joined capped cylinders, so only add a contact for the
