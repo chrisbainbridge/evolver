@@ -3,14 +3,10 @@ from ZODB import DB
 from persistent.mapping import PersistentMapping
 from persistent.list import PersistentList
 import transaction
-import thread
-import threading
-import asyncore
 import socket
 import cluster
 
 conn = None
-once_only = 1 # don't run stuff twice when main is called in test harness
 serverName = None
 
 def getDefaultServer():
@@ -28,7 +24,7 @@ def getDefaultServer():
     return serverName
 
 def connect(server = None):
-    global conn, once_only, serverName
+    global conn, serverName
     if not server:
         serverName, port = getDefaultServer(), 12345
     elif ':' in server:
@@ -41,9 +37,6 @@ def connect(server = None):
     db = DB(storage)
     conn = db.open()
     root = conn.root()
-    if once_only:
-        thread.start_new_thread(asyncore.loop,())
-        once_only = 0
     return root
 
 def reconnect():
@@ -54,6 +47,3 @@ def reconnect():
 
 def sync():
     conn.sync()
-
-def e():
-    return threading.enumerate()
