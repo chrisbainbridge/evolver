@@ -1,0 +1,7 @@
+pdf('${base}.pdf')
+d <- read.table('${base}.txt', header=T)
+attach(d)
+plot(time, stimulus, type='l', bty='n', las=1, lty=4, xlab='time', ylab='strength')
+lines(time, output, type='l', lty=1)
+lines(c(0,5), c(0.5,0.5), col='red', lty=2)
+legend(0, 1, c('stimulus','response'), lty=c(2,1))
