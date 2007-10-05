@@ -1,7 +1,7 @@
 EV_SRC = bpg.py ev.py evolve.py network.py node.py sim.py daemon.py 
 VIS_SRC = glwidget.py qtgui.py qtapp.py qtgui.py
 SRC = $(EV_SRC) $(VIS_SRC)
-TEST = bpg_test.py evolve_test.py network_test.py sim_test.py ev_test.py plot_test.py cluster_test.py
+TEST = bpg_test.py evolve_test.py node_test.py network_test.py sim_test.py ev_test.py plot_test.py cluster_test.py
 
 .PHONY: clean test checker pop run popd
 
