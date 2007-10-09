@@ -150,9 +150,10 @@ class WeightNode(Node):
             self.weights[a] = self.weights[b]
             del self.weights[b]
 
-    def sumOfWeightedInputs(self, inputs=None, use_external=1):
+    def wsum(self, inputs=None, use_external=1):
+        'sum of weighted inputs'
         cumulative = 0
-        if not inputs:
+        if inputs==None:
             inputs = self.inputs
         for src in inputs:
             cumulative += src.output * self.weights[src]
@@ -170,7 +171,7 @@ class SigmoidNode(WeightNode):
 
     def postUpdate(self):
         'return output in [0,1]'
-        self.output = 1/(1 + math.e**-self.sumOfWeightedInputs())
+        self.output = 1/(1 + math.e**-self.wsum())
 
     def reset(self):
         self.output = rnd(0,1,self.output)
@@ -224,7 +225,7 @@ class SineNode(WeightNode):
 class BeerNode(WeightNode):
     'Beer 1st order model'
 
-    def __init__(self, weightDomain=(-16,16), quanta=None, biasDomain=(-16,16)):
+    def __init__(self, weightDomain=(-16,16), quanta=None, biasDomain=(-4,4)):
         WeightNode.__init__(self, weightDomain, quanta)
         self.adaptRate = None
         self.bias = None
@@ -236,7 +237,7 @@ class BeerNode(WeightNode):
 
     def preUpdate(self):
         DT = 1.0 / 50
-        self.nextState = self.state + DT * (self.sumOfWeightedInputs() - self.state) / self.adaptRate
+        self.nextState = self.state + DT * (self.wsum() - self.state) / self.adaptRate
 
     def postUpdate(self):
         self.state = self.nextState
@@ -255,7 +256,7 @@ class BeerNode(WeightNode):
 
     def setAdaptRate(self):
         # suggested value is 1
-        self.adaptRate = rnd(0.5, 10, self.adaptRate)
+        self.adaptRate = rnd(0.5, 5, self.adaptRate)
 
     def setBias(self):
         # suggested value is 2
@@ -264,6 +265,35 @@ class BeerNode(WeightNode):
     def reset(self):
         self.state = rnd(-0.1, 0.1, self.state) # should internal state be quantised?
         self.output = 1/(1 + math.e**-(self.state + self.bias))
+
+class TagaNode(WeightNode):
+    'Taga 2nd order model'
+
+    def __init__(self, weightDomain=(-4,4), quanta=None):
+        WeightNode.__init__(self, weightDomain, quanta)
+        self.tau0 = 1.0
+        self.tau1 = 1.0
+        self.beta = 2.5
+        self.b = 1.0
+        self.reset()
+
+    def reset(self):
+        self.u = 0
+        self.v = 0
+        self.setOutput()
+
+    def setOutput(self):
+        self.output = max(0, self.u)
+
+    def preUpdate(self):
+        DT = 1.0 / 50
+        self.next_u = self.u + DT * (-self.u - self.beta*max(0,self.v) + self.wsum() + self.b) / self.tau0
+        self.next_v = self.v + DT * (-self.v + self.output) / self.tau1
+
+    def postUpdate(self):
+        self.u = self.next_u
+        self.v = self.next_v
+        self.setOutput()
 
 class WallenNode(WeightNode):
     'Wallen 3rd order model'
@@ -276,42 +306,41 @@ class WallenNode(WeightNode):
         self.r = [1.8, 0.3, 1.0, 0.5]
         self.tau_d = [0.03, 0.02, 0.02, 0.05]
         self.mu = [0.3, 0.0, 0.3, 0.0]
-        # these values of 0.0 make no sense, they cause division by zero in 3rd
-        # equation
-        self.tau_hat = [0.400, 0.001, 0.2, 0.001]
+        self.tau_a = [0.400, 0.001, 0.2, 0.001] # rm 0s: / by 0 in 3rd eq.
 
         self.setI()
         self.excite = random.choice([True,False])
-        self.y_plus = None
-        self.y_minus = None
-        self.y_hat = None
+        self.ye = None
+        self.yi = None
+        self.yt = None
         self.reset()
 
     def setI(self):
+        'i selects the neuron type from the predefined values'
         self.i = random.randint(0,3)
 
     def reset(self):
-        self.y_hat = rnd(-0.1, 0.1, self.y_hat)
-        self.y_plus = rnd(-0.1, 0.1, self.y_plus)
-        self.y_minus = rnd(-0.1, 0.1, self.y_minus)
+        self.yt = rnd(-0.1, 0.1, self.yt)
+        self.ye = rnd(-0.1, 0.1, self.ye)
+        self.yi = rnd(-0.1, 0.1, self.yi)
         self.setOutput()
 
     def setOutput(self):
-        self.output = min(max(0, 1 - math.e**((self.theta[self.i] - self.y_plus)*self.r[self.i]) - self.y_minus - self.mu[self.i]*self.y_hat), 1)
+        self.output = max(0, 1 - math.e**(self.r[self.i]*(self.theta[self.i] - self.ye)) - self.yi - self.mu[self.i]*self.yt)
 
     def preUpdate(self):
         excite_inputs = [x for x in self.inputs if x.excite]
         inhibit_inputs = [x for x in self.inputs if not x.excite]
         # here we are assuming that all sensory input is excitatory
         DT = 1.0 / 50
-        self.next_y_plus = self.y_plus + DT * (-self.y_plus + self.sumOfWeightedInputs(excite_inputs)) / self.tau_d[self.i]
-        self.next_y_minus = self.y_minus + DT * (-self.y_minus + self.sumOfWeightedInputs(inhibit_inputs, 0)) / self.tau_d[self.i]
-        self.next_y_hat = self.y_hat + DT * (self.output - self.y_hat)/self.tau_hat[self.i]
+        self.next_ye = self.ye + DT * (-self.ye + self.wsum(excite_inputs)) / self.tau_d[self.i]
+        self.next_yi = self.yi + DT * (-self.yi + self.wsum(inhibit_inputs, 0)) / self.tau_d[self.i]
+        self.next_yt = self.yt + DT * (-self.yt + self.output)/self.tau_a[self.i]
 
     def postUpdate(self):
-        self.y_plus = self.next_y_plus
-        self.y_minus = self.next_y_minus
-        self.y_hat = self.next_y_hat
+        self.ye = self.next_ye
+        self.yi = self.next_yi
+        self.yt = self.next_yt
         self.setOutput()
 
     def mutate(self, p):
