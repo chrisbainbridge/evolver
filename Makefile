@@ -36,11 +36,8 @@ run:
 	ev.py -r x -c -m
 
 clean:
-	rm -f *.pyc 
-	rm -f qtgui.py 
-	rm -rf types/* test/* *~ test.txt
-	rm -f divx2pass.log
-	rm -rf doc
+	rm -f *.pyc qtgui.py r.out tmp.r divx2pass.log
+	rm -rf types/* test/* *~ test.txt doc
 
 memprof:
 	rm -rf types/*
