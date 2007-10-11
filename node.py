@@ -10,16 +10,31 @@ from persistent.mapping import PersistentMapping
 log = logging.getLogger('node')
 log.setLevel(logging.WARN)
 
-def randomFromDomain((low,high), v, quanta=None):
+def rdom((low,high), v=None, quanta=None):
+    """random value from domain where existing value=v if rand.usegauss is set,
+    or uniform otherwise. If quanta is set, quantise the returned value."""
     if quanta and v != None:
-        x = round(rnd(0,quanta-1,(v-low)/(high-low)*(quanta-1.0)))
+        x = round(rnd(0,quanta-1,(v-low)/(high-low)*(quanta-1)))
         return x/(quanta-1.0)*(high-low)+low
     else:
-        return rnd(low, high, v)
+        x = rnd(low, high, v)
+        if quanta:
+            x = round((x-low)/(high-low)*(quanta-1))*(high-low)/(quanta-1)+low
+    return x
 
 def quantise(value, quanta):
+    "quantise value between 0 and 1. Used for neuron outputs."
     assert 0 <= value <= 1
-    return round(quanta*value)/quanta
+    if not quanta:
+        return value
+    return round((quanta-1)*value)/(quanta-1)
+
+def quantiseDomain((l,h), x, q):
+    # in order to quantise we need to cap the domain
+    x = min(max(x,l),h)
+    if not q:
+        return x
+    return round((float(x)-l)/(h-l)*(q-1))*(h-l)/(q-1)+l
 
 class Node(Persistent):
 
@@ -79,31 +94,34 @@ class Node(Persistent):
 class WeightNode(Node):
     'A traditional model neuron: state in [0,1], weighted inputs'
 
-    def __init__(self, weightDomain=(-7,7), quanta=None):
+    def __init__(self, weightDomain=(-7,7), quanta=None, abs_weights=0):
+        # with absolute weights and polarity neurons range must be >= 0.
+        if abs_weights:
+            assert weightDomain[0] >= 0
         Node.__init__(self)
         self.weights = PersistentMapping()
         self.weightDomain = weightDomain
         self.quanta = quanta
         self.output = random.uniform(0,1)
+        # abs_weights only affects external inputs since weightDomain is forced
+        # to be positive above
+        self.abs_weights = abs_weights
 
     def destroy(self):
         Node.destroy(self)
         del self.weights
-
-    def randomWeight(self):
-        return randomFromDomain(self.weightDomain, self.quanta)
 
     def mutate(self, p):
         mutations = 0
         for src in self.weights.keys():
             if random.random() < p:
                 mutations += 1
-                self.weights[src] = self.randomWeight()
+                self.weights[src] = rdom(self.weightDomain, self.weights[src], self.quanta)
         return mutations
 
     def addInput(self, source):
         Node.addInput(self, source)
-        self.weights[source] = self.randomWeight()
+        self.weights[source] = rdom(self.weightDomain, None, self.quanta)
 
     def addExternalInput(self, s_bp, s_sig, weight):
         'source = (srcBodypart, srcSignal, weight)'
@@ -111,6 +129,8 @@ class WeightNode(Node):
         if isinstance(s_sig, Node):
             assert s_sig in s_bp.network
         Node.addExternalInput(self, source)
+        if self.abs_weights:
+            weight = abs(weight)
         self.weights[source] = weight
 
     def removeExternalInput(self, bp, sig):
@@ -155,11 +175,17 @@ class WeightNode(Node):
         cumulative = 0
         if inputs==None:
             inputs = self.inputs
+        # quantise inputs
         for src in inputs:
-            cumulative += src.output * self.weights[src]
+            x = src.output
+            if self.quanta:
+                x = quantise(x, self.quanta)
+            cumulative += x * self.weights[src]
         if use_external:
-            for (src, value) in self.externalInputs.items():
-                cumulative += value * self.weights[src]
+            for (src, x) in self.externalInputs.items():
+                if self.quanta:
+                    x = quantise(x, self.quanta)
+                cumulative += x * self.weights[src]
         return cumulative
 
 class SigmoidNode(WeightNode):
@@ -172,6 +198,9 @@ class SigmoidNode(WeightNode):
     def postUpdate(self):
         'return output in [0,1]'
         self.output = 1/(1 + math.e**-self.wsum())
+        # quantise output
+        if self.quanta:
+            self.output = quantise(self.output, self.quanta)
 
     def reset(self):
         self.output = rnd(0,1,self.output)
@@ -191,22 +220,22 @@ class SineNode(WeightNode):
         self.postUpdate()
 
     def setPhaseOffset(self):
-        self.phaseOffset = rnd(0, 2*math.pi, self.phaseOffset)
+        self.phaseOffset = rdom((0,2*math.pi), self.phaseOffset, self.quanta)
 
     def setStepSize(self):
         # oscillate between [twice per second, once every 2 seconds)
         persec = math.pi*2/50
-        self.stepSize = rnd(persec/2, persec*2, self.stepSize)
+        self.stepSize = rdom((persec/2, persec*2), self.stepSize, self.quanta)
 
     def reset(self):
         self.state = self.phaseOffset
 
     def setAmplitude(self):
-        self.amplitude = rnd(0.25, 1, self.amplitude)
+        self.amplitude = rdom((0.25, 1), self.amplitude, self.quanta)
 
     def postUpdate(self):
         'return output in [0,1]'
-        self.output = (math.sin(self.state)*self.amplitude + 1) / 2
+        self.output = quantise((math.sin(self.state)*self.amplitude + 1) / 2, self.quanta)
         self.state = (self.state + self.stepSize) % (2*math.pi)
 
     def mutate(self, p):
@@ -238,10 +267,17 @@ class BeerNode(WeightNode):
     def preUpdate(self):
         DT = 1.0 / 50
         self.nextState = self.state + DT * (self.wsum() - self.state) / self.adaptRate
+        # cap state to [-4,4]. This isn't part of the normal model but we need
+        # clear boundaries for quantisation. +-4 is enough to define a clear
+        # output range that almost gets to 0 and 1.
+        self.nextState = quantiseDomain((-4,4), self.nextState, self.quanta)
 
     def postUpdate(self):
         self.state = self.nextState
         self.output = 1/(1 + math.e**-(self.state + self.bias))
+        # quantise output
+        if self.quanta:
+            self.output = quantise(self.output, self.quanta)
 
     def mutate(self, p):
         mutations = 0
@@ -255,24 +291,27 @@ class BeerNode(WeightNode):
         return mutations
 
     def setAdaptRate(self):
-        # suggested value is 1
-        self.adaptRate = rnd(0.5, 5, self.adaptRate)
+        # suggested value is 1, but this is very low when combined with Euler
+        # step size of 1/50.
+        self.adaptRate = rdom((0.05,0.5), self.adaptRate, self.quanta)
 
     def setBias(self):
         # suggested value is 2
-        self.bias = randomFromDomain(self.biasDomain, self.bias, self.quanta)
+        self.bias = rdom(self.biasDomain, self.bias, self.quanta)
 
     def reset(self):
-        self.state = rnd(-0.1, 0.1, self.state) # should internal state be quantised?
+        self.state = rdom((-0.1,0.1), self.state, self.quanta)
         self.output = 1/(1 + math.e**-(self.state + self.bias))
+        if self.quanta:
+            self.output = quantise(self.output, self.quanta)
 
 class TagaNode(WeightNode):
     'Taga 2nd order model'
 
     def __init__(self, weightDomain=(-4,4), quanta=None):
         WeightNode.__init__(self, weightDomain, quanta)
-        self.tau0 = 1.0
-        self.tau1 = 1.0
+        self.tau0 = 0.2 # originally 1.0, but very slow, this seems to work better.
+        self.tau1 = 0.2 # also 1.0
         self.beta = 2.5
         self.b = 1.0
         self.reset()
@@ -290,6 +329,9 @@ class TagaNode(WeightNode):
         self.next_u = self.u + DT * (-self.u - self.beta*max(0,self.v) + self.wsum() + self.b) / self.tau0
         self.next_v = self.v + DT * (-self.v + self.output) / self.tau1
 
+        self.next_u = quantiseDomain((-1,1), self.next_u, self.quanta)
+        self.next_v = quantiseDomain((0,1), self.next_v, self.quanta)
+
     def postUpdate(self):
         self.u = self.next_u
         self.v = self.next_v
@@ -299,20 +341,26 @@ class WallenNode(WeightNode):
     'Wallen 3rd order model'
 
     def __init__(self, weightDomain=(0,16), quanta=None):
-        WeightNode.__init__(self, weightDomain, quanta)
-        assert weightDomain[0] == 0
-
-        self.theta = [-0.2, 0.1, 0.5, 8.0]
-        self.r = [1.8, 0.3, 1.0, 0.5]
-        self.tau_d = [0.03, 0.02, 0.02, 0.05]
-        self.mu = [0.3, 0.0, 0.3, 0.0]
-        self.tau_a = [0.400, 0.001, 0.2, 0.001] # rm 0s: / by 0 in 3rd eq.
+        WeightNode.__init__(self, weightDomain, quanta, 1)
+               # i =    0      1      2     3
+        self.theta = [-0.2,   0.1,   0.5,  8.0  ]
+        self.r     = [ 1.8,   0.3,   1.0,  0.5  ]
+        self.tau_d = [ 0.03,  0.02,  0.02, 0.05 ]
+        self.mu    = [ 0.3,   0.0,   0.3,  0.0  ]
+        self.tau_a = [ 0.400, 0.001, 0.2,  0.001] # rm 0s: / by 0 in 3rd eq.
 
         self.setI()
         self.excite = random.choice([True,False])
         self.ye = None
         self.yi = None
         self.yt = None
+        # cap the states for quantisation. Use positive domain because ye and yi
+        # should always be positive
+        # These domains are different because of the way they're used in the
+        # output equation; i & t are used directly, e is used inside exp()
+        self.edom = (0, 15)
+        self.idom = (0, 0.5)
+        self.tdom = (0, 0.5)
         self.reset()
 
     def setI(self):
@@ -320,13 +368,15 @@ class WallenNode(WeightNode):
         self.i = random.randint(0,3)
 
     def reset(self):
-        self.yt = rnd(-0.1, 0.1, self.yt)
-        self.ye = rnd(-0.1, 0.1, self.ye)
-        self.yi = rnd(-0.1, 0.1, self.yi)
+        self.ye = rdom(self.edom, 0, self.quanta)
+        self.yi = rdom(self.idom, 0, self.quanta)
+        self.yt = rdom(self.tdom, 0, self.quanta)
         self.setOutput()
 
     def setOutput(self):
         self.output = max(0, 1 - math.e**(self.r[self.i]*(self.theta[self.i] - self.ye)) - self.yi - self.mu[self.i]*self.yt)
+        if self.quanta:
+            self.output = quantise(self.output, self.quanta)
 
     def preUpdate(self):
         excite_inputs = [x for x in self.inputs if x.excite]
@@ -336,6 +386,12 @@ class WallenNode(WeightNode):
         self.next_ye = self.ye + DT * (-self.ye + self.wsum(excite_inputs)) / self.tau_d[self.i]
         self.next_yi = self.yi + DT * (-self.yi + self.wsum(inhibit_inputs, 0)) / self.tau_d[self.i]
         self.next_yt = self.yt + DT * (-self.yt + self.output)/self.tau_a[self.i]
+        # restrict state to domain for quantisation
+        # yt is (0,0.5) since (0,4) is too big for the decay, and due to direct
+        # use of yt in output equation it has a large effect on output.
+        self.next_ye = quantiseDomain(self.edom, self.next_ye, self.quanta)
+        self.next_yi = quantiseDomain(self.idom, self.next_yi, self.quanta)
+        self.next_yt = quantiseDomain(self.tdom, self.next_yt, self.quanta)
 
     def postUpdate(self):
         self.ye = self.next_ye
