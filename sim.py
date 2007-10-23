@@ -170,7 +170,7 @@ class MyMotor(ode.AMotor):
 class Sim(object):
     "Simulation class, responsible for everything in the physical sim."
 
-    def __init__(self, max_simsecs, gaussNoise):
+    def __init__(self, max_simsecs, noise_sd):
         log.debug('Sim.__init__(max_simsecs=%s)', max_simsecs)
         # create world, set default gravity, geoms, flat ground, spaces etc.
         assert type(max_simsecs) is float or type(max_simsecs) is int
@@ -192,7 +192,7 @@ class Sim(object):
         self.bpgs = []
         self.contactGroup = ode.JointGroup()
         self.joints = []
-        self.gaussNoise = gaussNoise
+        self.noise_sd = noise_sd
         self.points = []
 
     def destroy(self):
@@ -263,8 +263,8 @@ class Sim(object):
 class BpgSim(Sim):
     "Simulate articulated bodies built from BodyPartGraphs"
 
-    def __init__(self, max_simsecs=30.0, fitnessName='meandistance', gaussNoise=0.01):
-        Sim.__init__(self, max_simsecs, gaussNoise)
+    def __init__(self, max_simsecs=30.0, fitnessName='meandistance', noise_sd=0.01):
+        Sim.__init__(self, max_simsecs, noise_sd)
         log.debug('BPGSim.__init__')
         self.geom_contact = {}
         self.startpos = vec3(0, 0, 0)
@@ -764,12 +764,18 @@ class BpgSim(Sim):
             value = (value/math.pi+1)/2
         elif isinstance(src, node.Node):
             # network output node, in domain [0,1]
-            value = src.output
+            if isinstance(src, node.IfNode) or isinstance(src, node.SrmNode):
+                # need to decode the spikes. For simplicity we just use the
+                # state which is almost a continuous representation of the
+                # spikes.
+                value = src.state/8+0.5 # [-4,4] -> [0,1]
+            else:
+                value = src.output
 
         assert 0 <= value <= 1
 
         # gaussian noise on sensors and motors
-        noisyValue = random.gauss(value, self.gaussNoise)
+        noisyValue = random.gauss(value, self.noise_sd)
         if noisyValue < 0: noisyValue = 0
         if noisyValue > 1: noisyValue = 1
         return noisyValue
@@ -858,9 +864,9 @@ class PoleBalanceSim(Sim):
       Inputs[0] -- angle of hinge joint between the boxes
       Outputs[0] -- desired velocity of the horizontal travelling box"""
 
-    def __init__(self, max_simsecs=30, net=None, gaussNoise=0.01):
+    def __init__(self, max_simsecs=30, net=None, noise_sd=0.01):
         """Creates the ODE and Geom bodies for this simulation"""
-        Sim.__init__(self, max_simsecs, gaussNoise)
+        Sim.__init__(self, max_simsecs, noise_sd)
         log.debug('init PoleBalance sim')
         self.network = net
 
@@ -957,14 +963,14 @@ class PoleBalanceSim(Sim):
 
     def applyNetworkForce(self):
         angle = (self.hinge_joint.getAngle() + math.pi/4)/(math.pi/2)
-        angle = random.gauss(angle, self.gaussNoise) # random noise
+        angle = random.gauss(angle, self.noise_sd) # random noise
         angle = max(0, min(angle, 1)) # clip
         # send angle to network
         self.inputNode.externalInputs[(self.angleSignal[0],self.angleSignal[1])] = angle
         self.network.step()
         # read network, get desired force/velocity
         v = self.network.outputs[0].output
-        v = random.gauss(v, self.gaussNoise)
+        v = random.gauss(v, self.noise_sd)
         v = (v-0.5) * self.MAXF # map [0,1] -> [-25,25]
         self.slider_joint.setParam(ode.ParamVel, v)
         self.setControlForce(v)

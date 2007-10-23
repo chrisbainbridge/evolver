@@ -2,9 +2,10 @@
 
 from unittest import TestCase
 from logging import critical
-import random
 import sys
 import os
+from math import sqrt, floor
+import random
 
 import test_common
 from test_common import *
@@ -12,7 +13,7 @@ from network import Network, TOPOLOGIES
 from node import SigmoidNode, BeerNode, WallenNode, LogicalNode, SineNode
 from plot import plotNetwork
 
-random.seed()
+random.seed(0)
 
 class NetworkTest:
 
@@ -26,33 +27,46 @@ class NetworkTest:
         if test_common.interactive:
             os.popen('kghostview %s.ps'%name)
 
-    def do(self, n, i, o, top, update):
-        net = Network(n, i, o, self.nodet, self.nodea, top, update)
+    def do(self, n, i, o, top, update, r, u):
+        net = Network(n, i, o, self.nodet, self.nodea, top, update, r, u)
         ns = str(self.nodet)
         nc = ns[ns.find('.')+1:ns.rfind('\'')]
         s = '%s_%s'%(nc, top)
         self.dot(net, s)
 
     def test_01_1d(self):
-        self.do(4,1,1, '1d', 'async')
+        self.do(4,1,1, '1d', 'async', 1, 0)
 
     def test_02_2d(self):
-        self.do(9,0,0, '2d', 'async')
+        self.do(9,0,0, '2d', 'async', 1, 0)
 
     def test_03_full(self):
-        self.do(4,0,0, 'full', 'async')
+        self.do(4,0,0, 'full', 'async', 1, 0)
 
-    def test_04_2d_with_3i2o(self):
-        self.do(9,3,2, '2d', 'async')
+    def test_04_randomk(self):
+        self.do(9,3,2, 'randomk', 'async', 1, 0)
+
+    def test_05_2d_with_3i2o(self):
+        self.do(9,3,2, '2d', 'async', 1, 0)
 
     def test_06_run_net_with_all_topologies(self):
         for topology in TOPOLOGIES:
-            net = Network(9,3,2, self.nodet, self.nodea, topology, 'sync')
+            maxr = 3
+            num_nodes = 16
+            # 2d topology doesn't allow overlap of neighbourhood
+            if topology == '2d' and sqrt(num_nodes) < maxr*2+1:
+                maxr = floor((sqrt(num_nodes)-1)/2)
+            radius = random.randint(1,maxr)
+            uniform = random.randint(0,1)
+            net = Network(num_nodes,3,2, self.nodet, self.nodea, topology, 'sync', radius, uniform)
             net.reset()
             for n in net:
                 n.preUpdate()
             for n in net:
                 n.postUpdate()
+
+    def test_07_uniform(self):
+        self.do(4,0,0, 'full', 'async', 1, 1)
 
 class Sigmoid(NetworkTest,TestCase):
     nodet = SigmoidNode
@@ -64,7 +78,7 @@ class Wallen(NetworkTest,TestCase):
     nodet = WallenNode
 class Logical(NetworkTest,TestCase):
     nodet = LogicalNode
-    nodea = {'numberOfStates':2}
+    nodea = {'quanta':2}
 
 if __name__ == "__main__":
     test_main()

@@ -19,7 +19,7 @@ class Network(PersistentList):
     "Model of a control network; nodes, edges, weights."
 
     def __init__(self, num_nodes, num_inputs, num_outputs, new_node_class,
-            new_node_args, topology, update_style, radius=1):
+            new_node_args, topology, update_style, radius, uniform):
         # what about k, quanta, nodes_per_input
         PersistentList.__init__(self)
         log.debug('Network.__init__()')
@@ -28,8 +28,6 @@ class Network(PersistentList):
                          'state' : (0,1),
                          'weight' : (-7,7) }
         self.quanta = None
-        # this is when we use a single update function (ca-like)
-        self.function = None
         self.update_style = update_style
         # num_nodes must be bigger than inputs+outputs
         assert num_nodes >= num_inputs
@@ -38,9 +36,18 @@ class Network(PersistentList):
         inputsPerNode = self.getNumberOfInputsPerNode(topology, radius, num_nodes)
         if new_node_class == LogicalNode:
             new_node_args['numberOfInputs'] = inputsPerNode
-        for _ in range(num_nodes):
-            n = new_node_class(**dict(new_node_args))
-            self.append(n)
+        self.uniform = uniform
+        if not uniform:
+            for _ in range(num_nodes):
+                n = new_node_class(par=1, **dict(new_node_args))
+                self.append(n)
+        else:
+            n0 = new_node_class(par=1, **dict(new_node_args))
+            self.append(n0)
+            for _ in range(1, num_nodes):
+                n = new_node_class(par=n0.par, **dict(new_node_args))
+                self.append(n)
+
         # select input nodes
         self.inputs = PersistentList()
         for _ in range(num_inputs):
@@ -61,6 +68,7 @@ class Network(PersistentList):
         self.connect(topology, radius)
         for n in self:
             assert len(n.inputs) == inputsPerNode
+        self.topology = topology
 
     def __repr__(self):
         return 'Network[%d]'%len(self)
@@ -69,15 +77,14 @@ class Network(PersistentList):
         for n in self:
             n.destroy()
 
-    def getNumberOfInputsPerNode(self, topology, neighbourhood_dist, num_nodes):
+    def getNumberOfInputsPerNode(self, topology, radius, num_nodes):
         if topology == '1d':
-            return neighbourhood_dist * 2
+            return radius * 2
         elif topology == '2d':
-            neighbour_len = neighbourhood_dist*2+1
-            return neighbour_len**2 - 1
+            return (radius*2+1)**2 - 1
         elif topology == 'randomk':
-            return neighbourhood_dist
-        else: #if topology == 'full':
+            return radius
+        elif topology == 'full':
             return num_nodes - 1
 
     def mutate(self, p):
@@ -85,8 +92,8 @@ class Network(PersistentList):
 
         On average p*100 % of the network will be changed."""
         # MUTATE NODE POSITIONS IN TOPOLOGY
-        # The topology never changes (except for ARBNS) so we just randomly
-        # select two nodes and swap them
+        # The topology never changes so we just randomly select two nodes and
+        # swap them
         self.mutations = 0
         self.check()
         for a_index in range(len(self)):
@@ -123,18 +130,11 @@ class Network(PersistentList):
                     for i in a_index, b_index:
                         self[i].fixup()
 
-        # MUTATE NETWORK WIDE NODE UPDATE FUNCTION AND PARAMS, IF WE HAVE ONE
-        if self.function:
-            # mutate the function
-            # with p probability we choose a random bit and replace it
-            for x in range(len(self.function)):
-                if random() < p:
-                    self.mutations += 1
-                    x = randint(0,len(self.function)-1)
-                    self.function[x] = choice([0,1])
-
-        # MUTATE INDIVIDUAL NODE AND PARAMS, OTHERWISE
+        # if all nodes use the same pars, only call mutate once
+        if self.uniform:
+            self[0].mutate(p)
         else:
+            # otherwise mutate each node individually
             for node in self:
                 m = node.mutate(p)
                 self.mutations += m
@@ -147,6 +147,16 @@ class Network(PersistentList):
                     old = puts[i]
                     new = choice([x for x in self if x != old])
                     puts[i] = new
+
+        if self.topology == 'randomk':
+            # mutate topology
+            assert len(self[i].inputs) # we should always have k existing inputs
+            for i in range(len(self)):
+                for x in range(len(self[i].inputs)):
+                    if random() < p:
+                        self.mutations += 1
+                        self[i].inputs[x] = random.choice(self)
+
         return self.mutations
 
     def reset(self):
@@ -201,26 +211,29 @@ class Network(PersistentList):
         name = name[a:b]
         return name
 
-    def connect(self, topology, neighbourhood_dist=1):
+    def connect(self, topology, radius):
+        """Join the nodes in given topology, with each node being connected to
+        others within the dist/radius specified, but with no self
+        connections, so k value should be radius*2."""
         log.debug('connect(%s)', topology)
         for n in self:
             assert not n.inputs
         if topology == '1d':
-                self.connect1D(neighbourhood_dist)
+            self.connect1D(radius)
         elif topology == '2d':
-            self.connect2D(neighbourhood_dist)
+            self.connect2D(radius)
         elif topology == 'randomk':
-            self.connectRandomK(neighbourhood_dist)
+            self.connectRandomK(radius)
         elif topology == 'full':
             self.connectFull()
 
-    def connect1D(self, neighbourhood_dist):
+    def connect1D(self, radius):
         "1D ring, cells connect to every other cell in neighbourhood"
-        log.debug('connect1D(%d)', neighbourhood_dist)
+        log.debug('connect1D(%d)', radius)
         # a 1D network with wrap around
         # go over all nodes calling target.addInput(src), with src
         # being the previous and next nodes in the network order
-        neighbourhood = range(-neighbourhood_dist, 0) + range(1, neighbourhood_dist+1)
+        neighbourhood = range(-radius, 0) + range(1, radius+1)
         for target_index in range(len(self)):
             # for the index of each node
             for src_offset in neighbourhood:
@@ -235,31 +248,27 @@ class Network(PersistentList):
                 log.debug('add link %s -> %s', str(self[src_index]), str(self[target_index]))
                 self[target_index].addInput(self[src_index])
 
-    def connect2D(self, neighbourhood_dist):
-        """A 2D Moore neighbourhood (connect to all neighbours defined by a square boundary).
-
-        FIXME: implement von neumann neighbourhood (cross boundary) as cmdline option.
-
-        """
-        log.debug('connect2D(num_nodes=%d, neighbourhood_dist=%d)', len(self), neighbourhood_dist)
+    def connect2D(self, radius):
+        "A 2D Moore neighbourhood (square, not von Neumann cross)."
+        log.debug('connect2D(num_nodes=%d, radius=%d)', len(self), radius)
         nodes_per_d = math.sqrt(len(self))
         if math.modf(nodes_per_d)[0]:
             raise '2d topology requested but number of nodes %d is not square'%len(self)
 
-        neighbour_len = neighbourhood_dist*2+1
+        diameter = radius*2+1
         # connect function doesn't work when neighbourhood length wraps around
-        assert nodes_per_d >= neighbour_len
+        assert nodes_per_d >= diameter
         # make a torus grid
         dimension_len = int(math.sqrt(len(self)))
         log.debug('Network2D.connect %dx%d network, neighbourhoods %dx%d',
-                dimension_len, dimension_len, neighbour_len, neighbour_len)
+                dimension_len, dimension_len, diameter, diameter)
         for i in range(dimension_len): # for dimension 1
             for j in range(dimension_len): # for dimension 2
                 # for all nodes...
                 target_index = i*dimension_len+j
                 log.debug('target_index=%d', target_index)
-                for y in range(i-neighbourhood_dist, i+neighbourhood_dist+1):
-                    for x in range(j-neighbourhood_dist, j+neighbourhood_dist+1):
+                for y in range(i-radius, i+radius+1):
+                    for x in range(j-radius, j+radius+1):
                         log.debug('src y,x=%d,%d', y, x)
                         # for coords over the neighbourhood rectangle but not target_node
                         wrapd_y = y%dimension_len
@@ -269,21 +278,20 @@ class Network(PersistentList):
                             log.debug('add link %s -> %s', str(self[src_index]), str(self[target_index]))
                             self[target_index].addInput(self[src_index])
         for n in self:
-            assert len(n.inputs) == neighbour_len**2-1
+            assert len(n.inputs) == diameter**2-1
 
-    def connectRandomK(self, k):
+    def connectRandomK(self, radius):
         """Each node has a fixed number of inputs randomly chosen from other nodes.
 
         Since the topology is random it can be mutated, unlike most Networks."""
-        log.debug('connectRandomK(%d)', k)
+        log.debug('connectRandomK(%d)', radius)
         for n in self:
-            for _ in range(k):
+            for _ in range(radius):
                 while 1:
                     r = choice(self)
-                    if r != n: # and r not in n.inputs:
+                    if r != n and r not in n.inputs:
                         n.addInput(r)
                         break
-
 
     def connectFull(self):
         "Create connections joining every node to every other node"

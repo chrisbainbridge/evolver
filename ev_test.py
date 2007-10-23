@@ -55,7 +55,7 @@ class SteadyState(EvTest, TestCase):
     args = '--nodetype sigmoid --steadystate'
 class Logical(EvTest, TestCase):
     name = 'ev_logical'
-    args = '--nodetype logical --states 2'
+    args = '--nodetype logical -q 2'
 class Pb(EvTest, TestCase):
     name = 'ev_pb'
     args = '--sim pb'

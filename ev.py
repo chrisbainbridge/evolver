@@ -24,33 +24,33 @@
 ===== Create initial population =====
 
  -p x                 Create initial population of size x
-     -q x             Use discrete neural nets with x quanta states
+     -q x             Use discrete model with x states
      -t x             Run simulation for x seconds (default 30)
      -g x             Generations to evolve for (default 100)
-     --topology x     Specify topology of [full,1d,2d,3d,randomk]
-       -k x           Specify k inputs for randomk topology
+     --topology x     Neural network topology [full,1d,2d,3d,randomk]
+     --uniform        Use a single set of neuron parameters for the whole network
+                      (eg. like the global update fn in a cellular automata)
      --update x       Update style [sync,async]
-     --nodetype x     Type of node [sigmoid,logical,beer,wallen,sine]
-     --states x       Number of states per cell [logical only]
-     --nodes x       (1d, randomk, full) - Total number of nodes
+     --nodetype x     Type of node [sigmoid,logical,beer,if,wallen,sine]
+     --nodes x        (1d, randomk, full) - Total number of nodes
                       (2d, 3d) - length of a dimension
                       number x includes network inputs and outputs
                       (default 10)
-     --dombias x,y   Domain for bias is [x,y] (default [0,1])
-     --domvalue x,y  Domain for signal values (default [-5,5])
-     --domweight x,y Domain for weight values (default [-7,7])
-     --radius x      Max distance of a nodes neighbour in any dimension (default 1)
+     --bias x,y       Domain for bias is [x,y] (default [0,1])
+     --weight x,y     Domain for weight values (default [-7,7])
+     --radius x       Max distance of a nodes neighbour in any dimension (default 1)
                         Note: neighbourhoods are squares not crosses
-     --fitness x     Specify fitness function [bpgsim only], can be:
+                        For randomk networks, this specifies degree of connectivity k
+     --fitness x      Fitness function [bpgsim only], can be:
                        cumulativez : average z value of all body parts summed over time
                        meandistance : average Euclidean distance of all body parts
                        movement : sum of distances from previous frame
                        walk : movement and meandistance combined
- --elite             Use an elitist GA
- --steadystate       Use a steady state parallel GA
- --mutate x          Specify mutation probability
- --noise x           Specify standard deviation of Gaussian noise applied to sensors and motors
- --mutgauss          Use gaussian mutations instead of uniform
+ --elite              Elitist GA
+ --steadystate        Steady state GA
+ --mutate x           Mutation probability
+ --gauss              Use gaussian mutations instead of uniform
+ --noise x            Standard deviation of Gaussian noise applied to sensors and motors
 
 ===== Unlock =====
 
@@ -64,19 +64,19 @@
 
  --plotnets f.type    Plot all of the control networks in bpg
  --plotbpg f.type     Plot to file. Type can be dot, ps, png, etc.
-     --toponly         Only draw topology - no weights or bi-connects
-     --unroll          Unroll bpg before converting to dot file
- --pf f.pdf  Plot min/mean/max fitness graph for specified generation
- --plotpi        Plot mutations vs prob. of child.fitness > parent fitness
- --plotfc        Plot mutations vs observed fitness change
+     --toponly        Only draw topology - no weights or bi-connects
+     --unroll         Unroll bpg before converting to dot file
+ --pf f.pdf           Plot min/mean/max fitness graph for specified generation
+ --plotpi             Plot mutations vs prob. of child.fitness > parent fitness
+ --plotfc             Plot mutations vs observed fitness change
 
 ===== Sim =====
 
  -s                   Run a simulation
  -v                   Visualise with graphical user interface
-     --qt 'qt options'  Pass string onto QT options (eg. -geometry 640x480)
-     --movie file.avi   Record movie to file.avi
- --ps fname  Record signal traces. f can be *.[txt/trace/eps]
+   --qt 'qt options'  Pass string onto QT options (eg. -geometry 640x480)
+   --movie file.avi   Record movie to file.avi
+ --ps fname           Record signal traces. f can be *.[txt/trace/eps]
    --nostrip          Don't strip flat signals from the trace
  --sim x              Select simulator [pb, bpg]
  --lqr                Use LQR controller for pb sim
@@ -129,14 +129,13 @@ def main():
     log.debug(' '.join(sys.argv))
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:k:lp:q:sz:t:uvm',
+        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:lp:q:sz:t:uvm',
                 ['blank', 'qt=', 'topology=', 'update=', 'nodetype=', 'nodes=',
-                    'dombias=', 'domvalue=', 'domweight=', 'elite', 'lqr',
-                    'steadystate', 'mutate=', 'mutgauss', 'noise=',
-                    'nodes_per_input=', 'network=', 'nostrip', 'plotbpg=',
-                    'pf=', 'plotnets=', 'ps=', 'unroll', 'radius=',
-                    'toponly', 'movie=', 'sim=', 'states=', 'fitness=',
-                    'plotpi=', 'plotfc=', 'cluster'])
+                    'bias=', 'weight=', 'elite', 'lqr', 'steadystate',
+                    'mutate=', 'gauss', 'noise=', 'network=', 'nostrip',
+                    'plotbpg=', 'pf=', 'plotnets=', 'ps=', 'unroll', 'radius=',
+                    'toponly', 'movie=', 'sim=', 'fitness=', 'plotpi=',
+                    'plotfc=', 'cluster', 'uniform'])
         log.debug('opts %s', opts)
         log.debug('args %s', args)
         # print help for no args
@@ -174,9 +173,8 @@ def main():
     unlock = 0
     k = None
     # default domains
-    dombias = (-5,5)
-    domweight = (-7,7)
-    #nodes_per_input = 1
+    bias = None
+    weight = None
     radius = 1
     plotbpg = None
     plotnets = None
@@ -190,11 +188,12 @@ def main():
     max_simsecs = 0
     mutationRate = 0
     numberOfGenerations = 0
-    gaussNoise = None
+    noise = None
     strip = 1
     lqr = 0
     blank = 0
-    mutgauss = 0
+    gauss = 0
+    uniform = 0
     for o, a in opts:
         log.debug('parsing %s %s',o,a)
         if o == '-c':
@@ -233,25 +232,17 @@ def main():
             qtopts = a
         elif o == '--topology':
             topology = a
-        elif o == '-k':
-            k = int(a)
         elif o == '--update':
             update_style = a
         elif o == '--nodetype':
             nodetype = a
         elif o == '--nodes':
             num_nodes = int(a)
-        elif o == '--dombias':
+        elif o == '--bias':
             # a is of form 'x,y'
-            dombias = eval(a)
-        elif o == '--domvalue':
-            # FIXME: THIS IS NOT BEING USED
-            domvalue = eval(a)
-        elif o == '--domweight':
-            domweight = eval(a)
-        elif o == '--nodes_per_input':
-            # FIXME: THIS IS NOT BEING USED
-            nodes_per_input = int(a)
+            bias = eval(a)
+        elif o == '--weight':
+            weight = eval(a)
         elif o == '--elite':
             ga = 'elite'
         elif o == '--lqr':
@@ -260,10 +251,12 @@ def main():
             ga = 'steady-state'
         elif o == '--mutate':
             mutationRate = float(a)
-        elif o == '--mutgauss':
-            mutgauss = 1
+        elif o == '--gauss':
+            gauss = 1
+        elif o == '--uniform':
+            uniform = 1
         elif o == '--noise':
-            gaussNoise = float(a)
+            noise = float(a)
         elif o == '--nostrip':
             strip = 0
         elif o == '-i':
@@ -293,8 +286,6 @@ def main():
             simulation = a
         elif o == '-m':
             master = 1
-        elif o == '--states':
-            numberOfStates = int(a)
         elif o == '--fitness':
             assert a in ['meandistance', 'cumulativez', 'movement', 'walk', 'after']
             fitnessFunctionName = a
@@ -361,21 +352,18 @@ def main():
                 'sigmoid' : node.SigmoidNode,
                 'logical': node.LogicalNode,
                 'beer' : node.BeerNode,
+                'if' : node.IfNode,
                 'wallen' : node.WallenNode,
                 'sine' : node.SineNode }
         new_node_class = new_node_arg_class_map[nodetype]
 
-        new_node_args = {}
-        if issubclass(new_node_class, node.WeightNode):
-            if nodetype == 'wallen':
-                domweight = (0,16)
-            new_node_args = {
-                    'weightDomain' : domweight,
-                    'quanta': quanta }
-            if new_node_class is node.BeerNode:
-                new_node_args['biasDomain'] = dombias
-        elif new_node_class is node.LogicalNode:
-            new_node_args = { 'numberOfStates': numberOfStates }
+        new_node_args = { 'quanta' : quanta } # all nodes have states
+        if bias:
+            assert new_node_class is node.BeerNode
+            new_node_args['biasDomain'] = bias
+        if weight:
+            assert issubclass(new_node_class, node.WeightNode)
+            new_node_args['weightDomain'] = weight
 
         new_network_args = {
                 'num_nodes' : num_nodes,
@@ -385,16 +373,17 @@ def main():
                 'new_node_args' : new_node_args,
                 'topology' : topology,
                 'update_style' : update_style,
-                'radius' : radius }
+                'radius' : radius,
+                'uniform' : uniform}
 
         # create defaults
         if not max_simsecs : max_simsecs = 30
         if not mutationRate: mutationRate = 0.05
         if not numberOfGenerations: numberOfGenerations = 100
-        if gaussNoise == None: gaussNoise = 0.005
+        if noise == None: noise = 0.005
 
         new_sim_args = { 'max_simsecs' : max_simsecs,
-                         'gaussNoise' : gaussNoise}
+                         'noise' : noise}
         if simulation == 'bpg':
             new_individual_fn = bpg.BodyPartGraph
             new_individual_args = { 'network_args' : new_network_args }
@@ -408,7 +397,7 @@ def main():
         root[g] = evolve.Generation(popsize, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args, ga, mutationRate)
 
         root[g].setFinalGeneration(numberOfGenerations)
-        root[g].mutgauss = mutgauss
+        root[g].gauss = gauss
         log.debug('committing all subtransactions')
         transaction.commit()
         log.debug('commit done, end of create_initial_population')
@@ -556,14 +545,14 @@ def main():
             secs = max_simsecs
         else:
             secs = root[g].new_sim_args['max_simsecs']
-        if gaussNoise == None:
-            gaussNoise = root[g].new_sim_args['gaussNoise']
+        if noise == None:
+            noise = root[g].new_sim_args['noise']
         if root[g].new_sim_fn == sim.BpgSim:
             if not fitnessFunctionName:
                 fitnessFunctionName = root[g].new_sim_args['fitnessName']
-            s = root[g].new_sim_fn(secs, fitnessFunctionName, gaussNoise)
+            s = root[g].new_sim_fn(secs, fitnessFunctionName, noise)
         elif root[g].new_sim_fn == sim.PoleBalanceSim:
-            s = root[g].new_sim_fn(secs, gaussNoise=gaussNoise)
+            s = root[g].new_sim_fn(secs, noise=noise)
         if lqr:
             s.setUseLqr()
         else:

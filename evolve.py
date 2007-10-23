@@ -77,7 +77,7 @@ class Generation(PersistentList):
             self.hostData[hostname] = HostData()
         self.mutationStats = PersistentList() # (parentFitness, mutations, childFitness)
         self.statList = PersistentList()
-        self.mutgauss = 0
+        self.gauss = 0
         self.updateTime = time.time()
         self.updateRate = 0
         self.pause = 0
@@ -327,9 +327,8 @@ class Generation(PersistentList):
             done = self.runClientInnerLoop(master, slave)
 
     def runClientInnerLoop(self, master=1, slave=1):
-        rand.mutgauss = 0
-        if self.mutgauss:
-            rand.mutgauss = 1
+        # need to set this here because it can vary between runs
+        rand.gauss = self.gauss
         try:
             transaction.begin()
             if self.pause:

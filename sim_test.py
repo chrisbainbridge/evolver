@@ -251,7 +251,7 @@ class PoleBalanceSimTestCase(unittest.TestCase):
 
     def test_1_random_network_control(self):
         s = sim.PoleBalanceSim(SECONDS)
-        n = Network(10, 2, 1, SigmoidNode, {}, 'full', 'async')
+        n = Network(10, 2, 1, SigmoidNode, {}, 'full', 'async', 1, 1)
         s.setNetwork(n)
         runSim(s)
 
@@ -259,7 +259,7 @@ class PoleBalanceSimTestCase(unittest.TestCase):
         s = sim.PoleBalanceSim(SECONDS)
         # apply unit impulse
         s.pole_geom.getBody().addForce((1,0,0))
-        n = Network(10, 2, 1, SigmoidNode, {}, 'full', 'async')
+        n = Network(10, 2, 1, SigmoidNode, {}, 'full', 'async', 1, 1)
         s.setNetwork(n)
         runSim(s)
 

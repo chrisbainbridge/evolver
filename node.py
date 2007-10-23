@@ -36,12 +36,24 @@ def quantiseDomain((l,h), x, q):
         return x
     return round((float(x)-l)/(h-l)*(q-1))*(h-l)/(q-1)+l
 
+class Pars(Persistent):
+    pass
+
 class Node(Persistent):
 
-    def __init__(self):
+    def __init__(self, par):
         self.inputs = PersistentList() # list of internal inputs
         # externalInputs[(bp,sig)] = signalvalue
         self.externalInputs = PersistentMapping()
+        # par is a class for all the evolvable parameters of the model. If set
+        # in the constructor we can use a central parameter set, otherwise each
+        # neuron has its own.
+        if par == 0:
+            pass
+        elif par == 1:
+            self.par = Pars()
+        else:
+            self.par = par
 
     def destroy(self):
         # delete references that can cause cycles
@@ -94,11 +106,11 @@ class Node(Persistent):
 class WeightNode(Node):
     'A traditional model neuron: state in [0,1], weighted inputs'
 
-    def __init__(self, weightDomain=(-7,7), quanta=None, abs_weights=0):
+    def __init__(self, par, weightDomain=(-7,7), quanta=None, abs_weights=0):
         # with absolute weights and polarity neurons range must be >= 0.
         if abs_weights:
             assert weightDomain[0] >= 0
-        Node.__init__(self)
+        Node.__init__(self, par)
         self.weights = PersistentMapping()
         self.weightDomain = weightDomain
         self.quanta = quanta
@@ -180,6 +192,10 @@ class WeightNode(Node):
             x = src.output
             if self.quanta:
                 x = quantise(x, self.quanta)
+            if isinstance(src, SrmNode):
+                # hack since output is spikes, we want eps function
+                # note that we don't do quantisation here.
+                x = src.eps
             cumulative += x * self.weights[src]
         if use_external:
             for (src, x) in self.externalInputs.items():
@@ -191,8 +207,9 @@ class WeightNode(Node):
 class SigmoidNode(WeightNode):
     'Sigmoid model (no internal state)'
 
-    def __init__(self, weightDomain=(-7,7), quanta=None):
-        WeightNode.__init__(self, weightDomain, quanta)
+    def __init__(self, par, weightDomain=(-7,7), quanta=None):
+        # we pass on par here even though sigmoid has no internal parameters
+        WeightNode.__init__(self, par, weightDomain, quanta)
         self.reset()
 
     def postUpdate(self):
@@ -208,11 +225,11 @@ class SigmoidNode(WeightNode):
 class SineNode(WeightNode):
     'Sine wave model'
 
-    def __init__(self, weightDomain=(-7,7), quanta=None):
-        WeightNode.__init__(self, weightDomain, quanta)
-        self.phaseOffset = None
-        self.stepSize = None
-        self.amplitude = None
+    def __init__(self, par, weightDomain=(-7,7), quanta=None):
+        WeightNode.__init__(self, par, weightDomain, quanta)
+        self.par.phaseOffset = None
+        self.par.stepSize = None
+        self.par.amplitude = None
         self.setPhaseOffset()
         self.setStepSize()
         self.reset()
@@ -220,23 +237,23 @@ class SineNode(WeightNode):
         self.postUpdate()
 
     def setPhaseOffset(self):
-        self.phaseOffset = rdom((0,2*math.pi), self.phaseOffset, self.quanta)
+        self.par.phaseOffset = rdom((0,2*math.pi), self.par.phaseOffset, self.quanta)
 
     def setStepSize(self):
         # oscillate between [twice per second, once every 2 seconds)
         persec = math.pi*2/50
-        self.stepSize = rdom((persec/2, persec*2), self.stepSize, self.quanta)
+        self.par.stepSize = rdom((persec/2, persec*2), self.par.stepSize, self.quanta)
 
     def reset(self):
-        self.state = self.phaseOffset
+        self.state = self.par.phaseOffset
 
     def setAmplitude(self):
-        self.amplitude = rdom((0.25, 1), self.amplitude, self.quanta)
+        self.par.amplitude = rdom((0.25, 1), self.par.amplitude, self.quanta)
 
     def postUpdate(self):
         'return output in [0,1]'
-        self.output = quantise((math.sin(self.state)*self.amplitude + 1) / 2, self.quanta)
-        self.state = (self.state + self.stepSize) % (2*math.pi)
+        self.output = quantise((math.sin(self.state)*self.par.amplitude + 1) / 2, self.quanta)
+        self.state = (self.state + self.par.stepSize) % (2*math.pi)
 
     def mutate(self, p):
         mutations = 0
@@ -254,19 +271,20 @@ class SineNode(WeightNode):
 class BeerNode(WeightNode):
     'Beer 1st order model'
 
-    def __init__(self, weightDomain=(-16,16), quanta=None, biasDomain=(-4,4)):
-        WeightNode.__init__(self, weightDomain, quanta)
-        self.adaptRate = None
-        self.bias = None
+    def __init__(self, par, weightDomain=(-16,16), quanta=None, biasDomain=(-4,4)):
+        WeightNode.__init__(self, par, weightDomain, quanta)
+        if par == 1:
+            self.par.adaptRate = None
+            self.par.bias = None
+            self.par.biasDomain = biasDomain
+            self.setAdaptRate()
+            self.setBias()
         self.state = None
-        self.setAdaptRate()
-        self.biasDomain = biasDomain
-        self.setBias()
         self.reset()
 
     def preUpdate(self):
         DT = 1.0 / 50
-        self.nextState = self.state + DT * (self.wsum() - self.state) / self.adaptRate
+        self.nextState = self.state + DT * (self.wsum() - self.state) / self.par.adaptRate
         # cap state to [-4,4]. This isn't part of the normal model but we need
         # clear boundaries for quantisation. +-4 is enough to define a clear
         # output range that almost gets to 0 and 1.
@@ -274,7 +292,7 @@ class BeerNode(WeightNode):
 
     def postUpdate(self):
         self.state = self.nextState
-        self.output = 1/(1 + math.e**-(self.state + self.bias))
+        self.output = 1/(1 + math.e**-(self.state + self.par.bias))
         # quantise output
         if self.quanta:
             self.output = quantise(self.output, self.quanta)
@@ -293,27 +311,116 @@ class BeerNode(WeightNode):
     def setAdaptRate(self):
         # suggested value is 1, but this is very low when combined with Euler
         # step size of 1/50.
-        self.adaptRate = rdom((0.05,0.5), self.adaptRate, self.quanta)
+        self.par.adaptRate = rdom((0.05,0.5), self.par.adaptRate, self.quanta)
 
     def setBias(self):
         # suggested value is 2
-        self.bias = rdom(self.biasDomain, self.bias, self.quanta)
+        self.par.bias = rdom(self.par.biasDomain, self.par.bias, self.quanta)
 
     def reset(self):
         self.state = rdom((-0.1,0.1), self.state, self.quanta)
-        self.output = 1/(1 + math.e**-(self.state + self.bias))
+        self.output = 1/(1 + math.e**-(self.state + self.par.bias))
         if self.quanta:
             self.output = quantise(self.output, self.quanta)
+
+class IfNode(BeerNode):
+    'Integrate-and-fire spiking neuron model'
+
+    def __init__(self, par, weightDomain=(-16,16), quanta=None, biasDomain=(1,4)):
+        BeerNode.__init__(self, par, weightDomain, quanta, biasDomain)
+        if par == 1:
+            self.par.tr = None # refraction time
+            self.setTr()
+
+    def setTr(self):
+        self.par.tr = random.randint(5,25) # refract cycles (between 0 and 1/2 second)
+
+    def postUpdate(self):
+        self.output = 0
+        self.t += 1
+        if self.t > self.par.tr:
+            BeerNode.postUpdate(self)
+            # override sigmoid output with spike
+            self.output = 0
+            if self.state >= self.par.bias: # bias is actually used as firing threshold
+                self.state = 0
+                self.output = 1
+                self.t = 0
+
+    def mutate(self, p):
+        mutations = 0
+        mutations += BeerNode.mutate(self, p)
+        if random.random() < p:
+            self.setTr()
+            mutations += 1
+        return mutations
+
+    def reset(self):
+        BeerNode.reset(self)
+        self.t = 100 # cycles since last firing
+
+class SrmNode(WeightNode):
+    'Spike-response-model'
+
+    def __init__(self, par, weightDomain=(-4,4), quanta=None):
+        WeightNode.__init__(self, par, weightDomain, quanta)
+        if par == 1:
+            self.par.ft = None
+            self.setFt()
+        self.reset()
+        self.etamax=0
+        self.etamin=0
+
+    def reset(self):
+        self.spikes = []
+
+    def preUpdate(self):
+        # 20ms is too small since integration step is this big, so stretch
+        # functions to 200ms.
+        # we're counting in steps of 20ms upto 200ms, but we scale this to
+        # [0,20] for function calls to eps and eta.
+        self.spikes = [x+2 for x in self.spikes if x<20]
+        self.eps = 0
+        self.eta = 0
+        for s in self.spikes:
+            # we don't need to quantise values here because we could just use a
+            # precalculated 10 entry lookup table
+            if s >= 2: # synapse delay
+                self.eps += math.exp(-(s-2)/4)*(1-math.exp(-(s-2)/10))
+            self.eta += -math.exp(-s/4)
+        self.eps = quantiseDomain((0,1.0), self.eps, self.quanta)
+        self.eta = quantiseDomain((-1.1,0), self.eta, self.quanta)
+
+    def postUpdate(self):
+        # wsum() uses neuron.eps for SrmNode neurons
+        self.state = quantiseDomain((-4,4), self.wsum() + self.eta, self.quanta)
+        self.output = 0
+        if self.state > self.par.ft:
+            self.spikes = [0] + self.spikes
+            self.output = 1
+
+    def setFt(self):
+        'firing threshold'
+        self.par.ft = rdom((-4,4), self.par.ft, self.quanta)
+
+    def mutate(self, p):
+        mutations = 0
+        mutations += WeightNode.mutate(self, p)
+        if random.random() < p:
+            self.setFt()
+            mutations += 1
+        return mutations
 
 class TagaNode(WeightNode):
     'Taga 2nd order model'
 
-    def __init__(self, weightDomain=(-4,4), quanta=None):
-        WeightNode.__init__(self, weightDomain, quanta)
-        self.tau0 = 0.2 # originally 1.0, but very slow, this seems to work better.
-        self.tau1 = 0.2 # also 1.0
-        self.beta = 2.5
-        self.b = 1.0
+    def __init__(self, par, weightDomain=(-4,4), quanta=None):
+        WeightNode.__init__(self, par, weightDomain, quanta)
+        if par == 1:
+            self.par.tau0 = 0.2 # originally 1.0, but very slow, this seems to work better.
+            self.par.tau1 = 0.2 # also 1.0
+            self.par.beta = 2.5
+            self.par.b = 1.0
         self.reset()
 
     def reset(self):
@@ -326,8 +433,8 @@ class TagaNode(WeightNode):
 
     def preUpdate(self):
         DT = 1.0 / 50
-        self.next_u = self.u + DT * (-self.u - self.beta*max(0,self.v) + self.wsum() + self.b) / self.tau0
-        self.next_v = self.v + DT * (-self.v + self.output) / self.tau1
+        self.next_u = self.u + DT * (-self.u - self.par.beta*max(0,self.v) + self.wsum() + self.par.b) / self.par.tau0
+        self.next_v = self.v + DT * (-self.v + self.output) / self.par.tau1
 
         self.next_u = quantiseDomain((-1,1), self.next_u, self.quanta)
         self.next_v = quantiseDomain((0,1), self.next_v, self.quanta)
@@ -340,8 +447,8 @@ class TagaNode(WeightNode):
 class WallenNode(WeightNode):
     'Wallen 3rd order model'
 
-    def __init__(self, weightDomain=(0,16), quanta=None):
-        WeightNode.__init__(self, weightDomain, quanta, 1)
+    def __init__(self, par, weightDomain=(0,16), quanta=None):
+        WeightNode.__init__(self, par, weightDomain, quanta, 1)
                # i =    0      1      2     3
         self.theta = [-0.2,   0.1,   0.5,  8.0  ]
         self.r     = [ 1.8,   0.3,   1.0,  0.5  ]
@@ -349,8 +456,9 @@ class WallenNode(WeightNode):
         self.mu    = [ 0.3,   0.0,   0.3,  0.0  ]
         self.tau_a = [ 0.400, 0.001, 0.2,  0.001] # rm 0s: / by 0 in 3rd eq.
 
-        self.setI()
-        self.excite = random.choice([True,False])
+        if par == 1:
+            self.setI()
+        self.par.excite = random.choice([True,False])
         self.ye = None
         self.yi = None
         self.yt = None
@@ -365,7 +473,7 @@ class WallenNode(WeightNode):
 
     def setI(self):
         'i selects the neuron type from the predefined values'
-        self.i = random.randint(0,3)
+        self.par.i = random.randint(0,3)
 
     def reset(self):
         self.ye = rdom(self.edom, 0, self.quanta)
@@ -374,18 +482,18 @@ class WallenNode(WeightNode):
         self.setOutput()
 
     def setOutput(self):
-        self.output = max(0, 1 - math.e**(self.r[self.i]*(self.theta[self.i] - self.ye)) - self.yi - self.mu[self.i]*self.yt)
+        self.output = max(0, 1 - math.e**(self.r[self.par.i]*(self.theta[self.par.i] - self.ye)) - self.yi - self.mu[self.par.i]*self.yt)
         if self.quanta:
             self.output = quantise(self.output, self.quanta)
 
     def preUpdate(self):
-        excite_inputs = [x for x in self.inputs if x.excite]
-        inhibit_inputs = [x for x in self.inputs if not x.excite]
+        excite_inputs = [x for x in self.inputs if x.par.excite]
+        inhibit_inputs = [x for x in self.inputs if not x.par.excite]
         # here we are assuming that all sensory input is excitatory
         DT = 1.0 / 50
-        self.next_ye = self.ye + DT * (-self.ye + self.wsum(excite_inputs)) / self.tau_d[self.i]
-        self.next_yi = self.yi + DT * (-self.yi + self.wsum(inhibit_inputs, 0)) / self.tau_d[self.i]
-        self.next_yt = self.yt + DT * (-self.yt + self.output)/self.tau_a[self.i]
+        self.next_ye = self.ye + DT * (-self.ye + self.wsum(excite_inputs)) / self.tau_d[self.par.i]
+        self.next_yi = self.yi + DT * (-self.yi + self.wsum(inhibit_inputs, 0)) / self.tau_d[self.par.i]
+        self.next_yt = self.yt + DT * (-self.yt + self.output)/self.tau_a[self.par.i]
         # restrict state to domain for quantisation
         # yt is (0,0.5) since (0,4) is too big for the decay, and due to direct
         # use of yt in output equation it has a large effect on output.
@@ -406,7 +514,7 @@ class WallenNode(WeightNode):
             self.setI()
             mutations += 1
         if random.random() < p:
-            self.excite = not self.excite
+            self.par.excite = not self.par.excite
             mutations += 1
         return mutations
 
@@ -415,22 +523,18 @@ class MultiValueLogicFunction(PersistentList):
 
     Used by Logical node."""
 
-    def __init__(self, numberOfInputs, numberOfStates):
+    def __init__(self, numberOfInputs, quanta):
         "Create a new random lookup table"
         PersistentList.__init__(self)
-        self.numberOfStates = numberOfStates
-        for _ in range(int(round(numberOfStates ** numberOfInputs))):
+        self.quanta = quanta
+        for _ in range(int(round(quanta ** numberOfInputs))):
             self.append(self.getRandomValue())
         log.debug('MultiValueLogicFunction created %d entries', len(self))
 
     def getRandomValue(self):
         "Returns a random but valid value"
-        randomValue = random.randint(0, self.numberOfStates-1)
+        randomValue = random.randint(0, self.quanta-1)
         return randomValue
-
-    def getValue(self, x):
-        "Returns a stored value from the table"
-        return self[x]
 
     def mutate(self, p):
         "Change a value in the table"
@@ -445,31 +549,51 @@ class MultiValueLogicFunction(PersistentList):
 class LogicalNode(Node):
     """Output is a logical function of k inputs."""
 
-    def __init__(self, numberOfInputs=None, numberOfStates=None, function=None):
+    def __init__(self, par, numberOfInputs=None, quanta=None):
         "Either use a previously generated function table, or make a new one"
-        Node.__init__(self)
-        if function:
-            self.function = function
-        else:
-            assert numberOfInputs and numberOfStates
-            self.function = MultiValueLogicFunction(numberOfInputs, numberOfStates)
+        Node.__init__(self, par)
+        if par == 1:
+            assert numberOfInputs and quanta
+            self.par.function = MultiValueLogicFunction(numberOfInputs, quanta)
+        self.reset()
 
     def reset(self):
-        self.state = self.function.getRandomValue()
+        self.nextState = self.par.function.getRandomValue()
         self.postUpdate()
 
+    # The number of inputs can vary dynamically over the course of evolution. At
+    # this level we have no way to know how many inputs will be in the eventual
+    # phenotype, and yet we're expected to keep a complete lookup table in the
+    # genotype. So we keep the lookup table static but allow the bits to
+    # overlap, so we'll end up with duplicate bits from the internal and
+    # external inputs effectively XORed to partition the input space.
     def preUpdate(self):
         "Convert inputs to a decimal value and lookup in logic function"
         x = 0
+        assert self.par.function.quanta**len(self.inputs) == len(self.par.function)
         for i in range(len(self.inputs)):
-            x += i * self.function.numberOfStates * self.inputs[i].state
+            # we could just use the input neuron .state instead of .output
+            # should get the same value, but without conversion
+            v = int(round(self.inputs[i].output*(self.par.function.quanta-1)))
+            assert 0 <= v < self.par.function.quanta
+            x += self.par.function.quanta**i * v
         assert isinstance(x, int)
-        self.nextState = self.function.getValue(x)
+        assert x < len(self.par.function)
+        # consider external inputs
+        # this will roll over the end of the lookup table
+        for i in range(len(self.externalInputs)):
+            v = self.externalInputs.values()[i]
+            assert 0 <= v <= 1
+            q = quantise(v, self.par.function.quanta)
+            x += self.par.function.quanta**i * int(q*(self.par.function.quanta-1))
+        x = x%len(self.par.function)
+        self.nextState = self.par.function[x]
 
     def postUpdate(self):
-        self.output = self.state / (self.function.numberOfStates-1)
+        self.state = self.nextState
+        self.output = float(self.state) / (self.par.function.quanta-1)
 
     def mutate(self, p):
         "Mutate the function"
-        m = self.function.mutate(p)
+        m = self.par.function.mutate(p)
         return m

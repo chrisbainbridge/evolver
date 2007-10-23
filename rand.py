@@ -2,10 +2,10 @@ import random
 from cgkit.cgtypes import vec3
 import math
 
-mutgauss = 0
+gauss = 0
 
 def rnd(a, b, v):
-    if mutgauss and v != None:
+    if gauss and v != None:
         y = random.gauss(v, 0.5)
         if y<a: y = a
         if y>b: y = b
