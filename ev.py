@@ -31,7 +31,7 @@
      --uniform        Use a single set of neuron parameters for the whole network
                       (eg. like the global update fn in a cellular automata)
      --update x       Update style [sync,async]
-     --nodetype x     Type of node [sigmoid,logical,beer,if,wallen,sine]
+     --nodetype x     Type of node [sigmoid,logical,beer,if,ekeberg,sine]
      --nodes x        (1d, randomk, full) - Total number of nodes
                       (2d, 3d) - length of a dimension
                       number x includes network inputs and outputs
@@ -353,7 +353,7 @@ def main():
                 'logical': node.LogicalNode,
                 'beer' : node.BeerNode,
                 'if' : node.IfNode,
-                'wallen' : node.WallenNode,
+                'ekeberg' : node.EkebergNode,
                 'sine' : node.SineNode }
         new_node_class = new_node_arg_class_map[nodetype]
 

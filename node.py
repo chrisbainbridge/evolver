@@ -444,8 +444,8 @@ class TagaNode(WeightNode):
         self.v = self.next_v
         self.setOutput()
 
-class WallenNode(WeightNode):
-    'Wallen 3rd order model'
+class EkebergNode(WeightNode):
+    'Ekeberg 3rd order model'
 
     def __init__(self, par, weightDomain=(0,16), quanta=None):
         WeightNode.__init__(self, par, weightDomain, quanta, 1)

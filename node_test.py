@@ -12,7 +12,7 @@ from Cheetah.Template import Template
 import test_common
 from test_common import *
 from network import Network, TOPOLOGIES
-from node import SigmoidNode, BeerNode, IfNode, SrmNode, TagaNode, WallenNode, LogicalNode, SineNode, WeightNode
+from node import SigmoidNode, BeerNode, IfNode, SrmNode, TagaNode, EkebergNode, LogicalNode, SineNode, WeightNode
 from plot import plotNetwork
 
 class NodeTest:
@@ -21,11 +21,16 @@ class NodeTest:
         random.seed(0)
 
     def openf(self):
-        ns = re.search(r'\.(\w+)',str(self.nodet)).group(1)
+        ns = re.search(r'\.(\w+)Node',str(self.nodet)).group(1)
         i = ''
-        if self.nodet == WallenNode:
+        if self.nodet == EkebergNode:
             i = '%d'%self.i
-        self.prefix = 'test/%s%s-q%02d'%(ns,i, self.quanta)
+        self.prefix = 'test/%s%s-%02d'%(ns, i, self.quanta)
+        if self.quanta == 0:
+            s = 'continuous'
+        else:
+            s = '%d state (%d-bit)'%(self.quanta, math.log(self.quanta,2))
+        self.title = '%s%s %s'%(ns, i, s)
         self.f = open('%s.txt'%self.prefix, 'w')
         s = 'time output stimulus'
         if self.nodet in [IfNode, SrmNode]:
@@ -36,6 +41,7 @@ class NodeTest:
         t = Template(file='plot_node.r')
         t.base = self.prefix
         t.plot_state = 0
+        t.title = self.title
         if self.nodet in [IfNode, SrmNode]:
             t.plot_state = 1
         self.f = open('tmp.r', 'w')
@@ -74,7 +80,7 @@ class NodeTest:
             n1.par.ft = 2
         elif self.nodet == TagaNode:
             n0.weights[n1] = 2
-        elif self.nodet == WallenNode:
+        elif self.nodet == EkebergNode:
             n0.weights[n1] = 2
             n0.par.i = self.i
             n0.yt = 0
@@ -87,14 +93,14 @@ class NodeTest:
         stim = {0:0, 500:0.3, 1000:0.6, 2000:1.0, 3000:0.5, 4000:0.0}
         i = 0
         # stimulus initially inhibits
-        if self.nodet == WallenNode:
+        if self.nodet == EkebergNode:
             n1.par.excite = 0
         elif isinstance(n0, WeightNode):
             n0.weights[n1] = -n0.weights[n1]
         while i < 5000:
             # stimulus goes excitatory after delay
             if i == 1500:
-                if self.nodet == WallenNode:
+                if self.nodet == EkebergNode:
                     n1.par.excite = 1
                 elif isinstance(n0, WeightNode):
                     n0.weights[n1] = -n0.weights[n1]
@@ -156,17 +162,17 @@ class Srm(NodeTest,TestCase):
     nodet = SrmNode
 class Taga(NodeTest,TestCase):
     nodet = TagaNode
-class Wallen0(NodeTest,TestCase):
-    nodet = WallenNode
+class Ekeberg0(NodeTest,TestCase):
+    nodet = EkebergNode
     i = 0
-class Wallen1(NodeTest,TestCase):
-    nodet = WallenNode
+class Ekeberg1(NodeTest,TestCase):
+    nodet = EkebergNode
     i = 1
-class Wallen2(NodeTest,TestCase):
-    nodet = WallenNode
+class Ekeberg2(NodeTest,TestCase):
+    nodet = EkebergNode
     i = 2
-class Wallen3(NodeTest,TestCase):
-    nodet = WallenNode
+class Ekeberg3(NodeTest,TestCase):
+    nodet = EkebergNode
     i = 3
 class Logical(NodeTest,TestCase):
     nodet = LogicalNode
