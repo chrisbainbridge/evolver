@@ -82,6 +82,27 @@
  --lqr                Use LQR controller for pb sim
  """
 
+# For some reason, this has to be the very first thing that we do, otherwise the
+# call To ClientStorage in db.py will either silently exit the process, or the
+# process will become suspended waiting on some interrupt. Presumably merely
+# importing ZODB and/or the persistent classes does something (eg. records the
+# fact that we have a controlling terminal) that causes problems later on.
+# This could be related to the version bump from zodb-3.6.0 to 3.7.2 (no time to
+# investigate further atm).
+import sys
+background = 0
+if '-b' in sys.argv:
+    # before we do anything, fork if necessary
+    print 'backgrounding...'
+    import daemon, os
+    daemon.createDaemon()
+    # record pid so it can be used by monitoring programs
+    f = open('/tmp/client.pid', 'w')
+    f.write('%d\n'%(os.getpid()))
+    f.close()
+    background = 1
+    sys.argv.remove('-b')
+
 import os
 import sys
 import socket
@@ -129,7 +150,7 @@ def main():
     log.debug(' '.join(sys.argv))
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cdr:ebg:hi:lp:q:sz:t:uvm',
+        opts, args = getopt.getopt(sys.argv[1:], 'cdr:eg:hi:lp:q:sz:t:uvm',
                 ['blank', 'qt=', 'topology=', 'update=', 'nodetype=', 'nodes=',
                     'bias=', 'weight=', 'elite', 'lqr', 'steadystate',
                     'mutate=', 'gauss', 'noise=', 'network=', 'nostrip',
@@ -168,7 +189,6 @@ def main():
     master = 0
     g = None
     create_initial_population = 0
-    background = 0
     delete = 0
     unlock = 0
     k = None
@@ -202,8 +222,6 @@ def main():
             delete = 1
         elif o == '-r':
             g = a
-        elif o == '-b':
-            background = 1
         elif o == '-g':
             numberOfGenerations = int(a)
         elif o in ('-h'):
@@ -310,14 +328,6 @@ def main():
         log.critical('What do you want me to do with that individual?')
         return 1
 
-    # before we do anything, fork if necessary
-    if (master or client) and background:
-        daemon.createDaemon()
-        # record pid so it can be used by monitoring programs
-        f = open('/tmp/client.pid', 'w')
-        f.write('%d\n'%(os.getpid()))
-        f.close()
-
     log.debug('zeo server is %s', server_addr)
     root = db.connect(server_addr)
 
@@ -383,7 +393,7 @@ def main():
         if noise == None: noise = 0.005
 
         new_sim_args = { 'max_simsecs' : max_simsecs,
-                         'noise' : noise}
+                         'noise_sd' : noise}
         if simulation == 'bpg':
             new_individual_fn = bpg.BodyPartGraph
             new_individual_args = { 'network_args' : new_network_args }
@@ -546,13 +556,13 @@ def main():
         else:
             secs = root[g].new_sim_args['max_simsecs']
         if noise == None:
-            noise = root[g].new_sim_args['noise']
+            noise = root[g].new_sim_args['noise_sd']
         if root[g].new_sim_fn == sim.BpgSim:
             if not fitnessFunctionName:
                 fitnessFunctionName = root[g].new_sim_args['fitnessName']
             s = root[g].new_sim_fn(secs, fitnessFunctionName, noise)
         elif root[g].new_sim_fn == sim.PoleBalanceSim:
-            s = root[g].new_sim_fn(secs, noise=noise)
+            s = root[g].new_sim_fn(secs, noise_sd=noise)
         if lqr:
             s.setUseLqr()
         else:
