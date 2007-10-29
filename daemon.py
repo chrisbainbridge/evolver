@@ -87,7 +87,9 @@ def createDaemon():
 
 # we can't close the fds because we get an error from os.urandom about
 # the fd having disappeared...
-   maxfd = 3
+# this isnt a problem anymore with python 2.4.4
+   if sys.version_info < (2,4,4,'final',0):
+      maxfd = 3
    for fd in range(0, maxfd):
       try:
          os.close(fd)
