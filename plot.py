@@ -160,6 +160,7 @@ def gnuplot(gnuplotFile, ext, view, datFile, fbase):
         os.remove(datFile)
         if view:
             os.system('kpdf %s.pdf'%fbase)
+            os.remove('%s.pdf'%fbase)
 
 def plot_generation_vs_fitness(g, outputFilename, genName=None):
     (view, fbase, ext, gnuplotFile, datFile) = gnuplotSetup(outputFilename, genName)
