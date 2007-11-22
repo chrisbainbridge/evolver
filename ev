@@ -1,1 +1,3 @@
-ev.py
+#!/bin/bash
+ulimit -s 65536
+python ev.py $@

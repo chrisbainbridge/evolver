@@ -50,4 +50,4 @@ uml:
 	dia doc/dia.dia
 
 ulimit:
-	ulimit -s 16384
+	ulimit -s 65536

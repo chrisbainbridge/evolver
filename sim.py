@@ -10,7 +10,7 @@ import node
 import network
 
 CYLINDER_RADIUS = 0.5
-CYLINDER_DENSITY = 0.5
+CYLINDER_DENSITY = 5
 MAX_UNROLLED_BODYPARTS = 20
 SOFT_WORLD = 0
 HZ = 50
@@ -170,10 +170,11 @@ class MyMotor(ode.AMotor):
 class Sim(object):
     "Simulation class, responsible for everything in the physical sim."
 
-    def __init__(self, max_simsecs, noise_sd):
+    def __init__(self, max_simsecs, noise_sd, quick):
         log.debug('Sim.__init__(max_simsecs=%s)', max_simsecs)
         # create world, set default gravity, geoms, flat ground, spaces etc.
         assert type(max_simsecs) is float or type(max_simsecs) is int
+        self.quick = quick
         self.total_time = 0.0
         self.relax_time = 0
         self.max_simsecs = float(max_simsecs)
@@ -236,12 +237,23 @@ class Sim(object):
             self.addContact(geom1, geom2, c)
         log.debug('/handleCollide')
 
+    def worldStep(self):
+        # Using the quick mode makes no difference if we only have a few bodies
+        # and constraints, but it can be much quicker with many constraints.
+        # However, the ODE manual warns that for robotics apps, with many foot
+        # contacts with the floor, the system is close to a singularity and thus
+        # quickStep is particularly inaccurate.
+        if self.quick:
+            self.world.quickStep(DT)
+        else:
+            self.world.step(DT)
+
     def step(self):
         "Single step of sim. Sets self.finished when sim is over"
         log.debug('step')
         self.points = []
         self.space.collide(None, self.handleCollide)
-        self.world.step(DT)
+        self.worldStep()
         self.contactGroup.empty()
         self.total_time += DT
         log.debug('stepped world by %f time is %f', DT, self.total_time)
@@ -263,8 +275,8 @@ class Sim(object):
 class BpgSim(Sim):
     "Simulate articulated bodies built from BodyPartGraphs"
 
-    def __init__(self, max_simsecs=30.0, fitnessName='meandistance', noise_sd=0.01):
-        Sim.__init__(self, max_simsecs, noise_sd)
+    def __init__(self, max_simsecs=30.0, fitnessName='meandistance', noise_sd=0.01, quick=0):
+        Sim.__init__(self, max_simsecs, noise_sd, quick)
         log.debug('BPGSim.__init__')
         self.geom_contact = {}
         self.startpos = vec3(0, 0, 0)
@@ -275,6 +287,7 @@ class BpgSim(Sim):
                 'cumulativez' : self.fitnessCumulativeZ,
                 'movement' : self.fitnessMovement,
                 'after' : self.fitnessAfter,
+                'meanxv' : self.fitnessMeanXV,
                 'walk' : self.fitnessWalk}
         if not fitnessName:
             fitnessName = 'meandistance'
@@ -598,10 +611,22 @@ class BpgSim(Sim):
             tz += z
         return vec3(tx, ty, tz) / len(bpg.bodyparts)
 
+    def minPosX(self, bpg):
+        (mx,y,z) = bpg.bodyparts[0].geom.getPosition()
+        for bp in bpg.bodyparts[1:]:
+            (x, y, z) = bp.geom.getPosition()
+            mx = min(mx, x)
+        return mx
+
     def fitnessMeanDistance(self):
         "Geometric distance from post-relax start position"
         mpos = self.meanPos(self.bpgs[0])
         self.score = (mpos - self.startpos).length()
+
+    def fitnessMeanXV(self):
+        "Mean velocity on X-axis"
+        mx = self.minPosX(self.bpgs[0])
+        self.score = (mx - self.startpos[0])/self.total_time
 
     def fitnessMovement(self):
         "Cumulative movement between frames"
@@ -653,10 +678,11 @@ class BpgSim(Sim):
     def relax(self):
         "Relax bpg until summed velocity over 2 seconds is less than some threshold."
         count = 0
+        end = HZ * 10
         while 1:
             self.contactGroup.empty()
             self.space.collide(None, self.handleCollide)
-            self.world.step(DT)
+            self.worldStep()
             # calc total linear velocity
             total = 0
             for g in self.space:
@@ -669,22 +695,24 @@ class BpgSim(Sim):
                 self.prev_v += [total]
             else:
                 self.prev_v = self.prev_v[1:] + [total]
-                VELOCITY_THRESHOLD = 0.005
+                if self.quick:
+                    VELOCITY_THRESHOLD = 30
+                else:
+                    VELOCITY_THRESHOLD = 0.005
                 # if total velocity for last min_rt frames less than threshold
                 if sum(self.prev_v) < VELOCITY_THRESHOLD:
                     self.relaxed = 1
                     # recalc new start pos for fitness evals
                     self.startpos = self.meanPos(self.bpgs[0])
                     log.debug('relaxed - time=%f, startpos=%s, vt=%f', self.total_time, self.startpos, sum(self.prev_v))
-                    break
+                    return 0
             count += 1
             # if there are opposing violated constraints the body can move
             # constantly. We don't want that - we want the networks to
             # generate all of the movement energy. So we timeout after 10
             # seconds of waiting for the body to be still, and quit.
-            if count > HZ * 10:
+            if count > end:
                 return 1
-        return 0
 
     def logSignals(self):
         if self.siglog:
@@ -762,15 +790,14 @@ class BpgSim(Sim):
                 log.critical('bad sensor')
             # scale value to [0,1]
             value = (value/math.pi+1)/2
+        elif isinstance(src, node.IfNode) or isinstance(src, node.SrmNode):
+            # need to decode the spikes. For simplicity we just use the
+            # state which is almost a continuous representation of the
+            # spikes.
+            value = src.state/8.0+0.5 # [-4,4] -> [0,1]
         elif isinstance(src, node.Node):
             # network output node, in domain [0,1]
-            if isinstance(src, node.IfNode) or isinstance(src, node.SrmNode):
-                # need to decode the spikes. For simplicity we just use the
-                # state which is almost a continuous representation of the
-                # spikes.
-                value = src.state/8+0.5 # [-4,4] -> [0,1]
-            else:
-                value = src.output
+            value = src.output
 
         assert 0 <= value <= 1
 
@@ -864,9 +891,9 @@ class PoleBalanceSim(Sim):
       Inputs[0] -- angle of hinge joint between the boxes
       Outputs[0] -- desired velocity of the horizontal travelling box"""
 
-    def __init__(self, max_simsecs=30, net=None, noise_sd=0.01):
+    def __init__(self, max_simsecs=30, net=None, noise_sd=0.01, quick=0):
         """Creates the ODE and Geom bodies for this simulation"""
-        Sim.__init__(self, max_simsecs, noise_sd)
+        Sim.__init__(self, max_simsecs, noise_sd, quick)
         log.debug('init PoleBalance sim')
         self.network = net
 

@@ -36,20 +36,24 @@ def dbset(g, k, v):
            if c > 10:
                 raise
 
-def runRateTest(gn):
-    # run test with 1,2,4,8,16,32,62 client nodes
-    # 2 nodes are already used - zeoserver and master
+def runRateTest(gn, single=0):
+    # run test with 1,2,4,8,16,32,62 client nodes. The actual hosts are
+    # hardcoded as cluster.HOSTS but cluster.MASTER is removed.
     f = open('test/rate.txt', 'w')
     f.write('pcs\teh\n')
     r = db.connect()
     g = r[gn]
     nh = [4,8,15,30,45,59]
     nh.reverse()
+    if single:
+        nh = [1]
     for n in nh:
         dbset(g, 'pause', 1)
         debug('n=%d',n)
         hosts = list(set(cluster.HOSTS) - set([cluster.MASTER]))
         hosts = hosts[:n]
+        if single:
+            hosts = 'localhost',
         debug('%d hosts : %s', len(hosts), hosts)
         assert len(hosts) == n
         for x in g:
@@ -62,7 +66,7 @@ def runRateTest(gn):
         dbset(g, 'pause', 0)
         debug('unpaused clients')
         while g.leftToEval():
-            time.sleep(1)
+            time.sleep(10)
             db.sync()
         endtime = time.time()
         runtime = endtime - starttime
@@ -75,7 +79,7 @@ def runRateTest(gn):
     f.close()
 
 class Cluster:
-    def setUp(self):
+    def test_0_delete(self):
         ev_test.delete(self.g)
     def test_1_create(self):
         ev_test.create(self.g, self.args)
@@ -92,21 +96,32 @@ class SteadyState(Cluster, TestCase):
 
 class TestClusterRate(Cluster, TestCase):
     g = 'test_cluster_rate'
-    args = '-p 50 -t 30 -g 2 --topology full --update sync'\
-        '--nodetype sine --nodes 5 --sim bpg --fitness movement'
+    args = '-p 50 -t 30 -g 2 --topology full --update sync --nodetype sine --nodes 5 --sim bpg --fitness movement'
     def test_3_run(self):
+        # this test will run after 5 gens of evolution, hopefully weeded out the
+        # very bad individuals and so giving more realisitc results
         ev_test.main('ev.py -r %s -g 10'%self.g)
-        runRateTest(ev_test.g)
+        runRateTest(self.g)
+
+class SingleRate(Cluster, TestCase):
+    g = 'test_single_rate'
+    args = '-p 20 -t 30 -g 2 --topology full --update sync --nodetype sine --nodes 5 --sim bpg --fitness meandistance'
+    def test_2_run(self):
+        ev_test.main('ev.py -r %s -g 10'%self.g)
+        runRateTest(self.g, single=1)
 
 if __name__ == "__main__":
     setup_logging()
+    single = 0
+    if '-s' in sys.argv:
+        cluster.ZEOSERVER='localhost'
+        cluster.MASTER = 'localhost'
+        single = 1
+        sys.argv.remove('-s')
     if not cluster.isZeoServerRunning():
         critical('Can\'t contact ZEO server %s, skipping tests...', cluster.ZEOSERVER)
         sys.exit(0)
-    hosts = ('bw64node02','bw64node03')
-    h = cluster.startZeoClients(hosts)
-    cluster.stopZeoClients(h)
-    if len(h) != len(hosts):
-        critical('Can\'t start ZEO clients %s, skipping tests...', hosts)
+    if cluster.getHostname() == 'bob':
+        critical('Not running on cluster, skipping tests...')
         sys.exit(0)
     test_main()

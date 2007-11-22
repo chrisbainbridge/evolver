@@ -2,7 +2,6 @@ import re
 import socket
 import os
 from logging import debug, info
-from os import kill, popen3
 import popen2
 import time
 import signal
@@ -11,7 +10,7 @@ CLUSTER = 'bw64'
 HOME = '/home/s9734229'
 INSTDIR = HOME + '/phd'
 MASTER = CLUSTER + 'node02'
-ZEOSERVER = CLUSTER + 'node01'
+ZEOSERVER = 'hermes'
 REGEXP = r'bw240n\d\d.inf.ed.ac.uk'
 
 def getBadHosts():
@@ -37,7 +36,11 @@ def nodeName(n):
 
 HOSTS = list(set([nodeName(x) for x in range(2,65)]) - set(getBadHosts()))
 HOSTS.sort()
-HOSTNAMES = [ 'bw240n%s'%(str(x).zfill(2)) for x in range(1,65) ] + ['bob']
+def bwlist(prefix,n):
+    return [ '%sn%s'%(prefix,str(x).zfill(2)) for x in range(1,n) ]
+HOSTNAMES = bwlist('bw240',65) + ['bob']
+HOSTNAMES += ['lutzow']
+HOSTNAMES += ['hermes'] + bwlist('bw1425',25)
 
 def isHost():
     if re.match(REGEXP,  socket.gethostname()):
@@ -55,14 +58,16 @@ def getHostname():
 TIMEOUT = 60
 p = None # current executing Popen4 process for alarm handler
 
-def popen4(s):
+def popen(server, cmd):
     global p
-    p = popen2.Popen4(s)
+    if server != 'localhost':
+        cmd = 'ssh -f %s "%s"'%(server, cmd)
+    p = popen2.Popen4(cmd)
 
 def handleAlarm(sigNum, stackFrame):
     info('timed out')
     try:
-        kill(p.pid, signal.SIGHUP)
+        os.kill(p.pid, signal.SIGHUP)
     except:
         debug('couldnt kill pid')
 
@@ -76,10 +81,10 @@ def stopAlarm():
 
 def isZeoServerRunning():
     info('trying zeo server %s', ZEOSERVER)
-    cmd = 'ssh %s zdctl.py -C %s/server/zdctl.conf status 2>&1'%(ZEOSERVER, INSTDIR)
+    cmd = 'cd %s/server && make status 2>&1'%(INSTDIR)
     debug(cmd)
     startAlarm()
-    popen4(cmd)
+    popen(ZEOSERVER, cmd)
     s = p.fromchild.read().strip()
     stopAlarm()
     debug(s)
@@ -94,19 +99,19 @@ def startZeoServer():
     running = isZeoServerRunning()
     if not running:
         info('starting zeo server')
-        _,_,_ = popen3('ssh %s make -C %s startserver'%(ZEOSERVER, INSTDIR))
+        popen(ZEOSERVER, 'make -C %s startserver'%INSTDIR)
         time.sleep(5)
 
 def stopZeoServer():
     running = isZeoServerRunning()
     if running:
         info ('stopping zeo server')
-        _,_,_ = popen3('ssh %s make -C %s stopserver'%(ZEOSERVER, INSTDIR))
+        popen(ZEOSERVER, 'make -C %s stopserver'%INSTDIR)
 
 def getZeoClientPid(host):
     info('trying zeo client %s', host)
     startAlarm()
-    popen4('ssh -f %s cat /tmp/client.pid 2>&1'%host)
+    popen(host, 'cat /tmp/client.pid 2>&1')
     s = p.fromchild.read().strip()
     stopAlarm()
     debug('recv: %s',s)
@@ -127,22 +132,22 @@ def getZeoClientPid(host):
             return -1
 
 def getZeoClientDetails(host, pid):
-    cmd = 'ssh %s ps -p %d'%(host, pid)
+    cmd = 'ps -p %d'%pid
     debug('send: %s', cmd)
-    _,stdout,_ = popen3(cmd)
-    s1 = stdout.read()
+    popen(host, cmd)
+    s1 = p.fromchild.read()
     debug('recv: %s', s1)
     m = re.match('\s*PID\s+TTY\s+TIME\s+CMD\s+\d+\s*[\w?]*\s+([\d:]+)\s+(\w+)',s1)
     if m:
         cpu = m.group(1)
         comm = m.group(2)
-        info('Process %s running on host %s with elapsed cpucpu %s (h:m:s)'%(comm,host,cpu))
+        info('Process %s running on host %s with elapsed cpu %s (h:m:s)'%(comm,host,cpu))
         return (cpu, comm)
     else:
         debug('Process on %s seems to have died!'%host)
         return None
 
-def startZeoClient(host, run=None):
+def startZeoClient(host, run=None, single=0):
     try:
         restart = 0
         pid = getZeoClientPid(host)
@@ -155,27 +160,33 @@ def startZeoClient(host, run=None):
             if not details:
                 restart = 1
         if restart:
-            if host == MASTER:
+            if single:
+                opt = '-m -c'
+                s = 'single host (debug/devel): master and client'
+            elif host == MASTER:
                 opt = '-m'
                 s = 'master'
             else:
                 opt = '-c'
                 s = 'slave'
             info('Restarting %s client on %s', s, host)
-            cmd = 'ssh %s /bin/nice -n 5 %s/src/ev.py -z %s -b %s'%(host, INSTDIR, ZEOSERVER, opt)
+            cmd = 'nice -n 5 %s/src/ev.py -z %s -b %s'%(INSTDIR, ZEOSERVER, opt)
             if run:
                 cmd += ' -r %s'%run
             debug(cmd)
-            popen3(cmd)
+            popen(host, cmd)
         return 0
     except IOError, e:
         debug('ioerror %s', e)
         return -1
 
 def startZeoClients(hosts=HOSTS, run=None):
+    single = 0
+    if len(hosts) == 1:
+        single = 1
     h = []
     for host in hosts:
-        e = startZeoClient(host, run)
+        e = startZeoClient(host, run, single)
         if e == 0:
             h.append(host)
     return h
@@ -185,7 +196,7 @@ def stopZeoClient(host):
         pid = getZeoClientPid(host)
         if pid > 0:
             info('killing..')
-            popen4('ssh %s "kill %d; rm /tmp/client.pid; echo killed by cluster.py at `date` >> /tmp/client.stderr"'%(host, pid))
+            popen(host, 'kill %d; rm /tmp/client.pid; echo killed by cluster.py at `date` >> /tmp/client.stderr'%pid)
             s = p.fromchild.read()
             debug('recv: %s',s)
     except IOError, e:

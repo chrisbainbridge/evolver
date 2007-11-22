@@ -31,7 +31,7 @@
      --uniform        Use a single set of neuron parameters for the whole network
                       (eg. like the global update fn in a cellular automata)
      --update x       Update style [sync,async]
-     --nodetype x     Type of node [sigmoid,logical,beer,if,ekeberg,sine]
+     --nodetype x     Type of node [sigmoid,logical,beer,if,ekeberg,sine,srm]
      --nodes x        (1d, randomk, full) - Total number of nodes
                       (2d, 3d) - length of a dimension
                       number x includes network inputs and outputs
@@ -46,6 +46,7 @@
                        meandistance : average Euclidean distance of all body parts
                        movement : sum of distances from previous frame
                        walk : movement and meandistance combined
+                       meanxv : mean velocity on X-axis
  --elite              Elitist GA
  --steadystate        Steady state GA
  --mutate x           Mutation probability
@@ -125,6 +126,7 @@ import network
 import node # ignore checker error about this import
 import sim
 import daemon
+import cluster
 from plot import *
 
 log = logging.getLogger('ev')
@@ -139,12 +141,6 @@ def setup_logging():
         l.setLevel(level)
     logging.basicConfig()
     logging.getLogger('evolve').setLevel(logging.DEBUG)
-
-def cleanup():
-    log.debug('ev.py cleanup')
-    transaction.get().abort()
-    if db.conn:
-        db.conn.close()
 
 def main():
     log.debug(' '.join(sys.argv))
@@ -178,13 +174,11 @@ def main():
     nodetype = 'sigmoid'
     num_nodes = 10
     simulation = 'bpg'
-    #discrete = 0
     quanta = None
     server_addr = db.getDefaultServer()
     plotfitness = None
     plotpi = None
     plotfc = None
-
     client = 0
     master = 0
     g = None
@@ -192,7 +186,6 @@ def main():
     delete = 0
     unlock = 0
     k = None
-    # default domains
     bias = None
     weight = None
     radius = 1
@@ -305,12 +298,11 @@ def main():
         elif o == '-m':
             master = 1
         elif o == '--fitness':
-            assert a in ['meandistance', 'cumulativez', 'movement', 'walk', 'after']
+            assert a in ['meandistance', 'cumulativez', 'movement', 'walk', 'after', 'meanxv']
             fitnessFunctionName = a
         elif o == '--blank':
             blank = 1
         elif  o == '--cluster':
-            import cluster
             print 'Starting all cluster clients...'
             cluster.startZeoClients()
         else:
@@ -351,8 +343,6 @@ def main():
             # FIXME: this should be random from a definable range?
             num_inputs = 2
             num_outputs = 2
-            # (WHAT ABOUT PARAMS NOT PRESENT HERE ???)
-            # k
         if topology == '2d':
             num_nodes = num_nodes**2
         elif topology == '3d':
@@ -363,11 +353,12 @@ def main():
                 'logical': node.LogicalNode,
                 'beer' : node.BeerNode,
                 'if' : node.IfNode,
+                'srm' : node.SrmNode,
                 'ekeberg' : node.EkebergNode,
                 'sine' : node.SineNode }
         new_node_class = new_node_arg_class_map[nodetype]
 
-        new_node_args = { 'quanta' : quanta } # all nodes have states
+        new_node_args = { 'quanta' : quanta }
         if bias:
             assert new_node_class is node.BeerNode
             new_node_args['biasDomain'] = bias
@@ -481,7 +472,7 @@ def main():
                     rate = 0
                     if hasattr(i, 'updateRate'):
                         rate = i.updateRate
-                    print 'Generation: %s [ga=%s gen=%d/%d max=%s fitness=%s rate=%d]'%(k,
+                    print 'Generation: %s [ga=%s gen=%d/%d max=%s fitness=%s evh=%d]'%(k,
                             i.ga, i.gen_num, i.final_gen_num,
                             i.getMaxIndividual(), fn, rate)
         else:
@@ -498,7 +489,7 @@ def main():
                 if f == None:
                     s_f = 'X'
                     if hasattr(b, 'busy'):
-                        s_f += '*'
+                        s_f += '*%d'%b.busy.i
                 else:
                     s_f = '%.2f'%f
                 s_m = 'X'
@@ -511,7 +502,7 @@ def main():
             rate = 0
             if hasattr(root[g], 'updateRate'):
                 rate = root[g].updateRate
-            print 'Generation: name=%s ga=%s gen=%d/%d fitness=%s rate=%d'%(g,
+            print 'Generation: name=%s ga=%s gen=%d/%d fitness=%s evh=%d'%(g,
                     root[g].ga, root[g].gen_num, root[g].final_gen_num, fn,
                     rate)
             if root[g].updateInfo[2]:
@@ -520,28 +511,34 @@ def main():
                                 time.time() - root[g].updateInfo[1])
 
     if client or master:
+        h = {(1,0):'Master', (0,1):'Client', (1,1):'Master && Client'}
+        mode = h[master,client]
+        log.info('%s running on %s', mode, cluster.getHostname())
         log.debug('master/client mode')
-        # look for jobs
-        if g:
-            runs = [g]
-        else:
-            runs = [k for (k, i) in root.iteritems() if isinstance(i, evolve.Generation)]
-        # print completed runs
-        done = [r for r in runs if root[r].gen_num == root[r].final_gen_num and not root[r].leftToEval()]
-        log.debug('done %s', done)
-        # do a run from the rest
         while 1:
-            ready = [r for r in runs if root[r].gen_num < root[r].final_gen_num or root[r].leftToEval()]
+            # find all generations that aren't finished
+            db.sync()
+            if g:
+                runs = [g]
+            else:
+                runs = [k for (k, i) in root.iteritems() if isinstance(i, evolve.Generation)]
+            done = [r for r in runs if root[r].gen_num == root[r].final_gen_num and not root[r].leftToEval()]
+            if runs == done:
+                break
+            log.debug('done %s', done)
+            ready = []
+            if master:
+                ready += [r for r in runs if root[r].gen_num < root[r].final_gen_num and not root[r].leftToEval()]
+            if not ready and client:
+                ready = [r for r in runs if root[r].leftToEval()]
             log.debug('ready %s', ready)
             if not ready:
-                break
+                log.info('Nothing to do, sleeping for 5s...')
+                time.sleep(5)
+                continue
             r = random.choice(ready)
-            if client:
-                s = 'client'
-            if master:
-                s = 'master'
-            log.info('%s mode on run %s (%d/%d)', s, r, root[r].gen_num,
-                    root[r].final_gen_num)
+            log.info('run %s (%d/%d) / %s ', r, root[r].gen_num,
+                    root[r].final_gen_num, mode)
             root[r].runClientInnerLoop(master, client)
 
         log.info('client exiting')
@@ -612,7 +609,13 @@ def main():
                     log.info(cmd)
                     os.system(cmd)
         s.destroy()
-    return 0
+
+def cleanup():
+    log.debug('ev.py cleanup')
+    transaction.get().abort()
+    if db.conn:
+        db.conn.close()
+    time.sleep(0.3)
 
 if __name__=='__main__':
     random.seed()

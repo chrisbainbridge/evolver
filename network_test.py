@@ -10,7 +10,7 @@ import random
 import test_common
 from test_common import *
 from network import Network, TOPOLOGIES
-from node import SigmoidNode, BeerNode, EkebergNode, LogicalNode, SineNode
+from node import SigmoidNode, BeerNode, EkebergNode, LogicalNode, SineNode, IfNode, SrmNode
 from plot import plotNetwork
 
 random.seed(0)
@@ -76,6 +76,10 @@ class Sine(NetworkTest,TestCase):
     nodet = SineNode
 class Ekeberg(NetworkTest,TestCase):
     nodet = EkebergNode
+class If(NetworkTest,TestCase):
+    nodet = IfNode
+class Srm(NetworkTest,TestCase):
+    nodet = SrmNode
 class Logical(NetworkTest,TestCase):
     nodet = LogicalNode
     nodea = {'quanta':2}

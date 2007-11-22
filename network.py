@@ -28,6 +28,7 @@ class Network(PersistentList):
                          'state' : (0,1),
                          'weight' : (-7,7) }
         self.quanta = None
+        assert update_style in ['sync','async']
         self.update_style = update_style
         # num_nodes must be bigger than inputs+outputs
         assert num_nodes >= num_inputs
@@ -155,7 +156,7 @@ class Network(PersistentList):
                 for x in range(len(self[i].inputs)):
                     if random() < p:
                         self.mutations += 1
-                        self[i].inputs[x] = random.choice(self)
+                        self[i].inputs[x] = choice(self)
 
         return self.mutations
 
@@ -191,8 +192,6 @@ class Network(PersistentList):
                 n = choice(self)
                 n.preUpdate()
                 n.postUpdate()
-        else:
-            assert 'bad update style %s'%self.update_style
 
     def check(self):
         log.debug('Network.check()')

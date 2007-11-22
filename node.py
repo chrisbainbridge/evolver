@@ -31,7 +31,7 @@ def quantise(value, quanta):
 
 def quantiseDomain((l,h), x, q):
     # in order to quantise we need to cap the domain
-    x = min(max(x,l),h)
+    x = min(max(float(x),float(l)),float(h))
     if not q:
         return x
     return round((float(x)-l)/(h-l)*(q-1))*(h-l)/(q-1)+l
@@ -368,8 +368,9 @@ class SrmNode(WeightNode):
             self.par.ft = None
             self.setFt()
         self.reset()
-        self.etamax=0
-        self.etamin=0
+        self.etamax = 0
+        self.etamin = 0
+        self.state = 0
 
     def reset(self):
         self.spikes = []

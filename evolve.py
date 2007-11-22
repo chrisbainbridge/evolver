@@ -11,6 +11,7 @@ import random
 import time
 import sys
 import os
+import db
 from numpy import matrix
 
 import cluster
@@ -35,6 +36,11 @@ class HostData(Persistent):
     def __init__(self):
         Persistent.__init__(self)
         self.newIndividual = None
+
+class Counter(Persistent):
+    def __init__(self):
+        Persistent.__init__(self)
+        self.i = 0
 
 class Generation(PersistentList):
 
@@ -202,22 +208,31 @@ class Generation(PersistentList):
         transaction.commit()
         log.info('Commit took %d seconds', time.time() - self.updateInfo[1])
 
-    def runSim(self, x):
+    def runSim(self, x, quick=0):
         "Evaluate performance of individual(s) x in sim"
 
-        sim = self.new_sim_fn(**dict(self.new_sim_args))
+        sim = self.new_sim_fn(quick=quick, **dict(self.new_sim_args))
         sim.add(x)
         sim.run()
         sim.destroy()
         return sim.score
 
     def evaluate(self, x):
+        # it might be better to use one or more quick evals here, to get more
+        # robust agents (that work under more than one physics environment), and
+        # to speed evaluations.
         log.debug('evaluate')
         if type(x) is int:
             x = self[x]
-        s0 = self.runSim(x)
-        s1 = self.runSim(x)
-        s2 = self.runSim(x)
+        s0 = self.runSim(x, 0)
+        if s0 == -1:
+            x.score = -1
+            return
+        s1 = self.runSim(x, 0)
+        if s1 == -1:
+            x.score = -1
+            return
+        s2 = self.runSim(x, 0)
         x.score = min(s0,s1,s2)
         return
 
@@ -291,28 +306,38 @@ class Generation(PersistentList):
     def eliteInnerLoop(self, master, slave):
         ready = self.leftToEval()
         if slave and ready:
-            hosts = self.hostData.keys()
-            i = hosts.index(cluster.getHostname())
-            i %= len(ready)
-            x = ready[i]
-            if not hasattr(x, 'busy'):
-                x.busy = 1
-                transaction.commit()
+            notbusy = [x for x in ready if not hasattr(x, 'busy')]
+            if notbusy:
+                x = random.choice(notbusy)
+                x.busy = Counter()
+                x.busy.i += 1
+            else:
+                busy = [x for x in ready if hasattr(x, 'busy')]
+                min_busy = busy[0].busy.i
+                for x in busy[1:]:
+                    min_busy = min(x.busy.i, min_busy)
+                mins = [x for x in busy if x.busy.i == min_busy]
+                x = random.choice(mins)
+                x.busy.i += 1
+            transaction.commit()
+            log.info('eval %d', self.index(x))
+            a = time.time()
             self.evaluate(x)
+            b = time.time()
             if hasattr(x, 'busy'):
                 del x.busy
             transaction.commit()
+            log.info('took %d secs', round(b-a))
         elif master and not ready:
             self.update()
         else:
-            log.debug('nothing to do, sleeping...')
-            time.sleep(5)
+            log.debug('nothing to do, returning...')
 
     def getMaxIndividual(self):
-        l = [(x.score, x) for x in self]
-        l.sort()
-        l.reverse()
-        return l[0][0]
+        l = [(x.score, x) for x in self if x.score!=None]
+        l.sort(lambda (asc,ax),(bsc,bx):cmp(asc,bsc), reverse=1)
+        if l:
+            return l[0][0]
 
     def runClientLoop(self, master=1, slave=1):
         """Evolve client.
@@ -334,7 +359,7 @@ class Generation(PersistentList):
             if self.pause:
                 time.sleep(5)
                 return 0
-            log.debug('runClientLoop: %d/%d', self.gen_num, self.final_gen_num)
+            log.debug('runClientInnerLoop')
             if self.gen_num == self.final_gen_num \
                     and (self.ga == 'steady-state' or self.ga == 'elite' and ((master and not slave) or slave)) \
                     and not self.leftToEval() :
@@ -352,14 +377,15 @@ class Generation(PersistentList):
                 log.info('nothing for us to do')
         except ConflictError:
             transaction.abort()
-            time.sleep(5)
             log.debug('commit conflict')
         except POSKeyError:
             log.critical('poskeyerror - this should not happen')
             raise
         except DisconnectedError:
             log.debug('we lost connection to the server, sleeping..')
-            # FIXME: do i need to manually reestablish connection here??
+            # FIXME: this doesn't work.. if the server goes down we get
+            # ERROR:ZODB.Connection:Couldn't load state for 0x284dfd
+            # raise ClientDisconnected()
             time.sleep(60)
         log.debug('/runClientInnerLoop')
         return 0
