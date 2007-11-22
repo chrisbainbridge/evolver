@@ -536,7 +536,9 @@ class BpgSim(Sim):
         bpgraph.sanityCheck()
 
         num_bps = len(bpgraph.bodyparts)
-        log.debug('BPGSim.setSolution: number of unrolled bodyparts = %d', num_bps)
+        log.debug('BpgSim.add: number of unrolled bodyparts = %d', num_bps)
+        if num_bps > MAX_UNROLLED_BODYPARTS:
+            self.fail('too many body parts (%d > %d)'%(num_bps,MAX_UNROLLED_BODYPARTS))
 
         assert bpgraph.root
         # recursively add all bodyparts
