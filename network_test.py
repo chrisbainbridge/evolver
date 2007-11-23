@@ -29,6 +29,7 @@ class NetworkTest:
 
     def do(self, n, i, o, top, update, r, u):
         net = Network(n, i, o, self.nodet, self.nodea, top, update, r, u)
+        net.mutate(1)
         ns = str(self.nodet)
         nc = ns[ns.find('.')+1:ns.rfind('\'')]
         s = '%s_%s'%(nc, top)

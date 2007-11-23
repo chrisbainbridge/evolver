@@ -1,4 +1,5 @@
 import sys
+import os
 import logging
 import testoob
 import node
@@ -39,6 +40,8 @@ new_sim_args = { 'max_simsecs' : 10,
 interactive = 0
 
 def test_main():
+    if not os.path.exists('test'):
+        os.mkdir('test')
     if '-i' in sys.argv:
         global interactive
         interactive = 1

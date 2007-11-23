@@ -33,6 +33,8 @@ class Network(PersistentList):
         # num_nodes must be bigger than inputs+outputs
         assert num_nodes >= num_inputs
         assert num_nodes >= num_outputs
+        assert isinstance(radius, int) and radius>0
+        self.radius = radius
         # create nodes
         inputsPerNode = self.getNumberOfInputsPerNode(topology, radius, num_nodes)
         if new_node_class == LogicalNode:
@@ -151,13 +153,21 @@ class Network(PersistentList):
 
         if self.topology == 'randomk':
             # mutate topology
-            assert len(self[i].inputs) # we should always have k existing inputs
             for i in range(len(self)):
+                assert len(self[i].inputs) == self.radius # every node has k inputs
                 for x in range(len(self[i].inputs)):
                     if random() < p:
                         self.mutations += 1
-                        self[i].inputs[x] = choice(self)
+                        # choose a new random input.
+                        t = self[i].inputs[x]
+                        n = choice(self)
+                        self[i].inputs[x] = n
+                        # if using weights, swap old for new input
+                        if hasattr(self[i], 'weights'):
+                            self[i].weights[n] = self[i].weights[t]
+                            del self[i].weights[t]
 
+        self.check()
         return self.mutations
 
     def reset(self):
