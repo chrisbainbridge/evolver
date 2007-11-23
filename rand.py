@@ -7,8 +7,8 @@ gauss = 0
 def rnd(a, b, v):
     if gauss and v != None:
         y = random.gauss(v, 0.5)
-        if y<a: y = a
-        if y>b: y = b
+        if y<a: y = float(a)
+        if y>b: y = float(b)
         return y
     else:
         return random.uniform(a, b)
