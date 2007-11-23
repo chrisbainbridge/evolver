@@ -472,9 +472,13 @@ def main():
                     rate = 0
                     if hasattr(i, 'updateRate'):
                         rate = i.updateRate
+                    m = i.getMaxIndividual()
+                    sm = ''
+                    if m != None:
+                        sm = '%.2f'%m
                     print 'Generation: %s [ga=%s gen=%d/%d max=%s fitness=%s evh=%d]'%(k,
                             i.ga, i.gen_num, i.final_gen_num,
-                            i.getMaxIndividual(), fn, rate)
+                            sm, fn, rate)
         else:
             # print list of individuals in a generation
             print 'Num\tScore\tP.score\tMutations'
