@@ -5,13 +5,24 @@ from logging import debug, info
 import popen2
 import time
 import signal
+from ConfigParser import SafeConfigParser
+
+# This code used to be important since clients were started on each host
+# individually using tentakel, or from an ssh script, and then had to make sure
+# they were the only client process on that host, restart clients and the server
+# if necessary, etc.
+# With the new Grid Engine batch management system most of that is handled
+# automatically, and since we have no direct ssh access to clients anymore, this
+# code is mostly obsolete.
 
 CLUSTER = 'bw64'
 HOME = '/home/s9734229'
 INSTDIR = HOME + '/phd'
 MASTER = CLUSTER + 'node02'
-ZEOSERVER = 'hermes'
 REGEXP = r'bw240n\d\d.inf.ed.ac.uk'
+config = SafeConfigParser()
+config.read(os.path.expanduser('~/.ev'))
+ZEOSERVER = config.get('cluster','zeoserver')
 
 def getBadHosts():
     # bad host list in tentakel.conf looks like '# BAD: host1 host2'
