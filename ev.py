@@ -27,13 +27,13 @@
      -q x             Use discrete model with x states
      -t x             Run simulation for x seconds (default 30)
      -g x             Generations to evolve for (default 100)
-     --topology x     Neural network topology [full,1d,2d,3d,randomk]
+     --topology x     Neural network topology [full,1d,2d,randomk]
      --uniform        Use a single set of neuron parameters for the whole network
                       (eg. like the global update fn in a cellular automata)
      --update x       Update style [sync,async]
      --nodetype x     Type of node [sigmoid,logical,beer,if,ekeberg,sine,srm]
      --nodes x        (1d, randomk, full) - Total number of nodes
-                      (2d, 3d) - length of a dimension
+                      (2d) - length of a dimension
                       number x includes network inputs and outputs
                       (default 10)
      --bias x,y       Domain for bias is [x,y] (default [0,1])
@@ -345,8 +345,6 @@ def main():
             num_outputs = 2
         if topology == '2d':
             num_nodes = num_nodes**2
-        elif topology == '3d':
-            num_nodes = num_nodes**3
 
         new_node_arg_class_map = {
                 'sigmoid' : node.SigmoidNode,
