@@ -111,6 +111,9 @@ class MyApp(QApplication):
             self.steps += 1
         # we tell it explicitly when to record a frame, otherwise spurious
         # repaints will cause the movie to go out of sync with the physics
+        # Note: we only record 1/5th of the actual frames because grabbing
+        # the images and saving them takes ages, and we want to do it in
+        # realtime (this is why the movies are only 10fps).
         if self.glwidget.record and (self.frameno==0):
             self.glwidget.record_this_frame = 1
         self.frameno = (self.frameno + 1)%5
