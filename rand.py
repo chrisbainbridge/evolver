@@ -2,15 +2,15 @@ import random
 from cgkit.cgtypes import vec3
 import math
 
-gauss = 0
+mut = 'uniform'
 
 def rnd(a, b, v):
-    if gauss and v != None:
+    if mut == 'gauss' and v != None:
         y = random.gauss(v, 0.5)
         if y<a: y = float(a)
         if y>b: y = float(b)
         return y
-    else:
+    elif mut == 'uniform':
         return random.uniform(a, b)
 
 def randomVec3(ov):

@@ -27,12 +27,12 @@
      -q x             Use discrete model with x states
      -t x             Run simulation for x seconds (default 30)
      -g x             Generations to evolve for (default 100)
-     --topology x     Neural network topology [full,1d,2d,randomk]
+     --model x     Type of node [sigmoid,logical,beer,if,ekeberg,sine,srm]
+     --neurons x        Total number of nodes, including inputs and outputs (default 10)
+     --top x     Neural network topology [full,1d,2d,randomk]
+     --timing x       Neuron timing style [sync,async]
      --uniform        Use a single set of neuron parameters for the whole network
                       (eg. like the global update fn in a cellular automata)
-     --update x       Update style [sync,async]
-     --model x     Type of node [sigmoid,logical,beer,if,ekeberg,sine,srm]
-     --nodes x        Total number of nodes, including inputs and outputs (default 10)
      --bias x,y       Domain for bias is [x,y] (default [0,1])
      --weight x,y     Domain for weight values (default [-7,7])
      --radius x       Max distance of a nodes neighbour in any dimension (default 1)
@@ -46,8 +46,8 @@
                        meanxv : mean velocity on X-axis
  --elite              Elitist GA
  --steadystate        Steady state GA
- --mutate x           Mutation probability
- --gauss              Use gaussian mutations instead of uniform
+ --mp x               Mutation probability
+ --mut                Mutation type [gauss,uniform]
  --noise x            Standard deviation of Gaussian noise applied to sensors and motors
 
 ===== Unlock =====
@@ -144,9 +144,9 @@ def main():
     # parse command line
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'cdr:eg:hi:lp:q:sz:t:uvm',
-                ['blank', 'qt=', 'topology=', 'update=', 'model=', 'nodes=',
+                ['blank', 'qt=', 'top=', 'timing=', 'model=', 'neurons=',
                     'bias=', 'weight=', 'elite', 'lqr', 'steadystate',
-                    'mutate=', 'gauss', 'noise=', 'network=', 'nostrip',
+                    'mp=', 'mut=', 'noise=', 'network=', 'nostrip',
                     'plotbpg=', 'pf=', 'plotnets=', 'ps=', 'unroll', 'radius=',
                     'toponly', 'movie=', 'sim=', 'fitness=', 'plotpi=',
                     'plotfc=', 'cluster', 'uniform'])
@@ -202,7 +202,7 @@ def main():
     strip = 1
     lqr = 0
     blank = 0
-    gauss = 0
+    mut = 'uniform'
     uniform = 0
     for o, a in opts:
         log.debug('parsing %s %s',o,a)
@@ -238,13 +238,13 @@ def main():
             runsim = 1
         elif o == '--qt':
             qtopts = a
-        elif o == '--topology':
+        elif o == '--top':
             topology = a
-        elif o == '--update':
+        elif o == '--timing':
             update_style = a
         elif o == '--model':
             model = a
-        elif o == '--nodes':
+        elif o == '--neurons':
             num_nodes = int(a)
         elif o == '--bias':
             # a is of form 'x,y'
@@ -257,10 +257,11 @@ def main():
             lqr = 1
         elif o == '--steadystate':
             ga = 'steady-state'
-        elif o == '--mutate':
+        elif o == '--mp':
             mutationRate = float(a)
-        elif o == '--gauss':
-            gauss = 1
+        elif o == '--mut':
+            assert a in ['gauss','uniform']
+            mut = a
         elif o == '--uniform':
             uniform = 1
         elif o == '--noise':
@@ -391,7 +392,7 @@ def main():
         root[g] = evolve.Generation(popsize, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args, ga, mutationRate)
 
         root[g].setFinalGeneration(numberOfGenerations)
-        root[g].gauss = gauss
+        root[g].mut = mut
         log.debug('committing all subtransactions')
         transaction.commit()
         log.debug('commit done, end of create_initial_population')

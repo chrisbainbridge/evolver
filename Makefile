@@ -22,13 +22,13 @@ popd:
 	ev.py -r x -e
 
 pop:
-	ev.py -r x -p 5 -t 30 -g 100 --topology full --update sync --model sigmoid --nodes 10 --sim bpg --fitness meandistance --steadystate
+	ev.py -r x -p 5 -t 30 -g 100 --top full --timing sync --model sigmoid --neurons 10 --sim bpg --fitness meandistance --steadystate
 
 pbpop:
-	ev.py -r p -p 5 -t 30 -g 200 --topology full --update sync --model sigmoid --nodes 5 --sim pb --steadystate --mutate 0.05
+	ev.py -r p -p 5 -t 30 -g 200 --top full --timing sync --model sigmoid --neurons 5 --sim pb --steadystate --mutate 0.05
 
 popz:
-	ev.py -r z -p 10 -t 30 -g 100 --topology full --update sync --model beer --nodes 5 --sim bpg --fitness movement --steadystate
+	ev.py -r z -p 10 -t 30 -g 100 --top full --timing sync --model beer --neurons 5 --sim bpg --fitness movement --steadystate
 
 run:
 	ev.py -r x -u

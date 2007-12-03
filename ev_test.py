@@ -8,7 +8,7 @@ import ev
 from test_common import test_main
 from logging import debug, info, critical
 
-STDARGS = '-p 3 -t 3 -g 3 --topology 1d --update async --nodes 5'
+STDARGS = '-p 3 -t 3 -g 3 --top 1d --timing async --neurons 5'
 
 def main(s):
     sys.argv = s.split()
