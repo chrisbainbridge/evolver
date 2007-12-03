@@ -43,19 +43,19 @@ class EvTest:
 
 class Sigmoid(EvTest, TestCase):
     name = 'ev_sigmoid'
-    args = '--nodetype sigmoid'
+    args = '--model sigmoid'
 class Beer(EvTest, TestCase):
     name = 'ev_beer'
-    args = '--nodetype beer'
+    args = '--model beer'
 class SigmoidQuanta(EvTest, TestCase):
     name = 'ev_sigmoid_q'
-    args = '--nodetype sigmoid -q 32'
+    args = '--model sigmoid -q 32'
 class SteadyState(EvTest, TestCase):
     name = 'ev_steadystate'
-    args = '--nodetype sigmoid --steadystate'
+    args = '--model sigmoid --steadystate'
 class Logical(EvTest, TestCase):
     name = 'ev_logical'
-    args = '--nodetype logical -q 2'
+    args = '--model logical -q 2'
 class Pb(EvTest, TestCase):
     name = 'ev_pb'
     args = '--sim pb'

@@ -88,15 +88,15 @@ class Cluster:
 
 class Elite(Cluster, TestCase):
     g = 'test_cluster_elite'
-    args = '--nodetype sigmoid --elite'
+    args = '--model sigmoid --elite'
 
 class SteadyState(Cluster, TestCase):
     g = 'test_cluster_ss'
-    args = '--nodetype sigmoid --steadystate'
+    args = '--model sigmoid --steadystate'
 
 class TestClusterRate(Cluster, TestCase):
     g = 'test_cluster_rate'
-    args = '-p 50 -t 30 -g 2 --topology full --update sync --nodetype sine --nodes 5 --sim bpg --fitness movement'
+    args = '-p 50 -t 30 -g 2 --topology full --update sync --model sine --nodes 5 --sim bpg --fitness movement'
     def test_3_run(self):
         # this test will run after 5 gens of evolution, hopefully weeded out the
         # very bad individuals and so giving more realisitc results
@@ -105,7 +105,7 @@ class TestClusterRate(Cluster, TestCase):
 
 class SingleRate(Cluster, TestCase):
     g = 'test_single_rate'
-    args = '-p 20 -t 30 -g 2 --topology full --update sync --nodetype sine --nodes 5 --sim bpg --fitness meandistance'
+    args = '-p 20 -t 30 -g 2 --topology full --update sync --model sine --nodes 5 --sim bpg --fitness meandistance'
     def test_2_run(self):
         ev_test.main('ev.py -r %s -g 10'%self.g)
         runRateTest(self.g, single=1)

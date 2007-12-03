@@ -31,7 +31,7 @@
      --uniform        Use a single set of neuron parameters for the whole network
                       (eg. like the global update fn in a cellular automata)
      --update x       Update style [sync,async]
-     --nodetype x     Type of node [sigmoid,logical,beer,if,ekeberg,sine,srm]
+     --model x     Type of node [sigmoid,logical,beer,if,ekeberg,sine,srm]
      --nodes x        Total number of nodes, including inputs and outputs (default 10)
      --bias x,y       Domain for bias is [x,y] (default [0,1])
      --weight x,y     Domain for weight values (default [-7,7])
@@ -144,7 +144,7 @@ def main():
     # parse command line
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'cdr:eg:hi:lp:q:sz:t:uvm',
-                ['blank', 'qt=', 'topology=', 'update=', 'nodetype=', 'nodes=',
+                ['blank', 'qt=', 'topology=', 'update=', 'model=', 'nodes=',
                     'bias=', 'weight=', 'elite', 'lqr', 'steadystate',
                     'mutate=', 'gauss', 'noise=', 'network=', 'nostrip',
                     'plotbpg=', 'pf=', 'plotnets=', 'ps=', 'unroll', 'radius=',
@@ -168,7 +168,7 @@ def main():
     tracefile = None
     topology = 'full'
     update_style = 'sync'
-    nodetype = 'sigmoid'
+    model = 'sigmoid'
     num_nodes = 10
     simulation = 'bpg'
     quanta = None
@@ -242,8 +242,8 @@ def main():
             topology = a
         elif o == '--update':
             update_style = a
-        elif o == '--nodetype':
-            nodetype = a
+        elif o == '--model':
+            model = a
         elif o == '--nodes':
             num_nodes = int(a)
         elif o == '--bias':
@@ -349,7 +349,7 @@ def main():
                 'srm' : node.SrmNode,
                 'ekeberg' : node.EkebergNode,
                 'sine' : node.SineNode }
-        new_node_class = new_node_arg_class_map[nodetype]
+        new_node_class = new_node_arg_class_map[model]
 
         new_node_args = { 'quanta' : quanta }
         if bias:
