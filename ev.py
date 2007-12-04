@@ -337,9 +337,9 @@ def main():
             num_inputs = 1
             num_outputs = 1
         elif simulation == 'bpg':
-            # FIXME: this should be random from a definable range?
-            num_inputs = 2
-            num_outputs = 2
+            # FIXME: this should be evolved or user specified
+            num_inputs = min(3,num_nodes)
+            num_outputs = min(3,num_nodes)
 
         new_node_arg_class_map = {
                 'sigmoid' : node.SigmoidNode,
