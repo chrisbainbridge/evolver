@@ -13,7 +13,7 @@ import logging
 log = logging.getLogger('neural')
 log.setLevel(logging.INFO)
 
-TOPOLOGIES = '1d', '2d', 'rk', 'full'
+TOPOLOGIES = '1d', '2d', 'nk', 'full'
 
 class Network(PersistentList):
     "Model of a control network; nodes, edges, weights."
@@ -35,6 +35,7 @@ class Network(PersistentList):
         assert num_nodes >= num_outputs
         assert isinstance(radius, int) and radius>0
         self.radius = radius
+        assert topology in TOPOLOGIES
         # create nodes
         inputsPerNode = self.getNumberOfInputsPerNode(topology, radius, num_nodes)
         if new_node_class == LogicalNode:
@@ -85,7 +86,7 @@ class Network(PersistentList):
             return radius * 2
         elif topology == '2d':
             return (radius*2+1)**2 - 1
-        elif topology == 'rk':
+        elif topology == 'nk':
             return radius
         elif topology == 'full':
             return num_nodes - 1
@@ -151,7 +152,7 @@ class Network(PersistentList):
                     new = choice([x for x in self if x != old])
                     puts[i] = new
 
-        if self.topology == 'rk':
+        if self.topology == 'nk':
             # mutate topology
             for n in self:
                 assert len(n.inputs) == self.radius # every node has k inputs
@@ -233,7 +234,7 @@ class Network(PersistentList):
             self.connect1D(radius)
         elif topology == '2d':
             self.connect2D(radius)
-        elif topology == 'rk':
+        elif topology == 'nk':
             self.connectRandomK(radius)
         elif topology == 'full':
             self.connectFull()

@@ -29,14 +29,14 @@
      -g x             Generations to evolve for (default 100)
      --model x        Type of node [sigmoid,logical,beer,if,ekeberg,sine,srm]
      --neurons x      Total number of nodes, including inputs and outputs (default 10)
-     --top x          Neural network topology [full,1d,2d,rk]
+     --top x          Neural network topology [full,1d,2d,nk]
      --timing x       Neuron timing style [sync,async]
      --uniform        Use a single set of neuron parameters for the whole network
                         (eg. like the global update fn in a cellular automata)
      --bias x,y       Domain for bias is [x,y] (default [0,1])
      --weight x,y     Domain for weight values (default [-7,7])
      --k x            For 1d,2d : neighbourhood radius (square for 2d)
-                      For rk : degree of connectivity k
+                      For nk : degree of connectivity k
      --fitness x      Fitness function [bpgsim only], can be:
                         cumulativez : average z value of all body parts summed over time
                         meandistance : average Euclidean distance of all body parts
