@@ -167,8 +167,8 @@ def plot_generation_vs_fitness(g, outputFilename, genName=None):
 
     fdat = open(datFile, 'w')
     gen = 0
-    for (mn, mean, mx) in g.fitnessList:
-        fdat.write('%d %f %f %f\n'%(gen, mn, mean, mx))
+    for s in g.scores:
+        fdat.write('%d %f %f %f\n'%(gen, s.min, s.mean, s.max))
         gen += 1
     fdat.close()
 

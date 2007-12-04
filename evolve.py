@@ -12,7 +12,6 @@ import time
 import sys
 import os
 import db
-from numpy import matrix
 
 import cluster
 import rand
@@ -41,6 +40,14 @@ class Counter(Persistent):
     def __init__(self):
         Persistent.__init__(self)
         self.i = 0
+
+class Score:
+    def __init__(self, min, mean, max):
+        self.min = min
+        self.mean = mean
+        self.max = max
+    def __str__(self):
+        return '(%.2f %.2f %.2f)'%(self.min,self.mean,self.max)
 
 class Generation(PersistentList):
 
@@ -75,7 +82,7 @@ class Generation(PersistentList):
             transaction.savepoint()
         self.prev_gen = []
         self.setUpdateInfo()
-        self.fitnessList = PersistentList()
+        self.scores = PersistentList()
         self.ga = ga
         self.mutationRate = mutationRate
         self.hostData = PersistentMapping()
@@ -95,14 +102,11 @@ class Generation(PersistentList):
     def recordStats(self):
         "Record statistics"
 
-        fitnessValues = [x.score for x in self if x.score != None and x.score != -1]
-        if fitnessValues:
-            m = matrix([fitnessValues])
+        f = [x.score for x in self if x.score != None and x.score != -1]
+        if not f:
+            self.scores.append(Score(0,0,0))
         else:
-            m = matrix([0])
-        if len(self.fitnessList) > self.gen_num:
-            self.fitnessList = self.fitnessList[:self.gen_num]
-        self.fitnessList.append((m.min(), m.mean(), m.max()))
+            self.scores.append(Score(min(f), sum(f)/len(self), max(f)))
 
         for bg in self.statList:
             assert isinstance(bg.parentFitness, float) or isinstance(bg.parentFitness, int)

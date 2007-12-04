@@ -7,13 +7,14 @@ import sys
 
 from test_common import *
 from plot import *
+from evolve import Score
 
 class G:
     def __init__(self):
-        self.fitnessList = []
+        self.scores = []
         for i in range(100):
-            d = (random(), (i/2)*random(), i*random())
-            self.fitnessList.append(d)
+            d = Score(random(), (i/20)*random(), i/10*random())
+            self.scores.append(d)
         self.mutationStats = []
         for i in range(100):
             d = (random(), randint(0,10), random())
