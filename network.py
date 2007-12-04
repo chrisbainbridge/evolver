@@ -159,14 +159,15 @@ class Network(PersistentList):
                     if random() < p:
                         self.mutations += 1
                         # choose a new random input.
-                        t = n.inputs[x]
-                        src = choice(self)
-                        n.inputs[x] = src
-                        # if using weights, swap old for new input
-                        if hasattr(n, 'weights') and src!=t:
-                            n.weights[src] = n.weights[t]
-                            del n.weights[t]
-                        self.check()
+                        others = set(self) - set(n.inputs)
+                        if others:
+                            src = choice(list(others))
+                            t = n.inputs[x]
+                            n.inputs[x] = src
+                            # if using weights, swap old for new input
+                            if hasattr(n, 'weights'):
+                                n.weights[src] = n.weights[t]
+                                del n.weights[t]
 
         self.check()
         return self.mutations
