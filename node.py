@@ -157,6 +157,8 @@ class WeightNode(Node):
     def check(self):
         for key in self.weights.keys():
             assert key in self.inputs
+        for src in self.inputs:
+            assert src in self.weights
 
     def fixup(self):
         # remove all weights that dont have an input

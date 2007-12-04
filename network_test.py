@@ -44,8 +44,8 @@ class NetworkTest:
     def test_03_full(self):
         self.do(4,0,0, 'full', 'async', 1, 0)
 
-    def test_04_randomk(self):
-        self.do(9,3,2, 'randomk', 'async', 1, 0)
+    def test_04_rk(self):
+        self.do(9,3,2, 'rk', 'async', 1, 0)
 
     def test_05_2d_with_3i2o(self):
         self.do(9,3,2, '2d', 'async', 1, 0)

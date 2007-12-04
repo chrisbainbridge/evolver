@@ -27,23 +27,22 @@
      -q x             Use discrete model with x states
      -t x             Run simulation for x seconds (default 30)
      -g x             Generations to evolve for (default 100)
-     --model x     Type of node [sigmoid,logical,beer,if,ekeberg,sine,srm]
-     --neurons x        Total number of nodes, including inputs and outputs (default 10)
-     --top x     Neural network topology [full,1d,2d,randomk]
+     --model x        Type of node [sigmoid,logical,beer,if,ekeberg,sine,srm]
+     --neurons x      Total number of nodes, including inputs and outputs (default 10)
+     --top x          Neural network topology [full,1d,2d,rk]
      --timing x       Neuron timing style [sync,async]
      --uniform        Use a single set of neuron parameters for the whole network
-                      (eg. like the global update fn in a cellular automata)
+                        (eg. like the global update fn in a cellular automata)
      --bias x,y       Domain for bias is [x,y] (default [0,1])
      --weight x,y     Domain for weight values (default [-7,7])
-     --radius x       Max distance of a nodes neighbour in any dimension (default 1)
-                        Note: neighbourhoods are squares not crosses
-                        For randomk networks, this specifies degree of connectivity k
+     --k x            For 1d,2d : neighbourhood radius (square for 2d)
+                      For rk : degree of connectivity k
      --fitness x      Fitness function [bpgsim only], can be:
-                       cumulativez : average z value of all body parts summed over time
-                       meandistance : average Euclidean distance of all body parts
-                       movement : sum of distances from previous frame
-                       walk : movement and meandistance combined
-                       meanxv : mean velocity on X-axis
+                        cumulativez : average z value of all body parts summed over time
+                        meandistance : average Euclidean distance of all body parts
+                        movement : sum of distances from previous frame
+                        walk : movement and meandistance combined
+                        meanxv : mean velocity on X-axis
  --elite              Elitist GA
  --steadystate        Steady state GA
  --mp x               Mutation probability
@@ -147,7 +146,7 @@ def main():
                 ['blank', 'qt=', 'top=', 'timing=', 'model=', 'neurons=',
                     'bias=', 'weight=', 'elite', 'lqr', 'steadystate',
                     'mp=', 'mut=', 'noise=', 'network=', 'nostrip',
-                    'plotbpg=', 'pf=', 'plotnets=', 'ps=', 'unroll', 'radius=',
+                    'plotbpg=', 'pf=', 'plotnets=', 'ps=', 'unroll', 'k=',
                     'toponly', 'movie=', 'sim=', 'fitness=', 'plotpi=',
                     'plotfc=', 'cluster', 'uniform'])
         log.debug('opts %s', opts)
@@ -171,7 +170,7 @@ def main():
     model = 'sigmoid'
     num_nodes = 10
     simulation = 'bpg'
-    quanta = None
+    quanta = 0
     server_addr = db.getDefaultServer()
     plotfitness = None
     plotpi = None
@@ -284,7 +283,7 @@ def main():
             tracefile = a
         elif o == '--unroll':
             unroll = 1
-        elif o == '--radius':
+        elif o == '--k':
             radius = int(a)
         elif o == '--toponly':
             toponly = 1

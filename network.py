@@ -13,7 +13,7 @@ import logging
 log = logging.getLogger('neural')
 log.setLevel(logging.INFO)
 
-TOPOLOGIES = '1d', '2d', 'randomk', 'full'
+TOPOLOGIES = '1d', '2d', 'rk', 'full'
 
 class Network(PersistentList):
     "Model of a control network; nodes, edges, weights."
@@ -85,7 +85,7 @@ class Network(PersistentList):
             return radius * 2
         elif topology == '2d':
             return (radius*2+1)**2 - 1
-        elif topology == 'randomk':
+        elif topology == 'rk':
             return radius
         elif topology == 'full':
             return num_nodes - 1
@@ -151,21 +151,22 @@ class Network(PersistentList):
                     new = choice([x for x in self if x != old])
                     puts[i] = new
 
-        if self.topology == 'randomk':
+        if self.topology == 'rk':
             # mutate topology
-            for i in range(len(self)):
-                assert len(self[i].inputs) == self.radius # every node has k inputs
-                for x in range(len(self[i].inputs)):
+            for n in self:
+                assert len(n.inputs) == self.radius # every node has k inputs
+                for x in range(len(n.inputs)):
                     if random() < p:
                         self.mutations += 1
                         # choose a new random input.
-                        t = self[i].inputs[x]
-                        n = choice(self)
-                        self[i].inputs[x] = n
+                        t = n.inputs[x]
+                        src = choice(self)
+                        n.inputs[x] = src
                         # if using weights, swap old for new input
-                        if hasattr(self[i], 'weights'):
-                            self[i].weights[n] = self[i].weights[t]
-                            del self[i].weights[t]
+                        if hasattr(n, 'weights') and src!=t:
+                            n.weights[src] = n.weights[t]
+                            del n.weights[t]
+                        self.check()
 
         self.check()
         return self.mutations
@@ -231,7 +232,7 @@ class Network(PersistentList):
             self.connect1D(radius)
         elif topology == '2d':
             self.connect2D(radius)
-        elif topology == 'randomk':
+        elif topology == 'rk':
             self.connectRandomK(radius)
         elif topology == 'full':
             self.connectFull()
