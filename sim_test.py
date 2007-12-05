@@ -210,9 +210,9 @@ class BpgSimTestCase(unittest.TestCase):
         # start motor
         m = s.bpgs[0].bodyparts[1].motor
         motor_data = m.log('test/'+jointtype)
-        m.desired_axisangle[0] = math.pi/2
-        m.desired_axisangle[1] = math.pi/4
-        m.desired_axisangle[2] = -math.pi/2
+        m.dangle[0] = math.pi/2
+        m.dangle[1] = math.pi/4
+        m.dangle[2] = -math.pi/2
         s.initSignalLog('test/signal.log')
         if not record:
             runSim(s)
