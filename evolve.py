@@ -49,6 +49,19 @@ class Score:
     def __str__(self):
         return '(%.2f %.2f %.2f)'%(self.min,self.mean,self.max)
 
+class UpdateInfo(Persistent):
+    def __init__(self):
+        Persistent.__init__(self)
+        self.host = socket.gethostname()
+        self.time = time.time()
+        self.updating = 0
+    def update(self, v):
+        self.updating = v
+        self.time = time.time()
+    def elapsed(self):
+        return time.time() - self.time
+    elapsed = property(elapsed)
+
 class Generation(PersistentList):
 
     # cons sig must be ok when called with only self,size args due to
@@ -78,10 +91,11 @@ class Generation(PersistentList):
             x.parentFitness = None
             x.mutations = None
             x.createdInGeneration = 0
+            x.busy = Counter()
             self.append(x)
             transaction.savepoint()
         self.prev_gen = []
-        self.setUpdateInfo()
+        self.updateInfo = UpdateInfo()
         self.scores = PersistentList()
         self.ga = ga
         self.mutationRate = mutationRate
@@ -179,15 +193,13 @@ class Generation(PersistentList):
         self.updateRate = len(self) * 60.0 * 60.0 / (t - self.updateTime)
         self.updateTime = t
 
-    def setUpdateInfo(self, updating=0):
-        self.updateInfo = (socket.gethostname(), time.time(), updating)
-
     def update(self):
         log.debug('update()')
-        log.info('Making new generation %d (evals took %d seconds)', self.gen_num + 1, time.time() - self.updateInfo[1])
+        log.info('Making new generation %d (evals took %d seconds)', self.gen_num + 1, self.updateInfo.elapsed)
 
-        self.setUpdateInfo(1)
-        transaction.commit()
+        if not self.updateInfo.updating:
+            self.updateInfo.update(1)
+            transaction.commit()
 
         transaction.begin()
         self.recordStats()
@@ -199,18 +211,19 @@ class Generation(PersistentList):
 
         s = 'top %d of new gen scores are:'%len(self.prev_gen)
         for i in range(len(self.prev_gen)):
-           s += str(self.prev_gen[i].score) + ' '
+           s += '%1.2f '%self.prev_gen[i].score
         log.debug(s)
         self.elitistUpdate()
         # reset everything
         for x in self:
             x.score = None
+            x.busy.i = 0
 
         self.gen_num += 1
-        log.info('New generation created took %d seconds', time.time() - self.updateInfo[1])
-        self.setUpdateInfo(0)
+        log.info('New generation created took %d seconds', self.updateInfo.elapsed)
+        self.updateInfo.update(0)
         transaction.commit()
-        log.info('Commit took %d seconds', time.time() - self.updateInfo[1])
+        log.info('Commit took %d seconds', self.updateInfo.elapsed)
 
     def runSim(self, x, quick=0):
         "Evaluate performance of individual(s) x in sim"
@@ -307,26 +320,24 @@ class Generation(PersistentList):
     def eliteInnerLoop(self, master, slave):
         ready = self.leftToEval()
         if slave and ready:
-            notbusy = [x for x in ready if not hasattr(x, 'busy')]
+            notbusy = [x for x in ready if not x.busy.i]
             if notbusy:
                 x = random.choice(notbusy)
-                x.busy = Counter()
                 x.busy.i += 1
             else:
-                busy = [x for x in ready if hasattr(x, 'busy')]
+                busy = [x for x in ready if x.busy.i]
                 min_busy = busy[0].busy.i
                 for x in busy[1:]:
                     min_busy = min(x.busy.i, min_busy)
                 mins = [x for x in busy if x.busy.i == min_busy]
                 x = random.choice(mins)
-                x.busy.i += 1
+                if x.busy.i < 2:
+                    x.busy.i += 1
             transaction.commit()
             log.info('eval %d', self.index(x))
             a = time.time()
             self.evaluate(x)
             b = time.time()
-            if hasattr(x, 'busy'):
-                del x.busy
             transaction.commit()
             log.info('took %d secs', round(b-a))
         elif master and not ready:

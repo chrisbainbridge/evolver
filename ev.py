@@ -477,18 +477,15 @@ def main():
             print 'Num\tScore\tP.score\tMutations'
             for i in range(len(root[g])):
                 b = root[g][i]
-                f = b.score
                 pf = b.parentFitness
                 if pf == None:
                     s_pf = 'X'
                 else:
                     s_pf = ' %.2f'%pf
-                if f == None:
-                    s_f = 'X'
-                    if hasattr(b, 'busy'):
-                        s_f += '*%d'%b.busy.i
+                if b.score == None:
+                    s_f = {0:'X', 1:'X*%d'%b.busy.i, 2:'X*>2'}[b.busy.i]
                 else:
-                    s_f = '%.2f'%f
+                    s_f = '%.2f'%b.score
                 s_m = 'X'
                 if b.mutations != None:
                     s_m = '%d'%b.mutations
@@ -502,16 +499,14 @@ def main():
             print 'Generation: name=%s ga=%s gen=%d/%d fitness=%s evh=%d'%(g,
                     root[g].ga, root[g].gen_num, root[g].final_gen_num, fn,
                     rate)
-            if root[g].updateInfo[2]:
-                print 'Generation is currently being updated on %s, update '\
-                        'running for %d seconds'%(root[g].updateInfo[0],
-                                time.time() - root[g].updateInfo[1])
+            if root[g].updateInfo.updating:
+                print 'Update started on %s %d seconds ago'%(root[g].updateInfo.host,
+                                root[g].updateInfo.elapsed)
 
     if client or master:
         h = {(1,0):'Master', (0,1):'Client', (1,1):'Master && Client'}
         mode = h[master,client]
         log.info('%s running on %s', mode, cluster.getHostname())
-        log.debug('master/client mode')
         while 1:
             # find all generations that aren't finished
             db.sync()
@@ -526,17 +521,17 @@ def main():
             ready = []
             if master:
                 ready += [r for r in runs if root[r].gen_num < root[r].final_gen_num and not root[r].leftToEval()]
-            if not ready and client:
-                ready = [r for r in runs if root[r].leftToEval()]
+            if client:
+                ready += [r for r in runs if root[r].leftToEval()]
             log.debug('ready %s', ready)
-            if not ready:
+            if ready:
+                r = random.choice(ready)
+                log.info('run %s (%d/%d) / %s ', r, root[r].gen_num,
+                        root[r].final_gen_num, mode)
+                root[r].runClientInnerLoop(master, client)
+            else:
                 log.info('Nothing to do, sleeping for 5s...')
                 time.sleep(5)
-                continue
-            r = random.choice(ready)
-            log.info('run %s (%d/%d) / %s ', r, root[r].gen_num,
-                    root[r].final_gen_num, mode)
-            root[r].runClientInnerLoop(master, client)
 
         log.info('client exiting')
         if background:
@@ -612,7 +607,6 @@ def cleanup():
     transaction.get().abort()
     if db.conn:
         db.conn.close()
-    time.sleep(0.5)
 
 if __name__=='__main__':
     random.seed()
