@@ -612,7 +612,7 @@ def cleanup():
     transaction.get().abort()
     if db.conn:
         db.conn.close()
-    time.sleep(0.3)
+    time.sleep(0.5)
 
 if __name__=='__main__':
     random.seed()
