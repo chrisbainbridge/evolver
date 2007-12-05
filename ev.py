@@ -26,7 +26,7 @@
  -p x                 Create initial population of size x
      -q x             Use discrete model with x states
      -t x             Run simulation for x seconds (default 30)
-     -g x             Generations to evolve for (default 100)
+     -g x             Generations to evolve for, prefix +- for relative (default 100)
      --model x        Type of node [sigmoid,logical,beer,if,ekeberg,sine,srm]
      --neurons x      Total number of nodes, including inputs and outputs (default 10)
      --top x          Neural network topology [full,1d,2d,nk]
@@ -196,6 +196,7 @@ def main():
     ga = 'elite'
     max_simsecs = 0
     mutationRate = 0
+    genabs = 1
     numberOfGenerations = 0
     noise = None
     strip = 1
@@ -212,6 +213,8 @@ def main():
         elif o == '-r':
             g = a
         elif o == '-g':
+            if a[0] in '+-':
+                genabs = 0
             numberOfGenerations = int(a)
         elif o in ('-h'):
             print __doc__
@@ -390,7 +393,7 @@ def main():
 
         root[g] = evolve.Generation(popsize, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args, ga, mutationRate)
 
-        root[g].setFinalGeneration(numberOfGenerations)
+        root[g].setFinalGeneration(numberOfGenerations-1, genabs)
         root[g].mut = mut
         log.debug('committing all subtransactions')
         transaction.commit()
@@ -398,7 +401,7 @@ def main():
 
     elif not create_initial_population and not runsim and (numberOfGenerations or mutationRate or max_simsecs):
         if numberOfGenerations:
-            root[g].setFinalGeneration(numberOfGenerations)
+            root[g].setFinalGeneration(numberOfGenerations-1, genabs)
         if mutationRate:
             root[g].mutationRate = mutationRate
         if max_simsecs:
@@ -406,7 +409,7 @@ def main():
         transaction.commit()
 
     elif g and g not in root:
-        log.debug('Generation %s not in db %s', g, root.keys())
+        log.error('Generation %s not in db %s', g, root.keys())
         return
 
     if delete:
@@ -514,13 +517,14 @@ def main():
                 runs = [g]
             else:
                 runs = [k for (k, i) in root.iteritems() if isinstance(i, evolve.Generation)]
-            done = [r for r in runs if root[r].gen_num == root[r].final_gen_num and not root[r].leftToEval()]
+            done = [r for r in runs if root[r].gen_num == root[r].final_gen_num and not root[r].leftToEval() and len(root[r].scores) == root[r].final_gen_num+1]
             if runs == done:
                 break
             log.debug('done %s', done)
             ready = []
             if master:
                 ready += [r for r in runs if root[r].gen_num < root[r].final_gen_num and not root[r].leftToEval()]
+                ready += [r for r in runs if root[r].gen_num == root[r].final_gen_num and not root[r].leftToEval() and len(root[r].scores) < root[r].final_gen_num+1]
             if client:
                 ready += [r for r in runs if root[r].leftToEval()]
             log.debug('ready %s', ready)

@@ -14,13 +14,13 @@ from cgkit.cgtypes import vec3
 import network
 import node
 from rand import rnd, randomVec3, randomQuat, randomAxis
+from sim import MIN_UNROLLED_BODYPARTS, MAX_UNROLLED_BODYPARTS
 
 BPG_MAX_NODES = 8
 BPG_MAX_EDGES = 6
 BP_MAX_RECURSIVE_LIMIT = 3
 BP_MIN_LENGTH = 3
 BP_MAX_LENGTH = 10
-BPG_MIN_UNROLLED_BODYPARTS = 2
 
 log = logging.getLogger('bpg')
 log.setLevel(logging.INFO)
@@ -252,7 +252,7 @@ class BodyPartGraph(Persistent):
                 if bodyparts_dst_i in outset:
                     outset.remove(bodyparts_dst_i)
             u = self.unroll(1)
-            if len(u.bodyparts) >= BPG_MIN_UNROLLED_BODYPARTS:
+            if MIN_UNROLLED_BODYPARTS <= len(u.bodyparts) <= MAX_UNROLLED_BODYPARTS:
                 self.connectInputNodes()
                 self.sanityCheck()
                 break

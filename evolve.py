@@ -109,9 +109,12 @@ class Generation(PersistentList):
         self.updateRate = 0
         self.pause = 0
 
-    def setFinalGeneration(self, extraGenerations):
+    def setFinalGeneration(self, extraGenerations, genabs):
         "Set final generation number, relative to current one"
-        self.final_gen_num = self.gen_num + extraGenerations
+        if genabs:
+            self.final_gen_num = extraGenerations
+        else:
+            self.final_gen_num = self.gen_num + extraGenerations
 
     def recordStats(self):
         "Record statistics"
@@ -204,22 +207,28 @@ class Generation(PersistentList):
         transaction.begin()
         self.recordStats()
 
-        for bg in self.prev_gen:
-            bg.destroy()
-        self.prev_gen = self[:]
-        del self[:]
+        if self.gen_num == self.final_gen_num:
+            # the end
+            log.info('the end')
+            self.sort(lambda x,y: cmp(y.score, x.score))
+        else:
 
-        s = 'top %d of new gen scores are:'%len(self.prev_gen)
-        for i in range(len(self.prev_gen)):
-           s += '%1.2f '%self.prev_gen[i].score
-        log.debug(s)
-        self.elitistUpdate()
-        # reset everything
-        for x in self:
-            x.score = None
-            x.busy.i = 0
+            for bg in self.prev_gen:
+                bg.destroy()
+            self.prev_gen = self[:]
+            del self[:]
 
-        self.gen_num += 1
+            s = 'top %d of new gen scores are:'%len(self.prev_gen)
+            for i in range(len(self.prev_gen)):
+               s += '%1.2f '%self.prev_gen[i].score
+            log.debug(s)
+            self.elitistUpdate()
+            # reset everything
+            for x in self:
+                x.score = None
+                x.busy.i = 0
+            self.gen_num += 1
+
         log.info('New generation created took %d seconds', self.updateInfo.elapsed)
         self.updateInfo.update(0)
         transaction.commit()
@@ -372,12 +381,6 @@ class Generation(PersistentList):
                 time.sleep(5)
                 return 0
             log.debug('runClientInnerLoop')
-            if self.gen_num == self.final_gen_num \
-                    and (self.ga == 'steady-state' or self.ga == 'elite' and ((master and not slave) or slave)) \
-                    and not self.leftToEval() :
-                log.info('all individuals done in final generation, exiting')
-                transaction.abort()
-                return 1
             if self.ga == 'steady-state':
                 if slave:
                     self.steadyStateClientInnerLoop()

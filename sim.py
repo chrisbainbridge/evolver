@@ -12,6 +12,7 @@ import network
 CYLINDER_RADIUS = 0.5
 CYLINDER_DENSITY = 5
 MAX_UNROLLED_BODYPARTS = 20
+MIN_UNROLLED_BODYPARTS = 3
 SOFT_WORLD = 0
 HZ = 50
 DT = 1.0/HZ
@@ -112,6 +113,9 @@ class Motor(ode.AMotor):
                 else:
                     stop = lostops[x]
                 log.warn('axis %d rot360 (angle=%1.2f,stop=%1.2f,desired_angle=%1.2f)', x, a, self.getParam(stop), self.dangle[x])
+                # disable motors as a penalty
+                for x in self.axes:
+                    self.setParam(self.pfmax[x], 0)
             self.lastangle[x] = a
 
         # log joint angles for unit tests
@@ -536,6 +540,8 @@ class BpgSim(Sim):
 
         num_bps = len(bpgraph.bodyparts)
         log.debug('BpgSim.add: number of unrolled bodyparts = %d', num_bps)
+        if num_bps < MIN_UNROLLED_BODYPARTS:
+            self.fail('too few body parts (%d < %d)'%(num_bps,MIN_UNROLLED_BODYPARTS))
         if num_bps > MAX_UNROLLED_BODYPARTS:
             self.fail('too many body parts (%d > %d)'%(num_bps,MAX_UNROLLED_BODYPARTS))
 
