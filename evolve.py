@@ -222,23 +222,20 @@ class Generation(PersistentList):
         return sim.score
 
     def evaluate(self, x):
-        # it might be better to use one or more quick evals here, to get more
-        # robust agents (that work under more than one physics environment), and
-        # to speed evaluations.
+        # This function used to do multiple evals and take the min, so robust
+        # against physics explosions. But now that physics and motors are more
+        # stable, such measures are hopefully not necessary. Taking the mean of
+        # multiple trials has the advantage of normally distributed results
+        # (central limit theorem).
+        #
+        # It might be better to use one or more quickStep evals here, to get
+        # more robust agents (that work under more than one physics
+        # environment), and to speed evaluations for agents with many body
+        # parts.
         log.debug('evaluate')
         if type(x) is int:
             x = self[x]
-        s0 = self.runSim(x, 0)
-        if s0 == -1:
-            x.score = -1
-            return
-        s1 = self.runSim(x, 0)
-        if s1 == -1:
-            x.score = -1
-            return
-        s2 = self.runSim(x, 0)
-        x.score = min(s0,s1,s2)
-        return
+        x.score = self.runSim(x, 0)
 
     def steadyStateClientInnerLoop(self):
         log.debug('steadyStateClientLoop')
