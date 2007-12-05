@@ -485,17 +485,9 @@ class BpgSim(Sim):
                 j.setAxis2(tuple(axis2))
                 motor.setAxes(axis1, axis2)
             elif bp.joint == 'ball':
-                # the ball rotation is an evolvable parameter, so the joint axes
-                # do evolve
-#                ball_rot = quat(bp.ball_rot[0], vec3(bp.ball_rot[1])).toMat3()
-#                x = ball_rot * vec3((1, 0, 0))
-#                y = ball_rot * vec3((0, 1, 0))
                 axis1 = rotmat * vec3(bp.axis1)
                 axis2 = rotmat * vec3((0,0,1)).cross(vec3(bp.axis1))
                 motor.setAxes(axis1, axis2)
-#                j.setAxis1(tuple(axis1))
-#                j.setAxis2(tuple(axis2))
-#                motor.setAxes(x, y)
 
             log.debug('created joint with parent at %f,%f,%f', j_v[0], j_v[1], j_v[2])
 

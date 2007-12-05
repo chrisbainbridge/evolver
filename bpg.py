@@ -157,7 +157,6 @@ class BodyPart(Persistent):
             'recursive_limit' : 'random.randint(0, BP_MAX_RECURSIVE_LIMIT)',
             'joint' : "random.choice(['hinge','universal','ball'])",
             'axis1' : 'randomAxis(self.axis1)', # axis is (x,y,0)
-            'ball_rot' : 'randomQuat(self.ball_rot)',
             'rotation' : 'randomQuat(self.rotation)',
             }
         if not hasattr(self, 'scale'):
