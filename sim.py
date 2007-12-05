@@ -98,11 +98,12 @@ class MyMotor(ode.AMotor):
                     self.maxf = f
                     log.debug('joint maxf now %f', f)
         # check violation of stops
-        for x in 0,2:
+        for x,l in (0,math.pi),(1,math.pi/2),(2,math.pi):
             z = 0.05
             a = self.getAngle(x)
-            if not -math.pi+z <= a <= math.pi-z:
-                log.warn('stop failed (%f), possible 360 joint rotation', a)
+            if not -l+z <= a <= l-z:
+                log.warn('axis %d stop failed (%f), possible 360 joint rotation', x, a)
+
         # log joint angles for unit tests
         a = ['%1.2f'%self.getAngle(x) for x in 0,1,2]
         d = ['%1.2f'%x for x in self.desired_axisangle]
@@ -130,6 +131,8 @@ class MyMotor(ode.AMotor):
             # force to 0, but it doesn't.
             if b<self.lostop: b=self.lostop
             if b>self.histop: b=self.histop
+            if x==1 and b<-math.pi/2: b=-math.pi/2+self.stop/2
+            if x==1 and b>math.pi/2: b=math.pi/2-self.stop/2
 
             # ignore axes that we don't control for each joint
             if type(self.joint) is ode.HingeJoint and x != 2 \
