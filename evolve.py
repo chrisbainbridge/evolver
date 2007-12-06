@@ -67,7 +67,7 @@ class Generation(PersistentList):
     # cons sig must be ok when called with only self,size args due to
     # assumptions of UserList.__getslice__
 
-    def __init__(self, sizeOrList, new_individual_fn=None, new_individual_args=None, new_sim_fn=None, new_sim_args=None, ga='elite', mutationRate=0.01):
+    def __init__(self, sizeOrList, new_individual_fn=None, new_individual_args=None, new_sim_fn=None, new_sim_args=None, ga='elite', mutationRate=0.01, mut='uniform', final_gen=0):
         """Create an initial generation
 
         size -- number of solutions
@@ -97,28 +97,29 @@ class Generation(PersistentList):
         self.prev_gen = []
         self.updateInfo = UpdateInfo()
         self.scores = PersistentList()
+        assert ga in ('steadystate','elite','rank','tournament')
         self.ga = ga
+        assert 0 < mutationRate < 1
         self.mutationRate = mutationRate
         self.hostData = PersistentMapping()
         for hostname in cluster.HOSTNAMES:
             self.hostData[hostname] = HostData()
         self.mutationStats = PersistentList() # (parentFitness, mutations, childFitness)
         self.statList = PersistentList()
-        self.mut = 'uniform'
+        assert mut in ('gauss','uniform')
+        self.mut = mut
         self.updateTime = time.time()
         self.updateRate = 0
         self.pause = 0
-
-    def setFinalGeneration(self, extraGenerations, genabs):
-        "Set final generation number, relative to current one"
-        if genabs:
-            self.final_gen_num = extraGenerations
-        else:
-            self.final_gen_num = self.gen_num + extraGenerations
+        self.final_gen_num = final_gen
 
     def recordStats(self):
-        "Record statistics"
-
+        log.debug('record statistics')
+        assert len(self.scores) in [self.gen_num, self.gen_num+1]
+        if len(self.scores) == self.gen_num+1:
+            log.debug('we already did this generation?, bailing out')
+            return
+        assert len(self.scores) == self.gen_num
         f = [x.score for x in self if x.score != None and x.score != -1]
         if not f:
             self.scores.append(Score(0,0,0))
@@ -160,14 +161,12 @@ class Generation(PersistentList):
 
         Copies top % into next gen, then mutates copies
         of them to make the rest of the generation"""
-        # update function must copy from self.prev_gen to self
         log.debug('elitistUpdate()')
-        # 10% seems to be good for bpgs
+        # 20% seems to be good for bpgs
         num_elites = max(int(round(len(self.prev_gen)*0.2)), 1)
         log.debug('%d elites',num_elites)
 
         # copy the elites into next generation
-        self.prev_gen.sort(lambda x,y: cmp(y.score, x.score))
         count = 1
         for x in self.prev_gen[:num_elites]:
             y = copy.deepcopy(x)
@@ -191,10 +190,44 @@ class Generation(PersistentList):
             log.info('.' * count)
             count += 1
 
-        t = time.time()
-        # evals per hour
-        self.updateRate = len(self) * 60.0 * 60.0 / (t - self.updateTime)
-        self.updateTime = t
+    def rankUpdate(self):
+        log.debug('rankUpdate()')
+        # construct cumulative rank vector
+        rankv = []
+        cum = 0.0
+        n = len(self.prev_gen)
+        for i in range(1, n+1):
+            p = 2*float(n+1-i)/(n*(n+1))
+            cum += p
+            rankv.append(cum)
+        for x in range(n):
+            r = random.random()
+            for z in range(n):
+                if r <= rankv[z]:
+                    p = self.prev_gen[z]
+                    break
+            y = copy.deepcopy(p)
+            self.mutateChild(y)
+            y.parentFitness = p.score
+            self.append(y)
+            transaction.savepoint()
+            log.info('.' * (x+1))
+
+    def tournamentUpdate(self):
+        log.debug('tournamentUpdate()')
+        n = len(self.prev_gen)
+        for x in range(n):
+            a = random.choice(self.prev_gen)
+            b = random.choice(self.prev_gen)
+            p = b
+            if a.score > b.score:
+                p = a
+            y = copy.deepcopy(p)
+            self.mutateChild(y)
+            y.parentFitness = p.score
+            self.append(y)
+            transaction.savepoint()
+            log.info('.' * (x+1))
 
     def update(self):
         log.debug('update()')
@@ -216,13 +249,21 @@ class Generation(PersistentList):
             for bg in self.prev_gen:
                 bg.destroy()
             self.prev_gen = self[:]
+            self.prev_gen.sort(lambda x,y: cmp(y.score, x.score))
             del self[:]
 
             s = 'top %d of new gen scores are:'%len(self.prev_gen)
-            for i in range(len(self.prev_gen)):
-               s += '%1.2f '%self.prev_gen[i].score
+            s += ' '.join(['%1.2f'%x.score for x in self.prev_gen])
             log.debug(s)
-            self.elitistUpdate()
+
+            f = {'elite': self.elitistUpdate, 'rank': self.rankUpdate,
+                    'tournament': self.tournamentUpdate}
+            f[self.ga]()
+
+            t = time.time()
+            # evals per hour
+            self.updateRate = len(self) * 60.0 * 60.0 / (t - self.updateTime)
+            self.updateTime = t
             # reset everything
             for x in self:
                 x.score = None
@@ -261,6 +302,9 @@ class Generation(PersistentList):
 
     def steadyStateClientInnerLoop(self):
         log.debug('steadyStateClientLoop')
+        if self.gen_num == self.final_gen_num:
+            log.debug('final gen, steadystate done')
+            return
 
         mydata = self.hostData[cluster.getHostname()]
         if mydata.newIndividual:
@@ -271,17 +315,17 @@ class Generation(PersistentList):
         # make sure all initial instances are evaluated first
         init = [z for z in self if z.score == None]
         if init:
-            log.debug('doing post-create eval (no parent)')
             x = random.choice(init)
+            log.info('eval %d (post-create, no parent)', self.index(x))
             self.evaluate(x)
             transaction.commit()
             return
 
         x = random.choice(self)
+        log.info('eval %d', self.index(x))
         y = copy.deepcopy(x)
         self.mutateChild(y)
         self.evaluate(y)
-        log.debug('steady state eval done, score %f', y.score)
         assert x.score != None
         y.parentFitness = x.score
         log.debug('parent score=%f child score=%f', y.parentFitness, y.score)
@@ -312,8 +356,8 @@ class Generation(PersistentList):
                 else:
                     log.debug('newIndividual is too low, throw it away')
                 hd.newIndividual = None
-                self.gen_num += 1
                 self.recordStats()
+                self.gen_num += 1
             # force re-eval if older than threshold (stops freak evals being immortal)
             for x in self:
                 if x.createdInGeneration < self.gen_num - 3*len(self):
@@ -326,7 +370,7 @@ class Generation(PersistentList):
     def leftToEval(self):
         return [ x for x in self if x.score == None ]
 
-    def eliteInnerLoop(self, master, slave):
+    def generationalInnerLoop(self, master, slave):
         ready = self.leftToEval()
         if slave and ready:
             notbusy = [x for x in ready if not x.busy.i]
@@ -361,16 +405,13 @@ class Generation(PersistentList):
             return l[0][0]
 
     def runClientLoop(self, master=1, slave=1):
-        """Evolve client.
-
-        Make sure everything in the current generation is evaluated,
-        then create the next generation, and finally appends it to
-        self.generations which is persistent
-        (root['runs']['run_name'].generations)."""
-
-        done = 0
-        while not done:
-            done = self.runClientInnerLoop(master, slave)
+        if self.ga == 'steadystate':
+            end = self.final_gen_num
+        else:
+            end = self.final_gen_num+1
+        while len(self.scores) < end:
+            log.debug('runClientLoop %d/%d', len(self.scores), end)
+            self.runClientInnerLoop(master, slave)
 
     def runClientInnerLoop(self, master=1, slave=1):
         # need to set this here because it can vary between runs
@@ -379,28 +420,17 @@ class Generation(PersistentList):
             transaction.begin()
             if self.pause:
                 time.sleep(5)
-                return 0
+                return
             log.debug('runClientInnerLoop')
-            if self.ga == 'steady-state':
+            if self.ga == 'steadystate':
                 if slave:
                     self.steadyStateClientInnerLoop()
                 if master:
                     self.steadyStateMasterInnerLoop()
-            elif self.ga == 'elite':
-                self.eliteInnerLoop(master, slave)
             else:
-                log.info('nothing for us to do')
+                self.generationalInnerLoop(master, slave)
         except ConflictError:
             transaction.abort()
             log.debug('commit conflict')
-        except POSKeyError:
-            log.critical('poskeyerror - this should not happen')
-            raise
-        except DisconnectedError:
-            log.debug('we lost connection to the server, sleeping..')
-            # FIXME: this doesn't work.. if the server goes down we get
-            # ERROR:ZODB.Connection:Couldn't load state for 0x284dfd
-            # raise ClientDisconnected()
-            time.sleep(60)
         log.debug('/runClientInnerLoop')
         return 0

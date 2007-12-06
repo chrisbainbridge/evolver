@@ -26,7 +26,7 @@
  -p x                 Create initial population of size x
      -q x             Use discrete model with x states
      -t x             Run simulation for x seconds (default 30)
-     -g x             Generations to evolve for, prefix +- for relative (default 100)
+     -g x             Final generation, prefix +- for relative (default 99)
      --model x        Type of node [sigmoid,logical,beer,if,ekeberg,sine,srm]
      --neurons x      Total number of nodes, including inputs and outputs (default 10)
      --top x          Neural network topology [full,1d,2d,nk]
@@ -43,8 +43,7 @@
                         movement : sum of distances from previous frame
                         walk : movement and meandistance combined
                         meanxv : mean velocity on X-axis
- --elite              Elitist GA
- --steadystate        Steady state GA
+ --ga                 Genetic algorithm [elite,rank,tournament,steadystate]
  --mp x               Mutation probability
  --mut                Mutation type [gauss,uniform]
  --noise x            Standard deviation of Gaussian noise applied to sensors and motors
@@ -144,11 +143,10 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'cdr:eg:hi:lp:q:sz:t:uvm',
                 ['blank', 'qt=', 'top=', 'timing=', 'model=', 'neurons=',
-                    'bias=', 'weight=', 'elite', 'lqr', 'steadystate',
-                    'mp=', 'mut=', 'noise=', 'network=', 'nostrip',
-                    'plotbpg=', 'pf=', 'plotnets=', 'ps=', 'unroll', 'k=',
-                    'toponly', 'movie=', 'sim=', 'fitness=', 'plotpi=',
-                    'plotfc=', 'cluster', 'uniform'])
+                    'bias=', 'weight=', 'lqr', 'ga=', 'mp=', 'mut=', 'noise=',
+                    'network=', 'nostrip', 'plotbpg=', 'pf=', 'plotnets=',
+                    'ps=', 'unroll', 'k=', 'toponly', 'movie=', 'sim=',
+                    'fitness=', 'plotpi=', 'plotfc=', 'cluster', 'uniform'])
         log.debug('opts %s', opts)
         log.debug('args %s', args)
         # print help for no args
@@ -194,6 +192,8 @@ def main():
     runsim = 0
     fitnessFunctionName = None
     ga = 'elite'
+    rank = 0
+    tournament = 0
     max_simsecs = 0
     mutationRate = 0
     genabs = 1
@@ -253,16 +253,13 @@ def main():
             bias = eval(a)
         elif o == '--weight':
             weight = eval(a)
-        elif o == '--elite':
-            ga = 'elite'
+        elif o == '--ga':
+            ga = a
         elif o == '--lqr':
             lqr = 1
-        elif o == '--steadystate':
-            ga = 'steady-state'
         elif o == '--mp':
             mutationRate = float(a)
         elif o == '--mut':
-            assert a in ['gauss','uniform']
             mut = a
         elif o == '--uniform':
             uniform = 1
@@ -376,7 +373,7 @@ def main():
         # create defaults
         if not max_simsecs : max_simsecs = 30
         if not mutationRate: mutationRate = 0.05
-        if not numberOfGenerations: numberOfGenerations = 100
+        if not numberOfGenerations: numberOfGenerations = 99
         if noise == None: noise = 0.005
 
         new_sim_args = { 'max_simsecs' : max_simsecs,
@@ -391,46 +388,42 @@ def main():
             new_individual_args = new_network_args
             new_sim_fn = sim.PoleBalanceSim
 
-        root[g] = evolve.Generation(popsize, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args, ga, mutationRate)
+        root[g] = evolve.Generation(popsize, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args, ga, mutationRate, mut, numberOfGenerations)
 
-        root[g].setFinalGeneration(numberOfGenerations-1, genabs)
-        root[g].mut = mut
         log.debug('committing all subtransactions')
         transaction.commit()
         log.debug('commit done, end of create_initial_population')
 
     elif not create_initial_population and not runsim and (numberOfGenerations or mutationRate or max_simsecs):
         if numberOfGenerations:
-            root[g].setFinalGeneration(numberOfGenerations-1, genabs)
+            if genabs:
+                root[g].final_gen_num = numberOfGenerations
+            else:
+                root[g].final_gen_num += numberOfGenerations
         if mutationRate:
             root[g].mutationRate = mutationRate
         if max_simsecs:
             root[g].new_sim_args['max_simsecs'] = max_simsecs
         transaction.commit()
 
-    elif g and g not in root:
+    elif g and g not in root and not delete:
         log.error('Generation %s not in db %s', g, root.keys())
         return
 
-    if delete:
-        if not g:
-            log.critical('which generation?')
-            return 1
+    if not g and (delete or blank or plotfitness or plotpi or plotfc or plotbpg or plotnets):
+        log.critical('which generation?')
+        return 1
+
+    if delete and root.has_key(g):
         del(root[g])
         transaction.commit()
 
     if blank:
-        if not g:
-            log.critical('which generation?')
-            return 1
         for x in root[g]:
             x.score = None
         transaction.commit()
 
     if plotfitness or plotpi or plotfc:
-        if not g:
-            log.critical('which generation?')
-            return 1
         if plotfitness:
             plot_generation_vs_fitness(root[g], plotfitness, g)
         elif plotpi:
@@ -439,9 +432,6 @@ def main():
             plot_mutation_vs_fitness_change(root[g], plotfc, g)
 
     if plotbpg or plotnets:
-        if not g:
-            log.critical('which generation?')
-            return 1
         b = root[g][g_index]
         if isinstance(b, bpg.BodyPartGraph):
             if unroll:
@@ -511,22 +501,37 @@ def main():
         mode = h[master,client]
         log.info('%s running on %s', mode, cluster.getHostname())
         while 1:
+
             # find all generations that aren't finished
             db.sync()
             if g:
                 runs = [g]
             else:
                 runs = [k for (k, i) in root.iteritems() if isinstance(i, evolve.Generation)]
-            done = [r for r in runs if root[r].gen_num == root[r].final_gen_num and not root[r].leftToEval() and len(root[r].scores) == root[r].final_gen_num+1]
-            if runs == done:
+            done = []
+            done += [r for r in runs if root[r].ga == 'steadystate' and
+                    len(root[r].scores) == root[r].final_gen_num ]
+            done += [r for r in runs if root[r].ga != 'steadystate' and
+                    len(root[r].scores) == root[r].final_gen_num+1]
+            log.debug('done: %s / %s', done, runs)
+
+            # if everything we can do is done, exit
+            if not set(runs) - set(done):
                 break
-            log.debug('done %s', done)
+
             ready = []
             if master:
-                ready += [r for r in runs if root[r].gen_num < root[r].final_gen_num and not root[r].leftToEval()]
-                ready += [r for r in runs if root[r].gen_num == root[r].final_gen_num and not root[r].leftToEval() and len(root[r].scores) < root[r].final_gen_num+1]
+                ready += [r for r in runs if root[r].ga == 'steadystate' and
+                        len(root[r].scores) < root[r].final_gen_num ]
+                ready += [r for r in runs if root[r].ga != 'steadystate' and not
+                        root[r].leftToEval() and len(root[r].scores) <
+                        root[r].final_gen_num+1]
             if client:
-                ready += [r for r in runs if root[r].leftToEval()]
+                ready += [r for r in runs if root[r].ga == 'steadystate' and
+                        len(root[r].scores) < root[r].final_gen_num ]
+                ready += [r for r in runs if root[r].ga != 'steadystate' and
+                        root[r].leftToEval()]
+
             log.debug('ready %s', ready)
             if ready:
                 r = random.choice(ready)

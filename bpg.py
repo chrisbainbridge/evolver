@@ -14,7 +14,8 @@ from cgkit.cgtypes import vec3
 import network
 import node
 from rand import rnd, randomVec3, randomQuat, randomAxis
-from sim import MIN_UNROLLED_BODYPARTS, MAX_UNROLLED_BODYPARTS
+MAX_UNROLLED_BODYPARTS = 20
+MIN_UNROLLED_BODYPARTS = 3
 
 BPG_MAX_NODES = 8
 BPG_MAX_EDGES = 6

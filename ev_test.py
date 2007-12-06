@@ -32,14 +32,15 @@ def plot(g):
     main('ev.py -r %s --plotfc test/%s-childfc.pdf'%(g, g))
 
 class EvTest:
-    def setUp(self):
-        delete(self.name)
     def test_1_create(self):
+        delete(self.name)
         create(self.name, STDARGS + ' ' + self.args)
     def test_2_run(self):
         run(self.name)
     def test_3_plot(self):
         plot(self.name)
+    def test_4_erase(self):
+        delete(self.name)
 
 class Sigmoid(EvTest, TestCase):
     name = 'ev_sigmoid'
@@ -52,7 +53,7 @@ class SigmoidQuanta(EvTest, TestCase):
     args = '--model sigmoid -q 32'
 class SteadyState(EvTest, TestCase):
     name = 'ev_steadystate'
-    args = '--model sigmoid --steadystate'
+    args = '--model sigmoid --ga steadystate'
 class Logical(EvTest, TestCase):
     name = 'ev_logical'
     args = '--model logical -q 2'
