@@ -947,6 +947,7 @@ class PoleBalanceSim(Sim):
         self.lqr = None
         self.controlForce = 0
         self.randomForce = 0
+        self.force_urge = 0
 
     def setUseLqr(self):
         self.lqr = LqrController()
@@ -1001,10 +1002,8 @@ class PoleBalanceSim(Sim):
 
     def applyRandomForce(self):
         # hit the pole with a random force weighted by time
-        f = (random.random() - 0.5) * self.total_time**2
-        f *= 100
-        self.randomForce = f
-        self.pole_body.addForce((f, 0, 0))
+        self.randomForce = (random.random() - 0.5) * self.total_time * 50
+        self.pole_body.addForce((self.randomForce, 0, 0))
         self.last_hit = self.total_time
 
     def updateFitness(self):
@@ -1035,8 +1034,10 @@ class PoleBalanceSim(Sim):
             self.init_u_count += 1
 
         # regular random force
-        if self.regular_random_force and self.total_time > self.last_hit + 2.0:
+        if random.random() < self.force_urge:
             self.applyRandomForce()
+            self.force_urge = 0
+        self.force_urge += 0.01
 
         log.debug('absolute value of angle is %f', abs(self.hinge_joint.getAngle()))
 
