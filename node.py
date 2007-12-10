@@ -197,7 +197,9 @@ class WeightNode(Node):
             if isinstance(src, SrmNode):
                 # hack since output is spikes, we want eps function
                 # note that we don't do quantisation here.
-                x = src.eps
+                # note: with async nodes, eps may not have been set yet.
+                if hasattr(src, 'eps'):
+                    x = src.eps
             cumulative += x * self.weights[src]
         if use_external:
             for (src, x) in self.externalInputs.items():
