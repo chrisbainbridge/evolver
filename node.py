@@ -2,6 +2,7 @@ import logging
 import random
 import math
 from rand import rnd
+from numpy import matrix
 
 from persistent import Persistent
 from persistent.list import PersistentList
@@ -602,3 +603,30 @@ class LogicalNode(Node):
         "Mutate the function"
         m = self.par.function.mutate(p)
         return m
+
+class LqrController:
+    def __init__(self, quanta=0):
+        """Create LQR controller.
+
+        The control matrix was derived in Octave.
+        The NBAR input amplification factor was found through trial and error."""
+        self.NBAR = -202.25
+        self.K = matrix([[-202.25, -304.63, 2349.83, 1402.09]])
+        self.U = 0.0
+        self.quanta = quanta
+
+    def calculateResponse(self, state):
+        "Return error force correction from LQR control matrix applied to state"
+        # does network get full state?
+        state[0] = quantiseDomain((-5,5), state[0], self.quanta)
+        state[1] = quantiseDomain((-25,25), state[1], self.quanta)
+        state[2] = quantiseDomain((-math.pi/4,math.pi/4), state[2], self.quanta)
+        state[3] = quantiseDomain((-5,5), state[3], self.quanta)
+
+        fe = self.NBAR * self.U - self.K * state
+        fe = quantiseDomain((-1000,1000), fe, self.quanta)
+        return fe
+
+    def setReferenceInput(self, U):
+        "Set the reference input - in this case, the desired cart position."
+        self.U = U

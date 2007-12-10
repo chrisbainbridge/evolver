@@ -562,7 +562,7 @@ def main():
         elif root[g].new_sim_fn == sim.PoleBalanceSim:
             s = root[g].new_sim_fn(secs, noise_sd=noise)
         if lqr:
-            s.setUseLqr()
+            s.setUseLqr(quanta)
         else:
             s.add(root[g][i])
         # set up tracing

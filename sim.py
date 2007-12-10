@@ -861,24 +861,6 @@ class BpgSim(Sim):
         Sim.step(self)
         log.debug('/step')
 
-class LqrController:
-    def __init__(self):
-        """Create LQR controller.
-
-        The control matrix was derived in Octave.
-        The NBAR input amplification factor was found through trial and error."""
-        self.NBAR = -202.25
-        self.K = matrix([[-202.25, -304.63, 2349.83, 1402.09]])
-        self.U = 0.0
-
-    def calculateResponse(self, state):
-        "Return error force correction from LQR control matrix applied to state"
-        fe = self.NBAR * self.U - self.K * state
-        return fe
-
-    def setReferenceInput(self, U):
-        "Set the reference input - in this case, the desired cart position."
-        self.U = U
 
 class PoleBalanceSim(Sim):
     """Simulation of a pole balancing task.
@@ -949,8 +931,8 @@ class PoleBalanceSim(Sim):
         self.randomForce = 0
         self.force_urge = 0
 
-    def setUseLqr(self):
-        self.lqr = LqrController()
+    def setUseLqr(self, quanta=0):
+        self.lqr = node.LqrController(quanta)
 
     def add(self, net):
         self.setNetwork(net)
