@@ -86,21 +86,21 @@ def plotSignals(tracefile, quanta=0, ext='.pdf'):
     (basename, _) = os.path.splitext(tracefile)
     log.debug('basename = %s', basename)
     font = 'Helvetica'
-    font_size = 8
+    font_size = 4
     if ext == '.pdf':
-        term = 'pdf font "%s,%d" size 21cm,30cm'%(font, font_size)
+        term = 'pdf font "%s,%d"'%(font, font_size)
     elif ext == '.eps':
         term = 'postscript portrait "%s" %d'%(font, font_size)
     header = """#!/usr/bin/gnuplot
     set terminal %s
     set out "%%s"
-    set multiplot layout %d,1
+    set multiplot layout %%d,1
     set border 3
     set key top outside
     set style line 1 linetype 1 linewidth 1
     set lmargin 10
     set xtics nomirror
-    """%(term, PLOTS_PER_PAGE)
+    """%(term)
 
     page = 0
     fnames = []
@@ -111,27 +111,33 @@ def plotSignals(tracefile, quanta=0, ext='.pdf'):
         log.debug('creating gnuplot script %s', fname)
         epsFile = "%s-p%d%s"%(basename, page, ext)
         fnames.append(epsFile)
-        s = header%(epsFile)
+        s = header%(epsFile, min(PLOTS_PER_PAGE, num_plots+1-x))
         for i in range(x, x+min(PLOTS_PER_PAGE, num_plots-x+1)):
             log.debug('plotting row %d', i)
             yrange = '[-0.25:1]'
             ytics = '0,1,1'
-            if 'M' in labels[i] or 'angle' == labels[i]:
+            if 'M' in labels[i]:
                 yrange = '[-5:3.14]'
-                ytics = '-3.14,6.28,3.14'
+                ytics = '-3.1,6.2,3.1'
+            if 'angle' == labels[i]:
+                yrange = '[-1.8:1.8]'
+                ytics = '-1.8,1.8,1.8'
             if 'ctrlf' == labels[i]:
                 yrange = '[-1000:1000]'
-                ytics = '-1000,1000,500'
+                ytics = '-1000,1000,1000'
+            if 'randf' == labels[i]:
+                yrange = '[-200:200]'
+                ytics = '-200,200,200'
             style = 'lines'
             if quanta:
                 style = 'steps'
             s += """
             set yrange %s
             set ytics nomirror %s
-            set label "%s" at graph -0.08, graph 0.5 # font "courier,10"
+            set label "%s" at graph -0.06, graph 0.5
             plot "%s" using 1:%d notitle with %s linestyle 1
             unset label
-            """%(yrange, ytics, labels[i], tracefile, i+1, style)
+            """%(yrange, ytics, labels[i].lower(), tracefile, i+1, style)
         fo.write(s)
         fo.close()
         os.chmod(fname, 0755)
