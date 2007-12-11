@@ -8,8 +8,10 @@ from persistent import Persistent
 from persistent.list import PersistentList
 from persistent.mapping import PersistentMapping
 from node import SigmoidNode, LogicalNode
+from rand import rnd
 
 import logging
+from logging import warn
 log = logging.getLogger('neural')
 log.setLevel(logging.INFO)
 
@@ -147,10 +149,12 @@ class Network(PersistentList):
         for puts in self.inputs, self.outputs:
             for i in range(len(puts)):
                 if random() < p:
-                    self.mutations += 1
                     old = puts[i]
-                    new = choice([x for x in self if x != old])
-                    puts[i] = new
+                    l = list(set(self)-set(puts))
+                    if l:
+                        self.mutations += 1
+                        new = choice(l)
+                        puts[i] = new
 
         if self.topology == 'nk':
             # mutate topology
@@ -169,6 +173,12 @@ class Network(PersistentList):
                             if hasattr(n, 'weights'):
                                 n.weights[src] = n.weights[t]
                                 del n.weights[t]
+
+        if hasattr(self,'weights'):
+            for i in range(4):
+                if random() < p:
+                    self.mutations += 1
+                    self.weights[i] = rnd(-7,7,self.weights[i])
 
         self.check()
         return self.mutations
@@ -208,6 +218,8 @@ class Network(PersistentList):
 
     def check(self):
         log.debug('Network.check()')
+        assert len(set(self.inputs)) == len(self.inputs)
+        assert len(set(self.outputs)) == len(self.outputs)
         for x in self:
             x.check()
 

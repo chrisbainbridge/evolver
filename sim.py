@@ -938,20 +938,17 @@ class PoleBalanceSim(Sim):
         self.setNetwork(net)
 
     def setNetwork(self, net):
-        """Tell PoleSim to use this network.
-
-        Must have 1 input and 1 output"""
-
         assert type(net) is network.Network
         self.network = net
         self.network.reset()
         self.finished = 0
         # fake external_input connection so node knows its an input
-        self.angleSignal = (None,'ANGLE_0', 1.0)
+        self.sig = ((None,'POS'), (None,'LVEL'), (None,'ANG'), (None,'AVEL'))
         for n in self.network:
             assert not n.externalInputs
-        self.inputNode = self.network.inputs[0]
-        self.inputNode.addExternalInput(self.angleSignal[0],self.angleSignal[1],self.angleSignal[2],)
+        assert len(self.network.inputs) == 1
+        for x in range(4):
+            self.network.inputs[0].addExternalInput(self.sig[x][0], self.sig[x][1], self.network.weights[x])
 
     def setControlForce(self, f):
         f = min(self.MAXF, max(-self.MAXF, f))
@@ -969,11 +966,10 @@ class PoleBalanceSim(Sim):
         self.setControlForce(fx)
 
     def applyNetworkForce(self):
-        angle = (self.hinge_joint.getAngle() + math.pi/4)/(math.pi/2)
-        angle = random.gauss(angle, self.noise_sd) # random noise
-        angle = max(0, min(angle, 1)) # clip
-        # send angle to network
-        self.inputNode.externalInputs[(self.angleSignal[0],self.angleSignal[1])] = angle
+        self.network.inputs[0].externalInputs[self.sig[0]] = min(1,max(0,self.cart_body.getPosition()[0]/10+1))
+        self.network.inputs[0].externalInputs[self.sig[1]] = min(1,max(0,self.cart_body.getLinearVel()[0]/50+1))
+        self.network.inputs[0].externalInputs[self.sig[2]] = min(1,max(0,self.hinge_joint.getAngle()/(math.pi/8)+1))
+        self.network.inputs[0].externalInputs[self.sig[3]] = min(1,max(0,self.cart_body.getAngularVel()[0]/10+1))
         self.network.step()
         # read network, get desired force/velocity
         v = self.network.outputs[0].output
@@ -1033,8 +1029,10 @@ class PoleBalanceSim(Sim):
     def run(self):
         Sim.run(self)
         if self.network:
-            # hack, setNetwork adds an external input, so we remove it here
-            self.inputNode.removeExternalInput(self.angleSignal[0],self.angleSignal[1])
+            # hack, setNetwork adds an external input, so we remove it here so
+            # that the memory can be freed
+            for x in range(4):
+                self.network.inputs[0].removeExternalInput(self.sig[x][0], self.sig[x][1])
 
     def initSignalLog(self, fname):
         self.siglog = open(fname, 'w')

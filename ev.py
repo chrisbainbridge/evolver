@@ -389,6 +389,9 @@ def main():
             new_sim_fn = sim.PoleBalanceSim
 
         root[g] = evolve.Generation(popsize, new_individual_fn, new_individual_args, new_sim_fn, new_sim_args, ga, mutationRate, mut, numberOfGenerations)
+        if simulation == 'pb':
+            for x in root[g]:
+                x.weights = [random.randrange(-7,7) for i in range(4)]
 
         log.debug('committing all subtransactions')
         transaction.commit()
