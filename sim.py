@@ -1012,6 +1012,7 @@ class PoleBalanceSim(Sim):
             self.init_u_count += 1
 
         # regular random force
+        self.randomForce = 0
         if random.random() < self.force_urge:
             self.applyRandomForce()
             self.force_urge = 0
