@@ -215,7 +215,7 @@ def main():
         elif o == '-g':
             if a[0] in '+-':
                 genabs = 0
-            numberOfGenerations = int(a)
+            numberOfGenerations = int(a)-1
         elif o in ('-h'):
             print __doc__
             return
