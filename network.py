@@ -57,19 +57,13 @@ class Network(PersistentList):
         # select input nodes
         self.inputs = PersistentList()
         for _ in range(num_inputs):
-            while 1:
-                n = choice(self)
-                if not n in self.inputs:
-                    self.inputs.append(n)
-                    break
+            n = choice(list(set(self)-set(self.inputs)))
+            self.inputs.append(n)
         # select output nodes
         self.outputs = PersistentList()
         for _ in range(num_outputs):
-            while 1:
-                n = choice(self)
-                if not n in self.outputs:
-                    self.outputs.append(n)
-                    break
+            n = choice(list(set(self)-set(self.outputs)))
+            self.outputs.append(n)
 
         self.connect(topology, radius)
         for n in self:
