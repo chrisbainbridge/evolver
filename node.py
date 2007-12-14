@@ -604,6 +604,9 @@ class LogicalNode(Node):
         m = self.par.function.mutate(p)
         return m
 
+    def addExternalInput(self, bp, sig, w):
+        Node.addExternalInput(self, (bp,sig))
+
 class LqrController:
     def __init__(self, quanta=0):
         """Create LQR controller.

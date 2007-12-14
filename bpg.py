@@ -389,14 +389,11 @@ class BodyPartGraph(Persistent):
                 assert g_bp in [ pbp.genotype for pbp in p_bpg.bodyparts ]
 
             # add to signal target.
-            if isinstance(p_dst_signal, node.WeightNode):
+            if isinstance(p_dst_signal, node.Node):
                 (p_src_bp, p_src_signal, weight) = p_source
                 if isinstance(p_src_signal, node.Node):
                     assert p_src_signal in p_src_bp.network
                 p_dst_signal.addExternalInput(p_src_bp, p_src_signal, weight)
-            elif isinstance(p_dst_signal, node.LogicalNode):
-                (p_src_bp, p_src_signal, weight) = p_source
-                p_dst_signal.addExternalInput((p_src_bp, p_src_signal))
             elif p_dst_signal[:6] == 'MOTOR_':
                 i = ord(p_dst_signal[6])-ord('0')
                 assert not p_dst_bp.motor_input[i]
