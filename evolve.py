@@ -237,7 +237,6 @@ class Generation(PersistentList):
             self.updateInfo.update(1)
             transaction.commit()
 
-        transaction.begin()
         self.recordStats()
 
         if self.gen_num == self.final_gen_num:
