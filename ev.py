@@ -399,16 +399,11 @@ def main():
         transaction.commit()
         log.debug('commit done, end of create_initial_population')
 
-    elif not create_initial_population and not runsim and (numberOfGenerations or mutationRate or max_simsecs):
-        if numberOfGenerations != None:
-            if genabs:
-                root[g].final_gen_num = numberOfGenerations
-            else:
-                root[g].final_gen_num += numberOfGenerations
-        if mutationRate:
-            root[g].mutationRate = mutationRate
-        if max_simsecs:
-            root[g].new_sim_args['max_simsecs'] = max_simsecs
+    elif numberOfGenerations != None:
+        if genabs:
+            root[g].final_gen_num = numberOfGenerations
+        else:
+            root[g].final_gen_num += numberOfGenerations
         transaction.commit()
 
     elif g and g not in root and not delete:
