@@ -458,7 +458,9 @@ def main():
                     rate = 0
                     if hasattr(i, 'updateRate'):
                         rate = i.updateRate
-                    m = i.getMaxIndividual()
+                    m = 0
+                    if i.scores:
+                        m = i.scores[-1].max
                     sm = ''
                     if m != None:
                         sm = '%.2f'%m
