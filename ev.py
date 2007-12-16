@@ -8,6 +8,7 @@
  -r name              Select evolutionary run with given name
  -i x                 Select individual with index x
  -d                   debug
+ --seed x             Set random seed, x is upto 32 bit hex
 
 ===== Client mode =====
 
@@ -145,7 +146,7 @@ def main():
                 ['blank', 'qt=', 'top=', 'timing=', 'model=', 'neurons=',
                     'bias=', 'weight=', 'lqr', 'ga=', 'mp=', 'mut=', 'noise=',
                     'network=', 'nostrip', 'plotbpg=', 'pf=', 'plotnets=',
-                    'ps=', 'unroll', 'k=', 'toponly', 'movie=', 'sim=',
+                    'ps=', 'unroll', 'k=', 'toponly', 'movie=', 'sim=', 'seed=',
                     'fitness=', 'plotpi=', 'plotfc=', 'cluster', 'uniform'])
         log.debug('opts %s', opts)
         log.debug('args %s', args)
@@ -204,6 +205,7 @@ def main():
     blank = 0
     mut = 'uniform'
     uniform = 0
+    seed = random.randint(0,0xFFFFFFFF)
     for o, a in opts:
         log.debug('parsing %s %s',o,a)
         if o == '-c':
@@ -302,6 +304,8 @@ def main():
         elif  o == '--cluster':
             print 'Starting all cluster clients...'
             cluster.startZeoClients()
+        elif o == '--seed':
+            seed = int(a,16)
         else:
             log.critical('unhandled option %s',o)
             return 1
@@ -316,6 +320,10 @@ def main():
     if g_index != None and not runsim and not plotbpg and not plotnets:
         log.critical('What do you want me to do with that individual?')
         return 1
+
+    if create_initial_population or client or master or runsim:
+        log.info('Random seed: %.8x', seed)
+        random.seed(seed)
 
     log.debug('zeo server is %s', server_addr)
     root = db.connect(server_addr)
@@ -621,7 +629,6 @@ def cleanup():
         db.conn.close()
 
 if __name__=='__main__':
-    random.seed()
     setup_logging()
     r = main()
     cleanup()
