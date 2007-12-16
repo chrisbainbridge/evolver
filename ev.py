@@ -195,11 +195,11 @@ def main():
     ga = 'elite'
     rank = 0
     tournament = 0
-    max_simsecs = 0
-    mutationRate = 0
+    max_simsecs = 30
+    mutationRate = 0.05
     genabs = 1
-    numberOfGenerations = 0
-    noise = None
+    numberOfGenerations = None
+    noise = 0.005
     strip = 1
     lqr = 0
     blank = 0
@@ -378,12 +378,6 @@ def main():
                 'radius' : radius,
                 'uniform' : uniform}
 
-        # create defaults
-        if not max_simsecs : max_simsecs = 30
-        if not mutationRate: mutationRate = 0.05
-        if not numberOfGenerations: numberOfGenerations = 99
-        if noise == None: noise = 0.005
-
         new_sim_args = { 'max_simsecs' : max_simsecs,
                          'noise_sd' : noise}
         if simulation == 'bpg':
@@ -406,7 +400,7 @@ def main():
         log.debug('commit done, end of create_initial_population')
 
     elif not create_initial_population and not runsim and (numberOfGenerations or mutationRate or max_simsecs):
-        if numberOfGenerations:
+        if numberOfGenerations != None:
             if genabs:
                 root[g].final_gen_num = numberOfGenerations
             else:
