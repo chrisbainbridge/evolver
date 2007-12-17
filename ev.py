@@ -527,15 +527,16 @@ def main():
             chosen = None
             for i in range(len(runs)):
                 r = runs[i]
+                done = root[r].leftToEval()
                 if master and (
                     root[r].ga == 'steadystate' and len(root[r].scores) <
                     root[r].final_gen_num or
-                    root[r].ga != 'steadystate' and not root[r].leftToEval() and
+                    root[r].ga != 'steadystate' and not done and
                     len(root[r].scores) < root[r].final_gen_num+1) \
                 or client and (
                     root[r].ga == 'steadystate' and len(root[r].scores) <
                     root[r].final_gen_num or
-                    root[r].ga != 'steadystate' and root[r].leftToEval()):
+                    root[r].ga != 'steadystate' and done):
                        chosen = r
                        break
             if chosen:
