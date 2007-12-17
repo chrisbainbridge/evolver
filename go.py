@@ -5,6 +5,7 @@ from logging import debug, error
 from ZODB.FileStorage import FileStorage
 
 logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger('ZEO').setLevel(logging.INFO)
 D = os.path.expanduser('~/done')
 
 while 1:
@@ -19,6 +20,7 @@ while 1:
         c = random.choice(l)
         c.taken += 1
         transaction.commit()
+        debug('db close')
         db.close()
         debug('run %s', c.name)
         zodb = '/var/tmp/%s'%c.name
@@ -38,5 +40,7 @@ while 1:
         FileStorage(zodb).pack(time.time(), None)
         debug('mv %s %s', zodb, D)
         shutil.move(zodb, D)
-    except:
+    except Exception, e:
+        error('%s', e)
+        debug('db close')
         db.close()

@@ -52,6 +52,7 @@ def sync():
     conn.sync()
 
 def close():
+    global conn
     if conn:
         conn.close()
         conn = None
