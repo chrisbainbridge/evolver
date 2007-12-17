@@ -19,6 +19,7 @@ while 1:
         c = random.choice(l)
         c.taken += 1
         transaction.commit()
+        db.close()
         debug('run %s', c.name)
         zodb = '/var/tmp/%s'%c.name
         debug('create %s', zodb)
@@ -38,4 +39,4 @@ while 1:
         debug('mv %s %s', zodb, D)
         shutil.move(zodb, D)
     except:
-        pass
+        db.close()

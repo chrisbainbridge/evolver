@@ -50,3 +50,8 @@ def reconnect():
 
 def sync():
     conn.sync()
+
+def close():
+    if conn:
+        conn.close()
+        conn = None
