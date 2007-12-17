@@ -4,7 +4,8 @@
 
 ===== Options for all invocations =====
 
- -z server_addr       ZEO DB server (default localhost)
+ -z server            ZEO DB server (default localhost)
+ -f file              ZODB file
  -r name              Select evolutionary run with given name
  -i x                 Select individual with index x
  -d                   debug
@@ -102,18 +103,11 @@ if '-b' in sys.argv:
 
 import os
 import sys
-import socket
 import time
 import random
-import cPickle
 import getopt
 import transaction
 import logging
-
-import ZODB
-from ZODB.FileStorage import FileStorage
-from ZEO.ClientStorage import ClientStorage
-from ZODB import DB
 
 import bpg
 import db
@@ -142,7 +136,7 @@ def main():
     log.debug(' '.join(sys.argv))
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'cdr:eg:hi:lp:q:sz:t:uvm',
+        opts, args = getopt.getopt(sys.argv[1:], 'cdr:eg:hi:lp:q:sz:t:uvmf:',
                 ['blank', 'qt=', 'top=', 'timing=', 'model=', 'neurons=',
                     'bias=', 'weight=', 'lqr', 'ga=', 'mp=', 'mut=', 'noise=',
                     'network=', 'nostrip', 'plotbpg=', 'pf=', 'plotnets=',
@@ -170,7 +164,7 @@ def main():
     num_nodes = 10
     simulation = 'bpg'
     quanta = 0
-    server_addr = db.getDefaultServer()
+    server = None
     plotfitness = None
     plotpi = None
     plotfc = None
@@ -206,6 +200,7 @@ def main():
     mut = 'uniform'
     uniform = 0
     seed = random.randint(0,0xFFFFFFFF)
+    zodb = None
     for o, a in opts:
         log.debug('parsing %s %s',o,a)
         if o == '-c':
@@ -232,7 +227,9 @@ def main():
             record = 1
             avifile = a
         elif o == '-z':
-            server_addr = a
+            server = a
+        elif o == '-f':
+            zodb = a
         elif o == '-t':
             max_simsecs = float(a)
         elif o == '-u':
@@ -325,8 +322,14 @@ def main():
         log.info('Random seed: %.8x', seed)
         random.seed(seed)
 
-    log.debug('zeo server is %s', server_addr)
-    root = db.connect(server_addr)
+    if not zodb:
+        if not server:
+            server = db.getDefaultServer()
+        log.debug('ZEO server: %s', server)
+        root = db.connect(server=server)
+    else:
+        log.debug('ZODB file: %s', zodb)
+        root = db.connect(zodb=zodb)
 
     if unlock:
         log.debug('release all locks')
