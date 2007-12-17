@@ -30,15 +30,14 @@ def main():
         sys.exit(1)
 
     sim = 'bpg'
-    prefix = 'e'
-    if sim == 'pb':
-        prefix = 'p'
+    prefix = 'b'
     start = 0
     pretend = 0
     server = None
     for o, a in opts:
         if o == '--pb':
             sim = 'pb'
+            prefix = 'p'
         elif o == '--start':
             start = int(a)
         elif o == '-p':
