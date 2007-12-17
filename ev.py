@@ -522,24 +522,26 @@ def main():
                 break
 
             ready = []
-            if master:
-                ready += [r for r in runs if root[r].ga == 'steadystate' and
-                        len(root[r].scores) < root[r].final_gen_num ]
-                ready += [r for r in runs if root[r].ga != 'steadystate' and not
-                        root[r].leftToEval() and len(root[r].scores) <
-                        root[r].final_gen_num+1]
-            if client:
-                ready += [r for r in runs if root[r].ga == 'steadystate' and
-                        len(root[r].scores) < root[r].final_gen_num ]
-                ready += [r for r in runs if root[r].ga != 'steadystate' and
-                        root[r].leftToEval()]
-
-            log.debug('ready %s', ready)
-            if ready:
-                r = random.choice(ready)
-                log.info('run %s (%d/%d) / %s ', r, root[r].gen_num,
-                        root[r].final_gen_num, mode)
-                root[r].runClientInnerLoop(master, client)
+            random.shuffle(runs)
+            i = 0
+            chosen = None
+            for i in range(len(runs)):
+                r = runs[i]
+                if master and (
+                    root[r].ga == 'steadystate' and len(root[r].scores) <
+                    root[r].final_gen_num or
+                    root[r].ga != 'steadystate' and not root[r].leftToEval() and
+                    len(root[r].scores) < root[r].final_gen_num+1) \
+                or client and (
+                    root[r].ga == 'steadystate' and len(root[r].scores) <
+                    root[r].final_gen_num or
+                    root[r].ga != 'steadystate' and root[r].leftToEval()):
+                       chosen = r
+                       break
+            if chosen:
+                log.info('run %s (%d/%d) / %s ', chosen, root[chosen].gen_num,
+                        root[chosen].final_gen_num, mode)
+                root[chosen].runClientInnerLoop(master, client)
             else:
                 log.info('Nothing to do, sleeping for 5s...')
                 time.sleep(5)
