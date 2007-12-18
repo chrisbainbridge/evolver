@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import db, transaction, random, shutil, logging, os, sys, time, traceback
+import db, transaction, random, logging, os, sys, time, traceback
 from logging import debug, error
 from ZODB.FileStorage import FileStorage
 import time
@@ -17,6 +17,8 @@ while 1:
         if not r:
             debug('all done')
             break
+        # note this strategy is suboptimal - would be better to use timestamps
+        # and just choose and update the oldest one
         m = min([x.taken for x in r])
         l = [x for x in r if x.taken == m]
         c = random.choice(l)
@@ -41,7 +43,7 @@ while 1:
         debug('pack %s', zodb)
         FileStorage(zodb).pack(time.time(), None)
         debug('mv %s %s', zodb, D)
-        shutil.move(zodb, D)
+        os.system('cp --remove-destination %s %s'%(zodb, D))
     except Exception, e:
         error('%s', traceback.format_exc())
         time.sleep(5)
