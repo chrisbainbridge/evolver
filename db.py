@@ -43,6 +43,7 @@ def sync():
 def close():
     global conn
     if conn:
+        transaction.abort()
         conn.close()
         conn.db().close()
         conn = None
