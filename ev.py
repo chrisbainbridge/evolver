@@ -323,8 +323,6 @@ def main():
         random.seed(seed)
 
     if not zodb:
-        if not server:
-            server = db.getDefaultServer()
         log.debug('ZEO server: %s', server)
         root = db.connect(server=server)
     else:
@@ -618,15 +616,9 @@ def main():
                     log.info(cmd)
                     os.system(cmd)
         s.destroy()
-
-def cleanup():
-    log.debug('ev.py cleanup')
-    transaction.get().abort()
-    if db.conn:
-        db.conn.close()
+    db.close()
 
 if __name__=='__main__':
     setup_logging()
     r = main()
-    cleanup()
     sys.exit(r)

@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
-import db, transaction, random, shutil, logging, os, sys, time
+import db, transaction, random, shutil, logging, os, sys, time, traceback
 from logging import debug, error
 from ZODB.FileStorage import FileStorage
+import time
 
 logging.getLogger().setLevel(logging.DEBUG)
 logging.getLogger('ZEO').setLevel(logging.INFO)
@@ -10,6 +11,7 @@ D = os.path.expanduser('~/done')
 
 while 1:
     try:
+        debug('db.connect')
         root = db.connect()
         r = [x for x in root['runs'] if not os.path.exists('%s/%s'%(D,x.name))]
         if not r:
@@ -20,7 +22,7 @@ while 1:
         c = random.choice(l)
         c.taken += 1
         transaction.commit()
-        debug('db close')
+        debug('db.close')
         db.close()
         debug('run %s', c.name)
         zodb = '/var/tmp/%s'%c.name
@@ -41,6 +43,5 @@ while 1:
         debug('mv %s %s', zodb, D)
         shutil.move(zodb, D)
     except Exception, e:
-        error('%s', e)
-        debug('db close')
-        db.close()
+        error('%s', traceback.format_exc())
+        time.sleep(5)

@@ -10,32 +10,21 @@ import cluster
 
 conn = None
 
-def getDefaultServer():
-    if cluster.isHost():
-        server = cluster.ZEOSERVER
-    else:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            s.connect(('localhost', 12345))
-            s.close()
-            server = 'localhost'
-        except:
-            server = cluster.ZEOSERVER
-    return server
-
 def connect(server=None, zodb=None):
     global conn
+    close() # close any existing connection
     if zodb:
         conn = DB(FileStorage(os.path.expanduser(zodb))).open()
     else:
         if not server:
-            s, p = getDefaultServer(), 12345
-        elif ':' in server:
+            server = cluster.ZEOSERVER
+        s = server
+        p = 12345
+        if ':' in server:
             s, p = server.split(':')
             p = int(p)
-        else:
-            s, p = server, 12345
         MB = 1024**2
+        print s,p
         storage = ClientStorage((s,p), cache_size=16*MB)
         db = DB(storage)
         conn = db.open()
@@ -55,4 +44,5 @@ def close():
     global conn
     if conn:
         conn.close()
+        conn.db().close()
         conn = None
