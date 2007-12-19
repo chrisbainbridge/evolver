@@ -24,7 +24,6 @@ def connect(server=None, zodb=None):
             s, p = server.split(':')
             p = int(p)
         MB = 1024**2
-        print s,p
         storage = ClientStorage((s,p), cache_size=16*MB)
         db = DB(storage)
         conn = db.open()
