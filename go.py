@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import db, transaction, random, logging, os, sys, time, traceback
-import time, popen2, re, copy, thread
+import time, popen2, re, copy, thread, fcntl
 from logging import debug, error
 from ZODB.FileStorage import FileStorage
 from ZODB import DB
@@ -48,6 +48,14 @@ def bad(z):
     c.db().close()
     return e
 
+def busy(z):
+    try:
+        f = open('%s.lock'%z, 'w')
+        fcntl.flock(f.fileno(), fcntl.LOCK_EX|fcntl.LOCK_NB)
+    except IOError:
+        return 1
+    return 0
+
 while 1:
     try:
         debug('ls done')
@@ -55,7 +63,10 @@ while 1:
         oldruns = [x for x in os.listdir('/var/tmp/') if re.match(pat,x) and os.stat('/var/tmp/%s'%x).st_mtime < time.time()-5*60]
         debug('oldruns %s', oldruns)
         for x in oldruns[:]:
-            if x in done or bad('/var/tmp/%s'%x):
+            if busy('/var/tmp/%s'%x):
+                debug('/var/tmp/%s is busy',x)
+                oldruns.remove(x)
+            elif x in done or bad(x):
                 debug('rm oldrun /var/tmp/%s'%x)
                 if not pretend:
                     os.unlink('/var/tmp/%s'%x)
