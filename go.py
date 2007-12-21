@@ -11,18 +11,29 @@ logging.getLogger().setLevel(logging.DEBUG)
 logging.getLogger('ZEO').setLevel(logging.INFO)
 config = SafeConfigParser()
 config.read(os.path.expanduser('~/.ev'))
-donedir = config.get('cluster','donedir')
+donedir = config.get('cluster','donedir') # must be absolute path, not ~/...
 if donedir[-1] != '/':
     donedir += '/'
+zeofile = None
+if config.has_option('cluster','zeofile'):
+    zeofile = os.path.expanduser(config.get('cluster','zeofile'))
+tmp = '/tmp/'
+if config.has_option('cluster','tmpdir'):
+    tmp = config.get('cluster','tmpdir')
+if tmp[-1] != '/':
+    tmp += '/'
 pat = r'[pb]\d\d\d$'
 pretend = 0
 if '-p' in sys.argv:
     pretend = 1
 
 def lsdone():
-    o,i = popen2.popen2('rsync %s'%donedir)
+    s = 'rsync %s'%donedir
+    debug('%s', s)
+    o,i = popen2.popen2(s)
     files = [x.split(' ')[-1][:-1] for x in o.readlines()]
     done = [x for x in files if re.match(pat, x)]
+    debug('done %s', done)
     return done
 
 def monitor(zodb):
@@ -60,24 +71,32 @@ while 1:
     try:
         debug('ls done')
         done = lsdone()
-        oldruns = [x for x in os.listdir('/var/tmp/') if re.match(pat,x) and os.stat('/var/tmp/%s'%x).st_mtime < time.time()-5*60]
+        oldruns = [x for x in os.listdir(tmp) if re.match(pat,x) and os.stat(tmp+x).st_mtime < time.time()-5*60]
         debug('oldruns %s', oldruns)
-        for x in oldruns[:]:
-            if busy('/var/tmp/%s'%x):
-                debug('/var/tmp/%s is busy',x)
+        orc = oldruns[:]
+        random.shuffle(orc)
+        for x in orc:
+            if busy(tmp+x):
+                debug('%s is busy',tmp+x)
                 oldruns.remove(x)
             elif x in done or bad(x):
-                debug('rm oldrun /var/tmp/%s'%x)
+                debug('rm oldrun %s',tmp+x)
                 if not pretend:
-                    os.unlink('/var/tmp/%s'%x)
+                    os.unlink('%s'%(tmp+x))
                 oldruns.remove(x)
         # oldruns now contains potentially valid runs
         if oldruns:
             debug('valid oldruns %s', oldruns)
-            zodb = '/var/tmp/%s'%random.choice(oldruns)
+            zodb = tmp+random.choice(oldruns)
         else:
             debug('db.connect')
-            root = db.connect()
+            if zeofile:
+                while busy(zeofile):
+                    debug('busy ZEO file...')
+                    time.sleep(random.randint(2,15))
+                root = db.connect(zodb=zeofile)
+            else:
+                root = db.connect()
             r = [x for x in root['runs'] if x not in done]
             if not r:
                 debug('all done')
@@ -94,12 +113,14 @@ while 1:
             c = copy.deepcopy(c) # don't use persistent object after db close
             db.close()
             debug('run %s', c.name)
-            zodb = '/var/tmp/%s'%c.name
+            zodb = tmp+c.name
             debug('create %s', zodb)
             if os.path.exists(zodb):
                 os.unlink(zodb)
             if not pretend:
-                e = os.system('%s -f %s'%(c.cl, zodb))
+                s = '%s -f %s'%(c.cl, zodb)
+                debug(s)
+                e = os.system(s)
                 if e:
                     error('child process failed')
                     continue
