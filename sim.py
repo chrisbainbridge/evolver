@@ -320,7 +320,7 @@ class BpgSim(Sim):
         s = '# time  '
         self.signals = []
         def pad(x):
-            while len(x) < 7:
+            while len(x) < 8:
                 x = x + ' '
             return x
         for bg in self.bpgs:
@@ -345,6 +345,7 @@ class BpgSim(Sim):
                 s += pad('bp%d-C'%(bpi))
                 self.signals.append((bp, 'CONTACT'))
         s += '\n'
+        assert len(s[2:].split()) == len(self.signals)+1
         self.siglog.write(s)
 
     def addBP(self, bp, parent=None, joint_end=None):

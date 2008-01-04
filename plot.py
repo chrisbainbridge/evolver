@@ -28,7 +28,10 @@ def stripTraceFile(tracefile):
         if s == '':
             break
         vals = s.split()
-        total += matrix([float(x) for x in vals])
+        assert len(vals) == cols
+        l = [float(x) for x in vals]
+        m = matrix(l)
+        total += m
         rows += 1
 
     mean = total/rows
