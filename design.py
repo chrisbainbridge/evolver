@@ -4,7 +4,8 @@
     --start x       Start from gen x
     -p              Pretend; change files but not database
     --server x      Write ev calls to server
-design.py 600 to just generate results.txt"""
+    --done x        Process done from dir x
+design.py 600 to just generate done.txt"""
 
 import sys, re, os, logging, getopt
 from logging import debug, error
@@ -13,6 +14,8 @@ from persistent.list import PersistentList
 import transaction
 import db
 from data import Run
+from ZODB.FileStorage import FileStorage
+from ZODB import DB
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -21,7 +24,7 @@ D = '../data/'
 def main():
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'p', ['pb', 'start=', 'server='])
+        opts, args = getopt.getopt(sys.argv[1:], 'p', ['pb', 'start=', 'server=', 'done='])
         if not opts:
             print __doc__
             sys.exit(1)
@@ -34,6 +37,7 @@ def main():
     start = 0
     pretend = 0
     server = None
+    done = 0
     for o, a in opts:
         if o == '--pb':
             sim = 'pb'
@@ -44,6 +48,8 @@ def main():
             pretend = 1
         elif o == '--server':
             server = a
+        elif o == '--done':
+            done = os.path.expanduser(a+'/')
 
     if server:
         r = db.connect()
@@ -69,7 +75,8 @@ def main():
     base = ['1 '*8+'\n' for y in range(0,10)]
     fx = open(D+'des-filtered.txt','w')
     fx.write('model q top neurons timing mut mp genpop\n')
-
+    openzodb = None
+    c = None
 
     for s in base + ss[1:]:
         model = models[int(s[0])-1]
@@ -100,7 +107,19 @@ def main():
         while count<times:
             run = '%s%.3d'%(prefix,i)
             for g in range(0,genpop):
-                s = "%s %s %.2d %s %.2d %s %s %.2f %.3d %d X\n"%(run,model,q,tk,neurons,timing,mut,mp,genpop,g)
+                score = -1
+                if done:
+                    if openzodb != run:
+                        if c:
+                            c.close()
+                            c.db().close()
+                        c = DB(FileStorage(done+run)).open()
+                        root = c.root()
+                        assert len(root[run].scores) == root[run].final_gen_num+1
+                        openzodb = run
+                    score = root[run].scores[g].max
+                s = "%s %s %.2d %s %.2d %s %s %.2f %.3d %d %.3f\n"%(run,model,q,tk,neurons,timing,mut,mp,genpop,g,score)
+
                 f.write(s)
 
             if i >= start:
