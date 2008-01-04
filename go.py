@@ -1,10 +1,10 @@
 #!/usr/bin/python
 
 import db, transaction, random, logging, os, sys, time, traceback
-import time, popen2, re, copy, thread, fcntl
+import time, popen2, re, copy, thread, fcntl, socket
 from logging import debug, error
 from ZODB.FileStorage import FileStorage
-from ZODB import DB
+from ZODB import DB, POSException
 from ConfigParser import SafeConfigParser
 
 logging.getLogger().setLevel(logging.DEBUG)
@@ -17,11 +17,19 @@ if donedir[-1] != '/':
 zeofile = None
 if config.has_option('cluster','zeofile'):
     zeofile = os.path.expanduser(config.get('cluster','zeofile'))
-tmp = '/tmp/'
+tmp = os.environ.get('TMPDIR')
+if not tmp:
+    tmp = '/tmp/'
 if config.has_option('cluster','tmpdir'):
     tmp = config.get('cluster','tmpdir')
 if tmp[-1] != '/':
     tmp += '/'
+tmp += socket.gethostname()+'/'
+try:
+    if not os.path.exists(tmp):
+        os.mkdir(tmp)
+except:
+    pass
 pat = r'[pb]\d\d\d$'
 pretend = 0
 if '-p' in sys.argv:
@@ -49,74 +57,109 @@ def monitor(zodb):
 
 def bad(z):
     r = z[-4:]
-    c = DB(FileStorage(z)).open()
-    root = c.root()
-    e = 1
-    if root.has_key(r) and root[r].gen_num >= 1:
+    try:
+        c = DB(FileStorage(z)).open()
+        root = c.root()
+        if root.has_key(r):
+            e = 0
+            debug('good %s', z)
+        else:
+            e = 1
+            debug('bad %s (key %s missing)', z, r)
+        c.close()
+        c.db().close()
+    except IOError:
+        debug('good %s (busy)', z)
         e = 0
-    debug('%s bad=%d', z, e)
-    c.close()
-    c.db().close()
+    except Exception:
+        debug('bad zodb %s (corrupt)', z)
+        e = 1
     return e
 
-def busy(z):
+lockfile = None
+
+def lock(z):
     try:
-        f = open('%s.lock'%z, 'w')
-        fcntl.flock(f.fileno(), fcntl.LOCK_EX|fcntl.LOCK_NB)
+        global lockfile
+        lockfile = open('%s.golock'%z, 'w')
+        fcntl.flock(lockfile.fileno(), fcntl.LOCK_EX|fcntl.LOCK_NB)
     except IOError:
-        return 1
-    return 0
+        lockfile.close()
+        lockfile = None
+        return 0
+    return 1
+
+def unlock():
+    global lockfile
+    if lockfile:
+        lockfile.close()
+        lockfile = None
 
 while 1:
     try:
+        unlock()
         debug('ls done')
+        dl = open(tmp+'done.golock','w')
+        fcntl.flock(dl.fileno(), fcntl.LOCK_EX|fcntl.LOCK_NB)
         done = lsdone()
-        oldruns = [x for x in os.listdir(tmp) if re.match(pat,x) and os.stat(tmp+x).st_mtime < time.time()-5*60]
+        oldruns = [x for x in os.listdir(tmp) if re.match(pat,x)] #  and os.stat(tmp+x).st_mtime < time.time()-5*60]
         debug('oldruns %s', oldruns)
         orc = oldruns[:]
         random.shuffle(orc)
+        busyl = []
         for x in orc:
-            if busy(tmp+x):
+            if lock(tmp+x):
+                broke = bad(tmp+x)
+                if x in done or broke:
+                    if broke: reason = 'bad'
+                    if x in done: reason = 'done'
+                    debug('%s %s, removing..', reason, tmp+x)
+                    if not pretend:
+                        os.unlink('%s'%(tmp+x))
+                    oldruns.remove(x)
+                unlock()
+            else:
                 debug('%s is busy',tmp+x)
                 oldruns.remove(x)
-            elif x in done or bad(x):
-                debug('rm oldrun %s',tmp+x)
-                if not pretend:
-                    os.unlink('%s'%(tmp+x))
-                oldruns.remove(x)
+                busyl.append(x)
         # oldruns now contains potentially valid runs
+        zodb = None
         if oldruns:
             debug('valid oldruns %s', oldruns)
-            zodb = tmp+random.choice(oldruns)
+            name = random.choice(oldruns)
+            zodb = tmp+name
+            if not lock(zodb):
+                continue
+            debug('resume %s', zodb)
+            dl.close()
         else:
             debug('db.connect')
             if zeofile:
-                while busy(zeofile):
+                while not lock(zeofile):
                     debug('busy ZEO file...')
                     time.sleep(random.randint(2,15))
                 root = db.connect(zodb=zeofile)
             else:
                 root = db.connect()
-            r = [x for x in root['runs'] if x not in done]
+            r = [x for x in root['runs'] if x.name not in done and x.name not in busyl]
+            assert len(r) == len(set(r)-set(done))
             if not r:
                 debug('all done')
                 break
-            # note: this scheduling is suboptimal - would be better to use
-            # timestamps and just choose and update the oldest one
-            m = min([x.taken for x in r])
-            l = [x for x in r if x.taken == m]
-            c = random.choice(l)
+            c = random.choice(r)
             c.taken += 1
-            if not pretend:
-                transaction.commit()
             debug('db.close')
             c = copy.deepcopy(c) # don't use persistent object after db close
+            transaction.abort() # DB keeps getting corrupted!!
             db.close()
+            unlock()
             debug('run %s', c.name)
+            assert c.name not in done
             zodb = tmp+c.name
+            if not lock(zodb):
+                continue
             debug('create %s', zodb)
-            if os.path.exists(zodb):
-                os.unlink(zodb)
+            dl.close()
             if not pretend:
                 s = '%s -f %s'%(c.cl, zodb)
                 debug(s)
@@ -124,19 +167,21 @@ while 1:
                 if e:
                     error('child process failed')
                     continue
-        debug('eval file: %s', zodb)
+        s = 'ev -f %s -c -m'%(zodb)
+        debug(s)
         if not pretend:
             thread.start_new_thread(monitor, (zodb,))
-            e = os.system('ev -f %s -c -m'%(zodb))
+            e = os.system(s)
             if e:
                 error('child process failed')
                 continue
         debug('pack %s', zodb)
         if not pretend:
             FileStorage(zodb).pack(time.time(), None)
-        debug('rsync %s %s', zodb, donedir)
+        s = 'rsync -av %s %s'%(zodb, donedir)
+        debug(s)
         if not pretend and not bad(zodb):
-            e = os.system('rsync -av %s %s'%(zodb, donedir))
+            e = os.system(s)
             if not e:
                 os.unlink(zodb)
     except Exception, e:
