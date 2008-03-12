@@ -86,8 +86,8 @@ class GLWidget(QGLWidget):
         glLight(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
         glLight(GL_LIGHT0,GL_SPECULAR,[1,1,1,1])
         glEnable(GL_LIGHT0)
-        glLightModel(GL_LIGHT_MODEL_LOCAL_VIEWER,GL_TRUE)
-        glLightModel(GL_LIGHT_MODEL_AMBIENT,(0.2,0.2,0.2))
+        glLightModelfv(GL_LIGHT_MODEL_LOCAL_VIEWER,GL_TRUE)
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT,(0.2,0.2,0.2))
         glMaterial(GL_FRONT,GL_SPECULAR,(0.0,0.1,0.1,1))
         glMaterial(GL_FRONT,GL_SHININESS,50.0)
         # enable back face culling
