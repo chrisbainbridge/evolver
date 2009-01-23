@@ -65,6 +65,7 @@ class GLWidget(QGLWidget):
 
     def initializeGL(self):
         log.debug('initialiseGL')
+        glutInit()
         self.quadratic = gluNewQuadric()
         gluQuadricNormals(self.quadratic, GLU_SMOOTH)
         gluQuadricTexture(self.quadratic, GL_TRUE)
