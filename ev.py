@@ -29,7 +29,7 @@
      -q x             Use discrete model with x states
      -t x             Run simulation for x seconds (default 30)
      -g x             Final generation, prefix +- for relative (default 99)
-     --model x        Type of node [sigmoid,logical,beer,if,ekeberg,sine,srm]
+     --model x        Type of node [sigmoid,logical,beer,if,ekeberg,sine,srm,taga]
      --neurons x      Total number of nodes, including inputs and outputs (default 10)
      --top x          Neural network topology [full,1d,2d,nk]
      --timing x       Neuron timing style [sync,async]
@@ -310,6 +310,11 @@ def main():
     if record and not qtopts:
         qtopts = '-geometry 640x480'
 
+    if zodb and not g:
+        g = zodb
+        if '/' in g:
+            g = g[g.rfind('/')+1:]
+
     # check options
     if gui + (client | master) + create_initial_population > 1 :
         log.critical('gui, client/master, create_initial are mutually exclustive modes')
@@ -357,6 +362,7 @@ def main():
                 'if' : node.IfNode,
                 'srm' : node.SrmNode,
                 'ekeberg' : node.EkebergNode,
+                'taga' : node.TagaNode,
                 'sine' : node.SineNode }
         new_node_class = new_node_arg_class_map[model]
 
