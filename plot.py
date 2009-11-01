@@ -89,7 +89,7 @@ def plotSignals(tracefile, quanta=0, ext='.pdf'):
     (basename, _) = os.path.splitext(tracefile)
     log.debug('basename = %s', basename)
     font = 'Helvetica'
-    font_size = 4
+    font_size = 8
     if ext == '.pdf':
         term = 'pdf font "%s,%d"'%(font, font_size)
     elif ext == '.eps':
@@ -137,7 +137,7 @@ def plotSignals(tracefile, quanta=0, ext='.pdf'):
             s += """
             set yrange %s
             set ytics nomirror %s
-            set label "%s" at graph -0.06, graph 0.5
+            set label "%s" at graph -0.10, graph 0.5
             plot "%s" using 1:%d notitle with %s linestyle 1
             unset label
             """%(yrange, ytics, labels[i].lower(), tracefile, i+1, style)
@@ -421,6 +421,7 @@ def plotNodes(net, toponly=0, prefix='n'):
     return s
 
 def weightToColor(x):
+    if x is None: return 'color=#000000' # unweighted connections e.g. logical
     x = x/7
     if x<0:
         r = abs(x)
