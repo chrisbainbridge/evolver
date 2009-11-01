@@ -568,7 +568,7 @@ class GLWidget(QGLWidget):
         for c1 in cmd1a, cmd1b:
             cmd = cmd0 + c1 + cmd2
             if log.level != logging.DEBUG:
-                cmd += ' &> /dev/null'
+                cmd += ' > /dev/null 2>&1' # do not use &> here
             log.debug('executing %s', cmd)
             res = os.system(cmd)
             if res:
