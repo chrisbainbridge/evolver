@@ -89,11 +89,11 @@ def plotSignals(tracefile, quanta=0, ext='.pdf'):
     (basename, _) = os.path.splitext(tracefile)
     log.debug('basename = %s', basename)
     font = 'Helvetica'
-    font_size = 8
-    if ext == '.pdf':
-        term = 'pdf font "%s,%d"'%(font, font_size)
+    font_size = 12
+    if ext in ['.pdf','.fig','.svg']:
+        term = '%s font "%s,%d"'%(ext[1:], font, font_size)
     elif ext == '.eps':
-        term = 'postscript portrait "%s" %d'%(font, font_size)
+        term = 'postscript enhanced portrait "%s" %d'%(font, font_size)
     header = """#!/usr/bin/gnuplot
     set terminal %s
     set out "%%s"
@@ -121,7 +121,8 @@ def plotSignals(tracefile, quanta=0, ext='.pdf'):
             ytics = '0,1,1'
             if 'M' in labels[i]:
                 yrange = '[-5:3.14]'
-                ytics = '-3.1,6.2,3.1'
+                ytics = '("-{/Symbol p}" -pi,2*pi,"+{/Symbol p}" pi)'
+
             if 'angle' == labels[i]:
                 yrange = '[-1.8:1.8]'
                 ytics = '-1.8,1.8,1.8'
@@ -137,7 +138,7 @@ def plotSignals(tracefile, quanta=0, ext='.pdf'):
             s += """
             set yrange %s
             set ytics nomirror %s
-            set label "%s" at graph -0.10, graph 0.5
+            set label "%s" at graph -0.25, graph 0.6
             plot "%s" using 1:%d notitle with %s linestyle 1
             unset label
             """%(yrange, ytics, labels[i].lower(), tracefile, i+1, style)
@@ -302,7 +303,7 @@ def plotNetworks(bg, filename, toponly):
                 j += ', ' + bp.joint
         else:
             j = bp.joint
-        s += '  label = "bp%d (%s, %s)"\n'%(i, j, nodet)
+        s += ' fontsize="24" label = "bp%d (%s, %s)"\n'%(i, j, nodet)
         prefix = 'bp%d_'%i
         s += plotNodes(bp.network, toponly, prefix)
         s += plotEdges(bp.network, toponly, prefix)
@@ -315,7 +316,7 @@ def plotNetworks(bg, filename, toponly):
                 l = signal[0]
                 if '0' <= signal[-1] <= '9':
                     l += signal[-1]
-                s += '  %s%s [label="%s"]\n'%(prefix, signal, l)
+                s += '  %s%s [label="%s",fontsize="20"]\n'%(prefix, signal, l)
         s += ' }\n'
 
     # plot inter-bodypart (node.external_input) edges here
@@ -331,14 +332,18 @@ def plotNetworks(bg, filename, toponly):
             if isinstance(tsignal, node.Node):
                 tn_i = bp.network.index(tsignal)
                 ts = '%d'%tn_i
+                wd = (-7,7) # default for logical nodes (?) fixme: probably the wrong way to do things
+                if hasattr(tsignal,'weightDomain'):
+                    wd = tsignal.weightDomain
             else:
                 ts = str(tsignal)
+                wd = (-7,7) # weightdomain is hardcoded in sim.py (?)
             if type(signal) is str:
                 s += ' bp%d_%s -> bp%d_%s'%(sbp_i, signal, tbp_i, ts)
             else: # node
                 s += ' bp%d_%d -> bp%d_%s'%(sbp_i, sbp.network.index(signal), tbp_i, ts)
-            color = weightToColor(w)
-            s += '[%s]\n'%color
+            cs = toColour(w,wd)
+            s += '[%s]\n'%cs
 
     # plot bpg topology
     for i in range(len(bg.bodyparts)):
@@ -417,20 +422,37 @@ def plotNodes(net, toponly=0, prefix='n'):
                 label += 'i'
             if net[i] in net.outputs:
                 label += 'o'
-            s += '  %s%d [label="%s"]\n'%(prefix, i, label)
+            s += '  %s%d [label="%s",fontsize="20"]\n'%(prefix, i, label)
     return s
 
-def weightToColor(x):
-    if x is None: return 'color=#000000' # unweighted connections e.g. logical
-    x = x/7
-    if x<0:
-        r = abs(x)
-        g = 0
+def toColour(w,wd):
+    # called with weight and weightDomain eg. 1,(-10,10)
+    if w is None: return 'color="#000000"' # return black for unweighted connections
+    try:
+        assert wd[0] <= w <= wd[1]
+    except AssertionError:
+        log.critical('%.2f not in %s. This should never happen! Fixing...',w,wd)
+        if w < wd[0]: w=wd[0]
+        if w > wd[1]: w=wd[1]
+    # normalize and figure out red-green colour
+    # fixme: this should be done also for inter-network
+    # edges, see plotNetworks()
+    if w<0:
+        norm = (w/wd[0])
+        col = 'red'
     else:
-        r = 0
-        g = x
-    def tohex(x): return hex(int(round(abs(x)*255)))[2:].zfill(2)
-    return 'color="#%s%s00"'%(tohex(r), tohex(g))
+        norm = (w/wd[1])
+        col = 'green'
+    assert 0 <= norm <= 1
+    # enforce a minimum colour brightness so edges don't
+    # disappear!
+    if norm < 0.2: norm = 0.2
+    def tohex(x): return hex(int(round(norm*255)))[2:].zfill(2)
+    if col == 'red':
+        cs = 'color="#%s0000"'%tohex(norm)
+    else:
+        cs = 'color="#00%s00"'%tohex(norm)
+    return cs
 
 def plotEdges(net, toponly=0, prefix='n'):
     s = ''
@@ -440,24 +462,21 @@ def plotEdges(net, toponly=0, prefix='n'):
         n = net[target_index]
         for i in n.inputs:
             if i not in net:
-                # fixme: why aren't we plotting anything here?!
+                # fixme: hmmm: why isn't the input in the net?
                 continue
             src_index = net.index(i)
             if not toponly or not done.has_key((target_index,src_index)):
                 edge_label = ''
+                cs = ''
                 if not toponly and hasattr(net[target_index],'weights'):
                     try:
-                        w = net[target_index].weights[net[src_index]]
-                        sl = str(w)
-                        sl = sl[:sl.find('.')+2]
-                        edge_label = sl
+                        w = n.weights[i]
+                        wd = n.weightDomain
+                        cs = toColour(w,wd)
                     except KeyError:
                         pass
-                if edge_label:
-#                    s += '  %s%d -> %s%d [label="%s"]\n'%(prefix, src_index, prefix, target_index, edge_label)
-                    x = float(edge_label)
-                    color = weightToColor(x)
-                    s += '  %s%d -> %s%d [%s]\n'%(prefix, src_index, prefix, target_index, color)
+                if cs:
+                    s += '  %s%d -> %s%d [%s]\n'%(prefix, src_index, prefix, target_index, cs)
                 elif toponly:
                     s += '  %s%d -> %s%d [dir=none]\n'%(prefix, src_index, prefix, target_index) # or dir=both
                 else:

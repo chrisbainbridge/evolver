@@ -24,6 +24,10 @@ from network import Network
 from plot import plotSignals
 from qtapp import MyApp
 
+# for motorised joint tests we only have 2 cylinders
+import bpg
+bpg.MIN_UNROLLED_BODYPARTS=2
+
 myapp = MyApp([sys.argv[0]] + ['-geometry','640x480'])
 
 TESTDIR = '/tmp/'

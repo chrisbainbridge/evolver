@@ -27,7 +27,7 @@ class NodeTest:
             i = '%d'%self.i
         self.prefix = 'test/%s%s-%02d'%(ns, i, self.quanta)
         if self.quanta == 0:
-            s = 'continuous'
+            s = 'floating-point (64-bit)'
         else:
             s = '%d state (%d-bit)'%(self.quanta, math.log(self.quanta,2))
         self.title = '%s%s %s'%(ns, i, s)

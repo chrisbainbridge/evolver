@@ -583,7 +583,7 @@ def main():
             (traceBase, traceExt) = os.path.splitext(tracefile)
             if traceExt in ['.trace', '.txt']:
                 fname = tracefile
-            elif traceExt in ['.eps', '.pdf']:
+            elif traceExt in ['.eps', '.pdf', '.fig', '.svg']:
                 fname = '%s.trace'%traceBase
                 plotTrace = 1
             elif traceBase == '-':
@@ -605,7 +605,7 @@ def main():
             s.run()
             log.info('Final score was %f', s.score)
         if plotTrace:
-            assert traceExt in ['.eps','.pdf']
+            assert traceExt in ['.eps','.pdf', '.fig', '.svg']
             if strip:
                 stripTraceFile(fname)
             if root[g].new_individual_args.has_key('new_node_args'):

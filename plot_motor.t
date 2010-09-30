@@ -2,7 +2,7 @@ pdf('$out')
 
 d <- read.table('$data', header=T)
 attach(d)
-plot(seconds, dx, type='l', lty=5, ylim=c(-pi,pi), col='red', ylab='angle',
+plot(seconds, dx, type='l', lty=5, ylim=c(-pi,pi), col='red', xlab='Time (seconds)', ylab='Angle (radians)',
 main='Angular response of motorised $joint joint')
 lines(seconds, ax, col='red')
 

@@ -4,7 +4,7 @@ import socket, sys, time, os, re
 from ZODB.FileStorage import FileStorage
 
 pat = r'[pb]\d\d\d$'
-tmp = os.path.expanduser('~/tmp/%s/'%socket.gethostname())
+tmp = os.path.expanduser('~/phd-data/new/pb/')
 oldruns = [x for x in os.listdir(tmp) if re.match(pat,x)]
 for zodb in oldruns:
     print 'packing',zodb
