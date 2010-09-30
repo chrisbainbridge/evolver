@@ -1,0 +1,76 @@
+ev -r b000 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 0 --top 1d --k 1 --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b001 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 0 --top 1d --k 1 --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b002 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 0 --top 1d --k 1 --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b003 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 0 --top 1d --k 1 --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b004 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 0 --top 1d --k 1 --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b005 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 0 --top 1d --k 1 --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b006 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 0 --top 1d --k 1 --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b007 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 0 --top 1d --k 1 --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b008 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 0 --top 1d --k 1 --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b009 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 0 --top 1d --k 1 --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b018 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 0 --top full --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b020 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 0 --top nk --k 1 --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b025 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 4 -q 8 --top full --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b029 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 4 -q 2 --top nk --k 2 --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b031 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 4 -q 4 --top nk --k 2 --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b051 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 4 -q 64 --top nk --k 1 --timing sync --mut gauss --mp 0.01 --fitness meanxv
+ev -r b053 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 4 -q 0 --top nk --k 2 --timing sync --mut gauss --mp 0.01 --fitness meanxv
+ev -r b058 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 64 --top 2d --k 1 --timing sync --mut gauss --mp 0.01 --fitness meanxv
+ev -r b060 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 32 --top full --timing sync --mut gauss --mp 0.01 --fitness meanxv
+ev -r b068 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 4 --top full --timing async --mut uniform --mp 0.01 --fitness meanxv
+ev -r b086 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 64 --top 1d --k 1 --timing async --mut uniform --mp 0.01 --fitness meanxv
+ev -r b089 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 8 --top nk --k 1 --timing async --mut uniform --mp 0.01 --fitness meanxv
+ev -r b090 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 32 --top nk --k 1 --timing async --mut uniform --mp 0.01 --fitness meanxv
+ev -r b095 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 4 --top 1d --k 1 --timing sync --mut uniform --mp 0.01 --fitness meanxv
+ev -r b105 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 4 -q 0 --top 1d --k 1 --timing sync --mut uniform --mp 0.01 --fitness meanxv
+ev -r b107 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 4 -q 32 --top full --timing sync --mut uniform --mp 0.01 --fitness meanxv
+ev -r b115 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 2 --top 1d --k 1 --timing sync --mut uniform --mp 0.01 --fitness meanxv
+ev -r b128 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 4 --top nk --k 1 --timing async --mut gauss --mp 0.05 --fitness meanxv
+ev -r b130 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 16 --top nk --k 1 --timing async --mut gauss --mp 0.05 --fitness meanxv
+ev -r b144 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 64 --top 2d --k 1 --timing async --mut gauss --mp 0.05 --fitness meanxv
+ev -r b148 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 16 --top nk --k 1 --timing async --mut gauss --mp 0.05 --fitness meanxv
+ev -r b154 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 0 --top 2d --k 1 --timing sync --mut gauss --mp 0.05 --fitness meanxv
+ev -r b160 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 2 --top nk --k 1 --timing sync --mut gauss --mp 0.05 --fitness meanxv
+ev -r b172 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 32 --top 1d --k 1 --timing sync --mut gauss --mp 0.05 --fitness meanxv
+ev -r b175 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 8 --top full --timing sync --mut gauss --mp 0.05 --fitness meanxv
+ev -r b176 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 32 --top nk --k 1 --timing sync --mut gauss --mp 0.05 --fitness meanxv
+ev -r b191 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 4 -q 16 --top nk --k 1 --timing async --mut uniform --mp 0.05 --fitness meanxv
+ev -r b192 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 2 --top 1d --k 1 --timing async --mut uniform --mp 0.05 --fitness meanxv
+ev -r b196 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 4 --top 2d --k 1 --timing async --mut uniform --mp 0.05 --fitness meanxv
+ev -r b201 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 2 --top nk --k 2 --timing async --mut uniform --mp 0.05 --fitness meanxv
+ev -r b211 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 16 -q 2 --top nk --k 2 --timing sync --mut uniform --mp 0.05 --fitness meanxv
+ev -r b213 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 4 -q 8 --top 1d --k 1 --timing sync --mut uniform --mp 0.05 --fitness meanxv
+ev -r b215 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 4 -q 32 --top full --timing sync --mut uniform --mp 0.05 --fitness meanxv
+ev -r b232 -p 50 -g 50 -t 30 --sim bpg --model taga --neurons 9 -q 16 --top nk --k 2 --timing sync --mut uniform --mp 0.05 --fitness meanxv
+ev -r b241 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 4 -q 8 --top full --timing async --mut gauss --mp 0.01 --fitness meanxv
+ev -r b258 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 16 -q 64 --top 1d --k 1 --timing sync --mut gauss --mp 0.01 --fitness meanxv
+ev -r b281 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 9 -q 16 --top full --timing sync --mut gauss --mp 0.01 --fitness meanxv
+ev -r b284 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 9 -q 4 --top nk --k 2 --timing sync --mut gauss --mp 0.01 --fitness meanxv
+ev -r b286 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 16 -q 16 --top full --timing async --mut uniform --mp 0.01 --fitness meanxv
+ev -r b289 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 16 -q 8 --top nk --k 1 --timing async --mut uniform --mp 0.01 --fitness meanxv
+ev -r b291 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 16 -q 4 --top nk --k 2 --timing async --mut uniform --mp 0.01 --fitness meanxv
+ev -r b296 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 16 -q 64 --top nk --k 2 --timing async --mut uniform --mp 0.01 --fitness meanxv
+ev -r b297 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 4 -q 0 --top 1d --k 1 --timing async --mut uniform --mp 0.01 --fitness meanxv
+ev -r b315 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 16 -q 0 --top 2d --k 1 --timing sync --mut uniform --mp 0.01 --fitness meanxv
+ev -r b322 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 16 -q 2 --top nk --k 2 --timing sync --mut uniform --mp 0.01 --fitness meanxv
+ev -r b325 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 4 -q 32 --top 1d --k 1 --timing sync --mut uniform --mp 0.01 --fitness meanxv
+ev -r b330 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 4 -q 16 --top nk --k 2 --timing sync --mut uniform --mp 0.01 --fitness meanxv
+ev -r b337 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 9 -q 8 --top 2d --k 1 --timing sync --mut uniform --mp 0.01 --fitness meanxv
+ev -r b338 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 9 -q 2 --top full --timing sync --mut uniform --mp 0.01 --fitness meanxv
+ev -r b349 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 16 -q 64 --top 2d --k 1 --timing async --mut gauss --mp 0.05 --fitness meanxv
+ev -r b355 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 4 -q 32 --top 1d --k 1 --timing async --mut gauss --mp 0.05 --fitness meanxv
+ev -r b356 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 4 -q 32 --top full --timing async --mut gauss --mp 0.05 --fitness meanxv
+ev -r b358 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 4 -q 4 --top nk --k 2 --timing async --mut gauss --mp 0.05 --fitness meanxv
+ev -r b360 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 9 -q 4 --top 1d --k 1 --timing async --mut gauss --mp 0.05 --fitness meanxv
+ev -r b362 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 9 -q 32 --top 2d --k 1 --timing async --mut gauss --mp 0.05 --fitness meanxv
+ev -r b372 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 9 -q 8 --top nk --k 2 --timing async --mut gauss --mp 0.05 --fitness meanxv
+ev -r b374 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 16 -q 16 --top 1d --k 1 --timing sync --mut gauss --mp 0.05 --fitness meanxv
+ev -r b384 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 16 -q 64 --top nk --k 1 --timing sync --mut gauss --mp 0.05 --fitness meanxv
+ev -r b385 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 16 -q 64 --top nk --k 2 --timing sync --mut gauss --mp 0.05 --fitness meanxv
+ev -r b392 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 4 -q 16 --top full --timing sync --mut gauss --mp 0.05 --fitness meanxv
+ev -r b405 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 16 -q 16 --top full --timing async --mut uniform --mp 0.05 --fitness meanxv
+ev -r b411 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 4 -q 0 --top 1d --k 1 --timing async --mut uniform --mp 0.05 --fitness meanxv
+ev -r b437 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 16 -q 4 --top nk --k 1 --timing sync --mut uniform --mp 0.05 --fitness meanxv
+ev -r b438 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 16 -q 8 --top nk --k 1 --timing sync --mut uniform --mp 0.05 --fitness meanxv
+ev -r b454 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 9 -q 2 --top 2d --k 1 --timing sync --mut uniform --mp 0.05 --fitness meanxv
+ev -r b457 -p 100 -g 100 -t 30 --sim bpg --model taga --neurons 9 -q 64 --top nk --k 1 --timing sync --mut uniform --mp 0.05 --fitness meanxv
