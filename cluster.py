@@ -22,7 +22,10 @@ MASTER = CLUSTER + 'node02'
 REGEXP = r'bw240n\d\d.inf.ed.ac.uk'
 config = SafeConfigParser()
 config.read(os.path.expanduser('~/.ev'))
-ZEOSERVER = config.get('cluster','zeoserver')
+try:
+    ZEOSERVER = config.get('cluster','zeoserver')
+except:
+    debug('no ZEO server')
 
 def getBadHosts():
     # bad host list in tentakel.conf looks like '# BAD: host1 host2'
