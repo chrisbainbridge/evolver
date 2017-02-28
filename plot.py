@@ -145,7 +145,8 @@ def plotSignals(tracefile, quanta=0, ext='.pdf'):
         fo.write(s)
         fo.close()
         os.chmod(fname, 0755)
-        os.system('gnuplot %s >> gnuplot.out 2>&1'%fname)
+        e = os.system('gnuplot %s >> gnuplot.out 2>&1'%fname)
+        if e: raise Exception('gnuplot')
         log.debug('generated %s-p%d.eps', basename, page)
         page += 1
     log.info('generated %s', fnames)
@@ -165,11 +166,13 @@ def gnuplotSetup(filename, genName):
 def gnuplot(gnuplotFile, ext, view, datFile, fbase):
     if ext != '.gnuplot':
         assert ext == '.pdf'
-        os.system('gnuplot %s >> gnuplot.out 2>&1'%(gnuplotFile))
+        e = os.system('gnuplot %s >> gnuplot.out 2>&1'%(gnuplotFile))
+        if e: raise Exception('gnuplot')
         os.remove(gnuplotFile)
         os.remove(datFile)
         if view:
-            os.system('kpdf %s.pdf'%fbase)
+            e = os.system('kpdf %s.pdf'%fbase)
+            if e: raise Exception('kpdf')
             os.remove('%s.pdf'%fbase)
 
 def plot_generation_vs_fitness(g, outputFilename, genName=None):
@@ -277,14 +280,18 @@ def dot(filename, s):
     f.close()
     if ext != '.dot':
         if ext == '.pdf':
-            os.system('dot -Tps -o%s.eps %s.dot >> dot.out 2>&1'%(fbase, fbase))
-            os.system('epstopdf %s.eps'%fbase)
+            e = os.system('dot -Tps -o%s.eps %s.dot >> dot.out 2>&1'%(fbase, fbase))
+            if e: raise Exception('dot')
+            e = os.system('epstopdf %s.eps'%fbase)
+            if e: raise Exception('epstopdf')
             os.remove(fbase+'.eps')
             if view:
-                os.system('kpdf %s.pdf'%fbase)
+                e = os.system('kpdf %s.pdf'%fbase)
+                if e: raise Exception('kpdf')
         else:
             cmd = 'dot -T%s -o%s%s %s.dot >> dot.out 2>&1'%(ext[1:], fbase, ext, fbase)
-            os.system(cmd)
+            e = os.system(cmd)
+            if e: raise Exception(e)
             os.remove(fbase+'.dot')
 
 def plotNetworks(bg, filename, toponly):
