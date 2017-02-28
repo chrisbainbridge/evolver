@@ -15,21 +15,21 @@ def main(s):
     ev.main()
 
 def delete(g):
-    main('ev.py -r %s -e'%g)
+    main('ev.py -f test.db -r %s -e'%g)
 
 def create(g, args):
-    main('ev.py -r %s %s'%(g, args))
+    main('ev.py -f test.db -r %s %s'%(g, args))
 
 def run(g):
-    main('ev.py -r %s -c -m'%g)
+    main('ev.py -f test.db -r %s -c -m'%g)
 
 def plot(g):
     debug('testing --pf')
-    main('ev.py -r %s --pf test/%s-fitness.pdf'%(g, g))
+    main('ev.py -f test.db -r %s --pf test/%s-fitness.pdf'%(g, g))
     debug('testing --plotpi')
-    main('ev.py -r %s --plotpi test/%s-childpi.pdf'%(g, g))
+    main('ev.py -f test.db -r %s --plotpi test/%s-childpi.pdf'%(g, g))
     debug('testing --plotfc')
-    main('ev.py -r %s --plotfc test/%s-childfc.pdf'%(g, g))
+    main('ev.py -f test.db -r %s --plotfc test/%s-childfc.pdf'%(g, g))
 
 class EvTest:
     def test_1_create(self):
