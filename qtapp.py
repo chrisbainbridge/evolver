@@ -16,17 +16,12 @@ redraw whenever it receives a specified timer event.
 
 import tempfile
 
-from qt import *
-from qtgl import *
+from PyQt4 import QtCore, QtGui, uic
+from PyQt4.QtGui import QApplication
+from PyQt4 import QtOpenGL
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
-try:
-    import qtgui
-except ImportError:
-    import os
-    os.system('make qtgui.py')
-    import qtgui
 
 from sim import DT
 
@@ -43,22 +38,22 @@ class MyApp(QApplication):
         """
         log.debug('myapp init with args %s', args)
         QApplication.__init__(self, args)
-        if not QGLFormat.hasOpenGL():
+        if not QtOpenGL.QGLFormat.hasOpenGL():
             raise Exception('No Qt OpenGL support.')
         log.debug('We have OpenGL support')
         # create the gui
-        self.window = qtgui.QtGui()
+        self.window = QtGui.QMainWindow()
+        uic.loadUi('qt4gui.ui', self.window)
         self.window.statusBar().hide()
         self.glwidget = self.window.glwidget
         # tell GL widget what to draw
         self.glwidget.qtapp = self
         # set timerEvent for each timestep
         self.startTimer(DT*1000)
-        # create main window
-        self.setMainWidget(self.window)
+        # display main window
         self.window.show()
         # what to do when we quit
-        QObject.connect(self, SIGNAL("lastWindowClosed()"), self.quit)
+        QtCore.QObject.connect(self, QtCore.SIGNAL("lastWindowClosed()"), self.quit)
         # default end time
         self.end_time = 0
         self.window.progressBar1.hide()
@@ -75,7 +70,7 @@ class MyApp(QApplication):
     def setSim(self, sim):
         self.sim = sim
         self.glwidget.sim = sim
-        self.window.progressBar1.setTotalSteps(round(self.sim.max_simsecs))
+        self.window.progressBar1.maximum = round(self.sim.max_simsecs)
         self.window.show()
 
     def quit(self):
@@ -87,7 +82,7 @@ class MyApp(QApplication):
             self.glwidget.finaliseRecording()
         del self.sim
         del self.glwidget.sim
-        QApplication.quit(self)
+        QApplication.quit()
 
     def setRecord(self, record, avifile=''):
         """Turn recording on/off and set the output file name.
@@ -122,7 +117,7 @@ class MyApp(QApplication):
         # show simulation time counter
         if self.steps % 25 == 0:
             if self.sim.max_simsecs:
-                self.window.progressBar1.setProgress(round(self.sim.total_time))
+                self.window.progressBar1.setValue(round(self.sim.total_time))
             self.window.score_label.setText('%.1f : %.3f'%(self.sim.total_time, self.sim.score))
         if self.sim.finished:
             self.quit()

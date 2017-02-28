@@ -597,7 +597,7 @@ def main():
             from qtapp import MyApp
             myapp = MyApp([sys.argv[0]]+qtopts.split(), s)
             myapp.setRecord(record, avifile)
-            myapp.exec_loop()
+            myapp.exec_()
             log.info('Final score was %f', s.score)
         else:
             log.info('Running simulation')

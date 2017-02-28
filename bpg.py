@@ -10,7 +10,10 @@ from persistent.dict import PersistentDict
 import logging
 
 from ode import Infinity
-from cgkit.cgtypes import vec3
+try:
+    from cgkit.cgtypes import vec3
+except ImportError:
+    from cgtypes import vec3
 import network
 import node
 from rand import rnd, randomVec3, randomQuat, randomAxis

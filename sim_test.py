@@ -12,7 +12,10 @@ import testoob
 import copy
 
 from persistent.list import PersistentList
-from cgkit.cgtypes import vec3
+try:
+    from cgkit.cgtypes import vec3
+except ImportError:
+    from cgtypes import vec3
 from Cheetah.Template import Template
 
 import sim

@@ -1,5 +1,8 @@
 import random
-from cgkit.cgtypes import vec3
+try:
+    from cgkit.cgtypes import vec3
+except:
+    from cgtypes import vec3
 import math
 
 mut = 'uniform'

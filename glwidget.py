@@ -17,25 +17,28 @@ import math
 import os
 import sys
 
-from qt import *
-from qtgl import *
+from PyQt4.QtCore import Qt
+from PyQt4 import QtOpenGL
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 import ode
-from cgkit.cgtypes import vec3, mat3, mat4, vec4
+try:
+    from cgkit.cgtypes import vec3, mat3, mat4, vec4
+except ImportError:
+    from cgtypes import vec3, mat3, mat4, vec4
 import Image
 
 import logging
 log = logging.getLogger('glwidget')
 
-class GLWidget(QGLWidget):
+class GLWidget(QtOpenGL.QGLWidget):
 
     """An OpenGL widget that renders an ODE scene"""
 
     def __init__(self, parent=None, name=None):
         log.debug('glwidget init')
-        QGLWidget.__init__(self, parent, name)
+        QtOpenGL.QGLWidget.__init__(self, parent, name)
         # make sure all key events come here
         self.grabKeyboard()
         # camera x,y,z

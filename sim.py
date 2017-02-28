@@ -3,7 +3,10 @@ import random
 import logging
 
 import ode
-from cgkit.cgtypes import quat, mat3, mat4, vec3
+try:
+    from cgkit.cgtypes import quat, mat3, mat4, vec3
+except:
+    from cgtypes import quat, mat3, mat4, vec3
 from numpy import matrix
 import bpg
 import node
