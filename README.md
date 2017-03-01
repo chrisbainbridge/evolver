@@ -68,6 +68,10 @@ Run `ev` without any parameters to show all supported options.
 Examples
 ========
 
+Video:
+
+[![YouTube](http://i.imgur.com/9qCatbW.jpg)](https://youtu.be/1RPOErHyB1o)
+
 Biped walker:
 
 ![biped walker](http://i.imgur.com/F9hz25G.jpg)
