@@ -70,7 +70,7 @@ Examples
 
 Video:
 
-[![YouTube](http://i.imgur.com/9qCatbW.jpg)](https://youtu.be/1RPOErHyB1o)
+[![YouTube](http://i.imgur.com/9qCatbW.jpg)](https://youtu.be/YpK5AoDQ-V4)
 
 Biped walker:
 
